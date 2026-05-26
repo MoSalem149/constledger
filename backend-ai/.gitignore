@@ -1,0 +1,32 @@
+# ── Dependencies ─────────────────────────────────────────────────────
+node_modules/
+
+# ── TypeScript build output (never commit compiled JS) ───────────────
+dist/
+*.tsbuildinfo
+
+# ── Environment / secrets ────────────────────────────────────────────
+# .env.example is committed — actual env files are NOT
+.env
+.env.production
+.env.staging
+
+# ── Logs ─────────────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+
+# ── Temp / downloaded files ───────────────────────────────────────────
+# Contract files are downloaded temporarily during analysis then discarded
+tmp/
+temp/
+downloads/
+
+# ── OS / Editor ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Testing ──────────────────────────────────────────────────────────
+coverage/

@@ -1,0 +1,78 @@
+services:
+
+  # ── MongoDB ─────────────────────────────────────────────────────────
+  mongo:
+    image: mongo:7
+    container_name: cpms-mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'           # MongoDB default
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - cpms-net
+
+  # ── Core Backend (Node/Express JS) ──────────────────────────────────
+  backend-core:
+    build:
+      context: ./backend-core
+      dockerfile: Dockerfile
+    container_name: cpms-backend-core
+    restart: unless-stopped
+    env_file: ./backend-core/.env
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/cpms
+      - AI_SERVICE_URL=http://backend-ai:5000
+    ports:
+      - '3000:3000'             # Express default
+    depends_on:
+      - mongo
+    networks:
+      - cpms-net
+    volumes:
+      # hot-reload in dev — comment out for production image
+      - ./backend-core/src:/app/src:ro
+
+  # ── AI Backend (Node/Express TS) ─────────────────────────────────────
+  backend-ai:
+    build:
+      context: ./backend-ai
+      dockerfile: Dockerfile
+    container_name: cpms-backend-ai
+    restart: unless-stopped
+    env_file: ./backend-ai/.env
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/cpms
+      - CORE_SERVICE_URL=http://backend-core:3000
+    ports:
+      - '5000:5000'             # AI service default
+    depends_on:
+      - mongo
+      - backend-core
+    networks:
+      - cpms-net
+
+  # ── Frontend (React + Vite) ──────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cpms-frontend
+    restart: unless-stopped
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+      - VITE_AI_API_URL=http://localhost:5000/api
+    ports:
+      - '5173:5173'             # Vite default
+    depends_on:
+      - backend-core
+      - backend-ai
+    networks:
+      - cpms-net
+
+volumes:
+  mongo_data:
+
+networks:
+  cpms-net:
+    driver: bridge
