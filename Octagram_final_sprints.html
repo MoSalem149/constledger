@@ -1,0 +1,413 @@
+
+<style>
+*{box-sizing:border-box}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+.tab{padding:5px 13px;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);cursor:pointer;background:transparent;color:var(--color-text-secondary);font-family:inherit}
+.tab.on{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500}
+.pane{display:none}.pane.on{display:block}
+.sprint-meta{display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap}
+.sprint-name{font-size:15px;font-weight:500;color:var(--color-text-primary);margin:0}
+.pill{font-size:11px;padding:2px 8px;border-radius:4px;border:0.5px solid}
+.pill-blue{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.pill-amber{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.pill-gray{background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary)}
+.pill-red{background:var(--color-background-danger);color:var(--color-text-danger);border-color:var(--color-border-danger)}
+.pill-green{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.goal-box{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:1.25rem;font-size:13px;color:var(--color-text-secondary);line-height:1.55}
+.goal-box strong{color:var(--color-text-primary);font-weight:500}
+.grp-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin:1rem 0 6px}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:8px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.tid{font-size:11px;color:var(--color-text-tertiary);font-family:var(--font-mono);flex-shrink:0;margin-top:1px}
+.ttitle{font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1;line-height:1.35}
+.tdesc{font-size:12px;color:var(--color-text-secondary);line-height:1.55;margin-bottom:6px}
+.tmeta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.av{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0}
+.av-fe{background:#B5D4F4;color:#0C447C}
+.av-be{background:#9FE1CB;color:#085041}
+.av-fs{background:#CECBF6;color:#3C3489}
+.av-ux{background:#F4C0D1;color:#72243E}
+.av-qa{background:#D3D1C7;color:#444441}
+.assignee-row{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--color-text-secondary)}
+.dev-row{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:10px 14px;margin-bottom:8px}
+.dev-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.dev-name{font-size:13px;font-weight:500;color:var(--color-text-primary);margin:0}
+.dev-role{font-size:12px;color:var(--color-text-secondary);margin:0}
+.trow{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.trow:last-child{border:none}
+.trow-id{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);flex-shrink:0;margin-right:8px}
+.warn{background:#FAEEDA;border:0.5px solid #EF9F27;border-radius:var(--border-radius-md);padding:9px 13px;margin-bottom:1rem;font-size:12px;color:#633806;line-height:1.55}
+.note{background:var(--color-background-info);border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);padding:9px 13px;margin-bottom:1rem;font-size:12px;color:var(--color-text-info);line-height:1.55}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:1.25rem}
+.stat{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px}
+.stat p:first-child{font-size:11px;color:var(--color-text-secondary);margin:0 0 2px}
+.stat p:last-child{font-size:20px;font-weight:500;color:var(--color-text-primary);margin:0}
+</style>
+
+<h2 class="sr-only">CPMS Jira backlog — 4 sprints, team assignments, and notes</h2>
+
+<div class="tabs">
+  <button class="tab on" onclick="show('overview',this)">Overview</button>
+  <button class="tab" onclick="show('s1',this)">Sprint 1 — May 25–30</button>
+  <button class="tab" onclick="show('s2',this)">Sprint 2 — May 31–Jun 6</button>
+  <button class="tab" onclick="show('s3',this)">Sprint 3 — Jun 9–13</button>
+  <button class="tab" onclick="show('s4',this)">Sprint 4 — Jun 15–16</button>
+  <button class="tab" onclick="show('team',this)">Team view</button>
+</div>
+
+<div id="overview" class="pane on">
+  <div class="stats">
+    <div class="stat"><p>Total tasks</p><p>28</p></div>
+    <div class="stat"><p>Dev tasks</p><p>20</p></div>
+    <div class="stat"><p>UX tasks</p><p>3</p></div>
+    <div class="stat"><p>QA tasks</p><p>5</p></div>
+    <div class="stat"><p>Dev days</p><p>12</p></div>
+  </div>
+  <div class="note"><strong style="font-weight:500">Tech stack:</strong> MERN (MongoDB + Mongoose, Express, React, Node). No PostgreSQL, no BullMQ/Redis — LLM is called directly server-side per the Octagram doc. Mongoose schemas replace the relational DB design.</div>
+  <div class="warn"><strong style="font-weight:500">Sprint 4 is 2 days</strong> — Epic 5 + all of Epic 6 must land here. The risk mitigation is CPMS-305: D4 pre-compiles MongoDB aggregation pipelines in Sprint 3 so Sprint 4 just wires them. Don't add scope to Sprint 3.</div>
+
+  <div class="grp-label">Sprint summary</div>
+  <div class="card">
+    <div class="card-top"><span class="ttitle">Sprint 1 — May 25–30 · 5 days</span><span class="pill pill-gray">No code</span></div>
+    <div class="tdesc">No implementation at all. Mongoose schema blueprints, API routing specs, LLM prompt spec, Figma designs, component tree docs, and full QA test matrices. Every developer produces a written specification for their implementation area.</div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="ttitle">Sprint 2 — May 31–Jun 6 · 6 days (1 weekend day off)</span><span class="pill pill-blue">Epic 2 + 3</span></div>
+    <div class="tdesc">Contract upload → S3 → server-side LLM call → save 13 fields. Contract list and detail screens. UX designs the approval/report screens. QA sets up test environment.</div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="ttitle">Sprint 3 — Jun 9–13 · 5 days</span><span class="pill pill-blue">Epic 1 + 4</span></div>
+    <div class="tdesc">Auth (login, JWT, RBAC), budget auto-split service, review form, budget variance table. D4 pre-compiles MongoDB aggregation pipelines as risk mitigation for Sprint 4.</div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="ttitle">Sprint 4 — Jun 15–16 · 2 days</span><span class="pill pill-red">Epic 5 + 6</span></div>
+    <div class="tdesc">Progress submission + PMO approval, performance reports, Excel export, live dashboard data binding. Full end-to-end QA pass.</div>
+  </div>
+</div>
+
+<div id="s1" class="pane">
+  <div class="sprint-meta">
+    <p class="sprint-name">Sprint 1</p>
+    <span class="pill pill-gray">May 25–30</span>
+    <span class="pill pill-gray">5 days</span>
+    <span class="pill pill-amber">No code — blueprints only</span>
+  </div>
+  <div class="goal-box"><strong>Goal:</strong> Every team member produces a written specification for their area. No line of code is written. By end of sprint: Mongoose schemas approved, API routes agreed, LLM prompt spec signed off, all Figma screens complete, full QA test matrix written.</div>
+
+  <div class="grp-label">Backend — D2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-101</span><div class="ttitle">MongoDB document collection and Mongoose schema mapping blueprint</div></div>
+    <div class="tdesc">Design all Mongoose schemas with field names, types, validations, and indexes: Contract (all 13 AI fields + status + file_url), FinancePlanned (periodLabel, periodStart, periodEnd, plannedAmount, cumulativePlanned), FinanceActual (contractId, workItems[], totalCost, status, submittedBy), User (name, email, passwordHash, role). No code — produce a written/diagrammed schema doc for team review.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-102</span><div class="ttitle">Cloud storage buckets and pre-signed URL integration design</div></div>
+    <div class="tdesc">Document the S3 integration design: bucket structure, naming convention, ACL policy (private), pre-signed URL flow (upload URL → frontend sends file direct to S3 → backend saves key). Max file size policy (50MB). Note which Node library to use (aws-sdk v3). This becomes D2's implementation spec in Sprint 2.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D3</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-103</span><div class="ttitle">LLM prompt constraints matrix and direct AI JSON response spec</div></div>
+    <div class="tdesc">Write the exact LLM system prompt and user prompt template. Define the expected JSON response shape for all 13 extracted fields (contractName, parties[], startDate, endDate, contractValue, currency, paymentTerms, milestones[], unitPrices[], penalties[], paymentSchedule[], reportingPeriod, durationDays). Specify null handling — never guess missing fields. Include a sample good response and sample failed response. This is D3's contract with themselves for Sprint 2.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D4</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-104</span><div class="ttitle">Milestone budget allocation algorithm technical specification</div></div>
+    <div class="tdesc">Define the algorithm that splits contract_value into FinancePlanned periods. Rule: if milestones exist, each milestone = one period, value split proportionally by duration between milestone dates. If no milestones, split evenly by reportingPeriod (weekly/monthly) across start–end. Write worked examples with numbers. Get sign-off from team lead before Sprint 3 starts — this is the most business-critical decision in the whole system.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D1</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-105</span><div class="ttitle">Client-side component tree layout and routing documentation</div></div>
+    <div class="tdesc">Document the React app structure: all page-level components, route paths, which roles can access each route, the auth context shape (user, role, token), and how protected routes work. Map each Figma screen to a route. Produces the routing skeleton D1 will implement in Sprint 2.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D1</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D5</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-106</span><div class="ttitle">Design system selection and Tailwind configuration layout spec</div></div>
+    <div class="tdesc">Choose component library (ShadCN/UI recommended for MERN projects — pre-built accessible components, Tailwind-native). Document which components map to which screens: Table → contract list, Form → review form, Badge → status indicators, Card → dashboard tiles. Write the Tailwind config tokens (brand colors, font). This becomes D5's Sprint 2 setup task.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D5</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Design — UX</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">UX-101</span><div class="ttitle">Figma high-fidelity designs — all core screens</div></div>
+    <div class="tdesc">Deliver Figma screens for: dashboard (role-aware nav + summary cards), contract list (table + filters + status badges), contract upload (file picker + loading/processing state), contract detail (read-only + PDF viewer + milestone timeline), contract review/edit form (all 13 fields). Must be shared with dev team by end of Sprint 1 so Sprint 2 frontend work is unblocked on day 1.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-ux">UX</span>UX Designer</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">QA — T1 + T2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">QA-101</span><div class="ttitle">Full test suite matrix — all three modules</div></div>
+    <div class="tdesc">Write given-when-then test cases for: auth (login valid/invalid, each role, token expiry, wrong role access), contract upload (valid PDF/DOCX, oversized file, bad format, AI success, AI failure), contract review (all 13 fields editable, confirm flow, re-analyze), planned budget (correct period split, cumulative math), actual progress submit + PMO approve/reject, all report outputs with known seed data. Create the seed dataset with known values now — needed for Sprint 4 regression.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-qa">QA</span>T1 + T2</span><span class="pill pill-amber">High</span></div>
+  </div>
+</div>
+
+<div id="s2" class="pane">
+  <div class="sprint-meta">
+    <p class="sprint-name">Sprint 2</p>
+    <span class="pill pill-blue">May 31–Jun 6</span>
+    <span class="pill pill-gray">5 working days</span>
+    <span class="pill pill-blue">Epic 2 + 3</span>
+  </div>
+  <div class="goal-box"><strong>Goal:</strong> Upload a contract → AI extracts 13 fields → saved to MongoDB. Contract list and detail visible in the browser. UX finishes approval and report screen designs for Sprint 3/4.</div>
+
+  <div class="grp-label">Backend — D2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-201</span><div class="ttitle">POST /api/contracts/upload — file handler and S3 ingest</div></div>
+    <div class="tdesc">Accept multipart PDF or DOCX (≤50MB). Validate file type and size. Upload to S3 using pre-signed PUT URL. Create Contract Mongoose doc (status: "processing", fileUrl: S3 key). Pass contractId and fileUrl to CPMS-202 controller in the same request cycle (no queue needed — call it directly then respond). Return {contractId, status}.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-202</span><div class="ttitle">Server-side contract text extractor utility</div></div>
+    <div class="tdesc">Node utility that takes a file buffer: for PDF use pdf-parse, for DOCX use mammoth. Returns raw text string. Called by CPMS-203 before the LLM call. Keep it as a separate util function — easy to test independently. Handle extraction failures (corrupted file, password-protected PDF) by returning null and setting contract status to "analysis_failed".</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D3</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-203</span><div class="ttitle">Direct server-to-LLM controller — call, receive, validate 13 JSON fields</div></div>
+    <div class="tdesc">Using the exact prompt spec from CPMS-103: receive extracted text → build prompt → call LLM API directly (no queue). Parse JSON response, validate all 13 fields, set null on missing. Update Contract doc with extracted fields + status: "active". On any LLM error (timeout, bad JSON, API failure): set status: "analysis_failed". Return updated contract to upstream controller. Timebox to 60s max per SRS.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D4</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-204</span><div class="ttitle">GET /api/contracts — database query controller with filters</div></div>
+    <div class="tdesc">Mongoose query with optional filters: status (enum), year (filter on startDate year), name (case-insensitive regex on contractName). Return array of contracts with id, name, status, contractValue, currency, startDate, endDate. Paginate (limit/skip). RBAC: all roles can read. Use Mongoose lean() for performance on list queries.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-gray">Med</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-205</span><div class="ttitle">GET /api/contracts/:id — detail endpoint with milestone sorter</div></div>
+    <div class="tdesc">Return full contract document. Sort milestones array by dueDate ascending before sending. Add derived field isDue (bool: dueDate &lt; today) to each milestone. Generate pre-signed S3 GET URL for fileUrl and return as pdfUrl (do not return raw S3 key to frontend). RBAC: all roles.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-gray">Med</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D1</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-206</span><div class="ttitle">React scaffold, file uploader, and async processing UI</div></div>
+    <div class="tdesc">Set up React app with routing per CPMS-105 spec. Auth context (user, role, JWT in memory). Axios instance with JWT header. Protected route wrapper. Then build the upload screen: drag-and-drop + click file picker, client-side validation (type + size), call CPMS-201, then poll GET /api/contracts/:id every 5s while status is "processing". Show spinner with "AI is reading your contract…". On "active" → navigate to review form. On "analysis_failed" → show error + retry.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D1</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D5</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-207</span><div class="ttitle">Contract list table and filter dashboard</div></div>
+    <div class="tdesc">Tailwind + component library setup per CPMS-106 spec. Contract list page: table with columns (name, value, currency, parties, status, start/end date). Status as colored badge. Filter bar: status dropdown, year picker, name search. Paginator. Click row → contract detail. Also build contract detail page: all fields read-only, milestone timeline (sorted, with overdue highlighting), iframe PDF viewer using pdfUrl from CPMS-205.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D5</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Design — UX</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">UX-201</span><div class="ttitle">Figma designs — approval screen, budget table, progress form, report screens</div></div>
+    <div class="tdesc">Deliver designs for Sprint 3 and 4 screens: PMO approval list + approve/reject flow, planned budget variance table, actual progress submission form (work items table), all report screens (monthly, quarterly, project performance, penalty). KPI card designs (SPI, CPI, progress %). Must be shared by Wednesday Jun 4 so Sprint 3 devs are unblocked on day 1.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-ux">UX</span>UX Designer</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">QA — T1 + T2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">QA-201</span><div class="ttitle">Mongoose schema sanity checks and test environment setup</div></div>
+    <div class="tdesc">Validate D2's Mongoose schemas match CPMS-101 spec. Set up test MongoDB instance (Atlas free tier or local). Import seed dataset from QA-101. Write integration test stubs for upload and LLM controller. Verify Sprint 1 specs (no live features to test yet) — flag any schema/spec inconsistencies to the team now before Sprint 3 when they're expensive to fix.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-qa">QA</span>T1 + T2</span><span class="pill pill-amber">High</span></div>
+  </div>
+</div>
+
+<div id="s3" class="pane">
+  <div class="sprint-meta">
+    <p class="sprint-name">Sprint 3</p>
+    <span class="pill pill-blue">Jun 9–13</span>
+    <span class="pill pill-gray">5 days</span>
+    <span class="pill pill-blue">Epic 1 + 4</span>
+  </div>
+  <div class="goal-box"><strong>Goal:</strong> Login works with roles. Contract review/edit form complete. Budget auto-generates on contract confirm. D4 pre-compiles MongoDB aggregation pipelines as Sprint 4 insurance.</div>
+
+  <div class="grp-label">Backend — D2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-301</span><div class="ttitle">User collection Mongoose indexes and password hashing</div></div>
+    <div class="tdesc">Create User Mongoose schema (name, email, passwordHash, role enum: "contractManager" | "pmo" | "financeTeam" | "topManagement"). Add unique index on email. Hash passwords with bcrypt (salt rounds: 10). Seed the 4 default user accounts for demo/graduation review. This is the only user management needed — no invite flow, no password reset, just seeded users and the login endpoint.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D3</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-302</span><div class="ttitle">POST /api/auth/login — JWT token and cookie delivery</div></div>
+    <div class="tdesc">Validate email + password with bcrypt.compare. Sign JWT (payload: userId, role, exp: 8h — long enough for a demo day). Set as httpOnly cookie. Return {user: {name, role}} to frontend. Also PUT /api/contracts/:id for the review/edit form: accepts partial contract field updates, validates types, sets status: "active" when confirmed: true is in body (and triggers CPMS-304 budget service).</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-amber">High</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-303</span><div class="ttitle">Server-side RBAC route interceptor middleware</div></div>
+    <div class="tdesc">Express middleware: verifyToken (reads httpOnly cookie, verifies JWT, attaches req.user). requireRole(...roles) (checks req.user.role is in allowed list, returns 403 if not). Apply to all protected routes. Keep simple — no libraries needed, just two middleware functions. Wire to all existing and upcoming routes.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D4</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-304</span><div class="ttitle">Contract budget auto-split service — Mongoose document generator</div></div>
+    <div class="tdesc">Triggered when contract status → "active". Using the algorithm from CPMS-104: generate FinancePlanned documents (one per period). Each document: contractId, periodLabel, periodStart, periodEnd, plannedAmount, cumulativePlanned. Insert with insertMany. If the contract already has FinancePlanned docs (re-analyze case), delete and regenerate. This service is called directly from the confirm endpoint in CPMS-302.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-amber">High</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-305</span><div class="ttitle">MongoDB aggregation pipeline scripts — pre-compilation for Sprint 4</div></div>
+    <div class="tdesc">Risk mitigation for the 2-day Sprint 4. Write and test all MongoDB aggregation pipelines now: (1) planned vs actual per period for a contract, (2) SPI = (cumActual/totalActual) / (cumPlanned/totalPlanned) per period, (3) CPI = totalPlanned / totalActual, (4) overall progress % = sum approved actual / total planned, (5) milestone hit rate. Test against seed data from QA-101. Sprint 4 just wraps these in routes.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D1</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-306</span><div class="ttitle">React 13-field extracted contract review and edit form</div></div>
+    <div class="tdesc">Form screen shown after upload completes (and reachable from contract detail for Contract Manager/PMO). Pre-fills all AI-extracted values. Field types: date pickers for startDate/endDate, number input for contractValue/durationDays, text for paymentTerms/currency, dynamic array editors for parties[], milestones[], unitPrices[], penalties[], paymentSchedule[]. Null fields highlighted in amber. "Confirm" button calls PUT /:id with {confirmed: true}. "Re-analyze" re-triggers upload controller. Login screen also built here (connects to CPMS-302).</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D1</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D5</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-307</span><div class="ttitle">Planned budget variance table and dashboard layout</div></div>
+    <div class="tdesc">Budget table screen: columns — period label, period dates, planned amount, actual amount (empty until approved), variance (green if ≤0, red if over), cumulative planned, cumulative actual. Data from GET /api/finance/:contractId/planned. Also build the dashboard shell: role-aware sidebar nav, summary stat cards (placeholders for now — data wired in Sprint 4 by D3). Dashboard and sidebar are the same layout used across all screens.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D5</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">QA — T1 + T2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">QA-301</span><div class="ttitle">Upload and AI pipeline functional verification</div></div>
+    <div class="tdesc">Execute QA-101 test cases against live Sprint 2 features. Upload real construction contract PDFs and DOCX files. Verify all 13 fields extracted and saved correctly. Test analysis_failed path (use a dummy file). Test contract list filters (status, year, name). Test detail page and PDF viewer. Test contract list — all filter combinations. Log all bugs in Jira with screenshots and steps to reproduce. Bugs should be triaged and fixed before Sprint 4.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-qa">QA</span>T1 + T2</span><span class="pill pill-amber">High</span></div>
+  </div>
+</div>
+
+<div id="s4" class="pane">
+  <div class="sprint-meta">
+    <p class="sprint-name">Sprint 4</p>
+    <span class="pill pill-red">Jun 15–16</span>
+    <span class="pill pill-gray">2 days</span>
+    <span class="pill pill-blue">Epic 5 + 6</span>
+  </div>
+  <div class="goal-box"><strong>Goal:</strong> Progress submission and PMO approval live. All reports rendering with real data. Dashboard live. Full end-to-end test pass before deadline.</div>
+  <div class="warn">Everything in this sprint depends on CPMS-305 being done. If D4's aggregation pipelines are not pre-compiled in Sprint 3, the report routes cannot be wired in 2 days. Protect CPMS-305 at all costs in Sprint 3.</div>
+
+  <div class="grp-label">Backend — D2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-401</span><div class="ttitle">Epic 5: progress entry POST route and PMO approval/reject controller</div></div>
+    <div class="tdesc">POST /api/finance/:contractId/actual — Finance Team only. Accept: periodLabel (must match existing FinancePlanned doc), workItems[], notes. Validate total = sum of workItems. Insert FinanceActual doc (status: "pending"). PUT /:id/approve (PMO only): set status "approved", update matching FinancePlanned doc with actualAmount, recalculate all subsequent cumulativeActual and variance values. PUT /:id/reject: set status "rejected", store rejectionReason. GET list endpoint with status filter.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-be">BE</span>D2</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D4</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-402</span><div class="ttitle">Epic 6: analytical performance reports router via pre-built pipelines</div></div>
+    <div class="tdesc">Wire the CPMS-305 aggregation pipelines into Express routes: GET /api/reports/contracts (all contracts, filterable), GET /api/reports/:contractId/monthly, GET /api/reports/:contractId/quarterly, GET /api/reports/:contractId/performance (SPI, CPI, progress %, milestone hit rate), GET /api/reports/:contractId/penalties. Apply RBAC (all roles read-only). Since pipelines are pre-tested, this is mostly route setup + query param handling.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D4</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Full-stack — D3</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-403</span><div class="ttitle">Epic 6: Excel workbook export controller</div></div>
+    <div class="tdesc">POST /api/reports/export — accept {reportType, contractId, filters}. Use exceljs to build a workbook from the report query results. Stream as .xlsx download. One sheet per report. Column headers from field names. This is lower priority — if time runs out on day 2, de-scope to a "download CSV" (just JSON.stringify + content-type text/csv) which is 10 lines of code vs 50.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-gray">Med</span></div>
+  </div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-404</span><div class="ttitle">Epic 6: main dashboard live data binding</div></div>
+    <div class="tdesc">GET /api/dashboard — aggregate across all contracts: total count by status, sum of planned vs actual, overall variance, pending approvals count. Wire to the dashboard shell from CPMS-307. Stat cards show live numbers. PMO sees pending approvals count as a badge. Finance Team sees which periods are awaiting submission. Top Management sees read-only summary. D3 owns this because it touches both the Mongoose aggregate and the React context.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fs">FS</span>D3</span><span class="pill pill-gray">Med</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D1</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-405</span><div class="ttitle">Epic 5: PMO operations log — pending review and approvals screen</div></div>
+    <div class="tdesc">PMO view: table of all pending FinanceActual submissions across all contracts. Columns: contract name, period, total cost, submitted by, date. Approve button (green confirm) + Reject button (opens modal with rejection reason text input). Finance Team view: same list filtered to their own submissions, with status badges and ability to edit pending reports. Status badges: pending=amber, approved=green, rejected=red.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D1</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">Frontend — D5</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">CPMS-406</span><div class="ttitle">Epic 6: consolidated performance report screens</div></div>
+    <div class="tdesc">Build all report screens using the shared layout from CPMS-307. Monthly report: table with period, planned, actual, variance. Quarterly: same but aggregated. Performance report: KPI cards (SPI, CPI, overall progress %, days ahead/behind) + milestone table. Penalty report: delay events table. Each screen has filter controls at top. Connect to CPMS-402 report endpoints. Also build the actual progress submission form (Finance Team only): period selector, work items table pre-filled from contract unitPrices, totals auto-calculated.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-fe">FE</span>D5</span><span class="pill pill-amber">High</span></div>
+  </div>
+
+  <div class="grp-label">QA — T1 + T2</div>
+  <div class="card">
+    <div class="card-top"><span class="tid">QA-401</span><div class="ttitle">Full end-to-end MERN stack evaluation walkthrough</div></div>
+    <div class="tdesc">Execute the complete test suite using the seed dataset. Cover: login as each role → correct screens visible. Upload → AI analysis → review → confirm → budget generated. Submit progress → PMO approves → budget table updates → variance correct. All 5 reports show correct data. Export downloads. Dashboard numbers match. RBAC — verify each role cannot access what it shouldn't. Log bugs immediately for same-day fix. Prioritize: anything that crashes the app or shows wrong numbers to the evaluator.</div>
+    <div class="tmeta"><span class="assignee-row"><span class="av av-qa">QA</span>T1 + T2</span><span class="pill pill-amber">High</span></div>
+  </div>
+</div>
+
+<div id="team" class="pane">
+  <div class="note">Each developer's full task chain across all 4 sprints, in order.</div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-fe" style="width:28px;height:28px;font-size:11px">FE</span><div><p class="dev-name">D1 — Frontend only</p><p class="dev-role">Routing, auth context, upload UI, review form, approval screen</p></div></div>
+    <div class="trow"><span><span class="trow-id">CPMS-105</span>Component tree and routing spec (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-206</span>React scaffold + upload screen + polling (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-306</span>13-field review/edit form + login screen (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-405</span>PMO approval + progress list screen (S4)</span><span class="pill pill-blue">Build</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-be" style="width:28px;height:28px;font-size:11px">BE</span><div><p class="dev-name">D2 — Backend only</p><p class="dev-role">Mongoose schemas, S3, upload API, auth setup, progress + approval endpoints</p></div></div>
+    <div class="trow"><span><span class="trow-id">CPMS-101</span>Mongoose schema mapping blueprint (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-102</span>S3 integration design (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-201</span>Upload endpoint + S3 ingest (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-202</span>Text extractor utility (PDF + DOCX) (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-301</span>User schema + bcrypt + seed users (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-401</span>Progress submit + PMO approve/reject (S4)</span><span class="pill pill-blue">Build</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-fs" style="width:28px;height:28px;font-size:11px">FS</span><div><p class="dev-name">D3 — Balanced full-stack</p><p class="dev-role">LLM integration, JWT auth, Excel export, dashboard data</p></div></div>
+    <div class="trow"><span><span class="trow-id">CPMS-103</span>LLM prompt spec + JSON response contract (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-203</span>Direct LLM controller — call, validate, save (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-302</span>POST /auth/login + JWT + PUT contract confirm (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-303</span>RBAC middleware (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-403</span>Excel export controller (S4)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-404</span>Dashboard live aggregate + frontend binding (S4)</span><span class="pill pill-blue">Build</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-fs" style="width:28px;height:28px;font-size:11px">FS</span><div><p class="dev-name">D4 — Balanced full-stack</p><p class="dev-role">Contract queries, budget algorithm, aggregation pipelines, report routes</p></div></div>
+    <div class="trow"><span><span class="trow-id">CPMS-104</span>Budget split algorithm spec (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-204</span>GET /api/contracts list + filters (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-205</span>GET /api/contracts/:id detail + milestone sort (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-304</span>Budget auto-split Mongoose service (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-305</span>Pre-compile all aggregation pipelines (S3)</span><span class="pill pill-amber">Risk mitigation</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-402</span>Wire report routes from pipelines (S4)</span><span class="pill pill-blue">Build</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-fe" style="width:28px;height:28px;font-size:11px">FE</span><div><p class="dev-name">D5 — Leans frontend</p><p class="dev-role">Design system, contract screens, budget table, report screens, progress form</p></div></div>
+    <div class="trow"><span><span class="trow-id">CPMS-106</span>Design system + Tailwind config spec (S1)</span><span class="pill pill-gray">Blueprint</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-207</span>Contract list table + detail screen (S2)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-307</span>Budget variance table + dashboard shell (S3)</span><span class="pill pill-blue">Build</span></div>
+    <div class="trow"><span><span class="trow-id">CPMS-406</span>All report screens + progress submit form (S4)</span><span class="pill pill-blue">Build</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-ux" style="width:28px;height:28px;font-size:11px">UX</span><div><p class="dev-name">UX Designer</p><p class="dev-role">Designs one sprint ahead. Handoff deadline = Wednesday of each sprint.</p></div></div>
+    <div class="trow"><span><span class="trow-id">UX-101</span>All core screens — dashboard, upload, list, detail, review form (S1)</span><span class="pill pill-gray">Design</span></div>
+    <div class="trow"><span><span class="trow-id">UX-201</span>Approval, budget table, progress form, all report screens (S2)</span><span class="pill pill-gray">Design</span></div>
+  </div>
+
+  <div class="dev-row">
+    <div class="dev-header"><span class="av av-qa" style="width:28px;height:28px;font-size:11px">QA</span><div><p class="dev-name">T1 + T2 — Testers</p><p class="dev-role">Write test plans in Sprint 1, test one sprint behind dev throughout.</p></div></div>
+    <div class="trow"><span><span class="trow-id">QA-101</span>Full test matrix + seed dataset (S1)</span><span class="pill pill-gray">Plan</span></div>
+    <div class="trow"><span><span class="trow-id">QA-201</span>Schema validation + test environment setup (S2)</span><span class="pill pill-gray">Setup</span></div>
+    <div class="trow"><span><span class="trow-id">QA-301</span>Test Sprint 2 — upload, AI, list, detail (S3)</span><span class="pill pill-blue">Test</span></div>
+    <div class="trow"><span><span class="trow-id">QA-401</span>Full end-to-end regression pass (S4)</span><span class="pill pill-amber">Final QA</span></div>
+  </div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  btn.classList.add('on');
+}
+</script>
