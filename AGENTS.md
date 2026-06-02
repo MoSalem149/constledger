@@ -17,15 +17,51 @@
 
 ## Frontend
 ```bash
-cd frontend && npm install && npm run dev   # → :5173
+cd frontend && npm install && npm run dev   # → :5173 (strictPort: true)
 npm run build         # vite build
-npm run lint          # eslint (no .eslintrc exists yet)
+npm run preview       # vite preview (also :5173)
+npm run lint          # eslint — FAILS until .eslintrc* created
 ```
 
 ### Current state
-- `App.jsx`, all 5 pages (`LoginPage`, `DashboardPage`, `ContractsPage`, `FinancePage`, `PerformancePage`), all 5 services (`api.js`, `authService`, `contractService`, `financeService`, `reportService`), `AuthContext.jsx`, `PrivateRoute.jsx` — **all empty stubs**. Need full build.
-- Config files exist: `vite.config.js`, `tailwind.config.js`, `postcss.config.js`, `index.html`
-- Dependencies installed: React 18, react-router-dom v6, axios, Tailwind, Vite
+- `App.jsx` (7 lines), `main.jsx` (10 lines), and every page/service/context file — **all empty stubs**. Zero logic exists. Full build required.
+- `PerformancePage.jsx` exists as stub file but is **not in the route table** — it was replaced by `ReportsPage` (tabs). Do not route to it.
+- Config files: `vite.config.js`, `tailwind.config.js`, `postcss.config.js`, `index.html`
+- Dependencies: React 18, react-router-dom v6, axios, Tailwind, Vite
+
+### Vite
+```js
+// No proxy configured — API calls go directly to VITE_API_URL env var
+server: { port: 5173, strictPort: true }    // crashes if 5173 taken
+```
+Env file: `frontend/.env.local` (copied from `.env.example`)
+
+### Tailwind design tokens (`tailwind.config.js`)
+```js
+colors: {
+  primary: "#FF4800",           // brand orange
+  "bg-main": "#FAF8F6",         // page bg — use via bg-bg-main
+  "bg-cards1": "#FFFFFF",
+  "bg-cards2": "#FF4800",
+  "bg-onTrak": "#D9ECDB",
+  "bg-atRisk100": "#FDEFE7",
+  "bg-atRisk200": "#FFD9D9",
+  "bg-watch": "#FEF2E3",
+  "bg-processing": "#DDE9F8",
+  "bg-grey": "#EEEEEE",
+  "bg-mainColor": "#FFE4D9",
+  "status-risk": "#FF0000",
+  "status-track": "#007D0F",
+  "status-processing": "#1D6CD3",
+  "text-primary": "#242424",
+  "text-secondary": "#6C6B6B",
+  "text-light": "#FAF8F6",
+}
+fontFamily: { sans: ["Lexend", "sans-serif"] }    // imported via Google Fonts in index.css
+borderRadius: { sm: "2px", md: "4px", lg: "8px", xl: "16px", "2xl": "28px" }
+boxShadow: { DEFAULT: "0 4px 16px rgba(36, 36, 36, 0.40)" }
+```
+Use class names as-defined: `bg-bg-main`, `text-text-primary`, `bg-bg-onTrak`, `text-status-risk`.
 
 ### Routes (per CPMS-105 routing skeleton)
 | Path | Page | Roles | Sprint |
