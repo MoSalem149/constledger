@@ -1,100 +1,105 @@
 # ConstLedger — Agent Guide
 
 ## Project Context
+
 - **CPMS** — Construction Project Management System. ITI graduation project, Team Octagram.
-- **Source of truth:** `Octagram_final_sprints.html` (sprint/feature breakdown).
-- **Routing skeleton (CPMS-105):** `.opencode/plans/routing-skeleton.md` — complete route table, role guards, component tree, directory structure.
-- **Current sprint:** Sprint 2 (May 31-Jun 6) — upload screen, contract list, detail view.
-- **Stack:** MERN — React 18 + Vite + Tailwind (JSX, ESM), Node/Express, MongoDB/Mongoose. Node 20+.
-- **All services in `/home/yousef_hany/projects/constledger`.** Docker Compose orchestrates everything.
+- **Stack:** React 18 + Vite + Tailwind (JSX, ESM) ← **frontend only, ignore backend**
+- **Current sprint:** Sprint 2 (May 31–Jun 6) — contract upload screen.
 
-## Role: D1 — Frontend only (team lead)
-- **Your tasks across 4 sprints:**
-  - **Sprint 1** (May 25-30): CPMS-105 — component tree/routing spec (blueprint, no code)
-  - **Sprint 2** (May 31-Jun 6): CPMS-206 — upload screen with drag-drop + async polling + auth scaffolding
-  - **Sprint 3** (Jun 9-13): CPMS-306 — 13-field review/edit form + login screen
-  - **Sprint 4** (Jun 15-16): CPMS-405 — approvals list + approve/reject flow
+## Frontend Scaffolding (already built, not stubs)
 
-## Frontend
+All infra is wired and compiling:
+
+- `App.jsx` — full route tree with `AuthProvider` → `PrivateRoute` → `DashboardLayout` → pages
+- `services/api.js` — Axios instance, `withCredentials: true`, callback-injection 401 handler (`setOnUnauthorized`)
+- `context/AuthContext.jsx` — `AuthProvider` + `useAuth()`, injects `logout` into Axios via `setOnUnauthorized` (no DOM events, no circular deps)
+- `components/common/` — `PrivateRoute`, `RoleGuard`, `DashboardLayout`, `FullPageSpinner`, `NotFoundPage`
+- All 12 page files exist as stubs (to be filled per sprint)
+
+### Quirks
+
+- **No `ContractsPage`** — no Figma screen for a contract list; "Add Project" goes to `/contracts/upload`
+- **`PerformancePage.jsx` deleted** — replaced by `ReportsPage` (tabs). Do not recreate.
+- **No `.eslintrc*`** — `npm run lint` will fail. Ignore it.
+- **No tests, no CI/CD**
+- **No proxy in Vite** — API calls go to `VITE_API_URL` env var. Dev must run backend separately or set up mock.
+- **`strictPort: true`** on port 5173 — crashes if port is taken. Kill any prior vite process if needed.
+
+## Commands
+
 ```bash
-cd frontend && npm install && npm run dev   # → :5173 (strictPort: true)
-npm run build         # vite build
-npm run preview       # vite preview (also :5173)
-npm run lint          # eslint — FAILS until .eslintrc* created
+npm run dev       # → :5173 (strictPort: true)
+npm run build     # vite build — produces dist/
+npm run preview   # vite preview (also :5173)
+npm run lint      # eslint — fails (no .eslintrc*). Skip it.
 ```
 
-### Current state
-- `App.jsx` (7 lines), `main.jsx` (10 lines), and every page/service/context file — **all empty stubs**. Zero logic exists. Full build required.
-- `PerformancePage.jsx` exists as stub file but is **not in the route table** — it was replaced by `ReportsPage` (tabs). Do not route to it.
-- Config files: `vite.config.js`, `tailwind.config.js`, `postcss.config.js`, `index.html`
-- Dependencies: React 18, react-router-dom v6, axios, Tailwind, Vite
+## Tailwind Design Tokens (`tailwind.config.js`)
 
-### Vite
-```js
-// No proxy configured — API calls go directly to VITE_API_URL env var
-server: { port: 5173, strictPort: true }    // crashes if 5173 taken
-```
-Env file: `frontend/.env.local` (copied from `.env.example`)
+Config uses **nested** keys. Class names follow the nesting:
 
-### Tailwind design tokens (`tailwind.config.js`)
-```js
+```ts
 colors: {
-  primary: "#FF4800",           // brand orange
-  "bg-main": "#FAF8F6",         // page bg — use via bg-bg-main
-  "bg-cards1": "#FFFFFF",
-  "bg-cards2": "#FF4800",
-  "bg-onTrak": "#D9ECDB",
-  "bg-atRisk100": "#FDEFE7",
-  "bg-atRisk200": "#FFD9D9",
-  "bg-watch": "#FEF2E3",
-  "bg-processing": "#DDE9F8",
-  "bg-grey": "#EEEEEE",
-  "bg-mainColor": "#FFE4D9",
-  "status-risk": "#FF0000",
-  "status-track": "#007D0F",
-  "status-processing": "#1D6CD3",
-  "text-primary": "#242424",
-  "text-secondary": "#6C6B6B",
-  "text-light": "#FAF8F6",
+  primary: "#FF4800",
+  bg: { main, cards1, cards2, onTrak, atRisk100, atRisk200, watch, processing, grey, mainColor },
+  status: { risk: "#FF0000", track: "#007D0F", processing: "#1D6CD3" },
+  text: { primary: "#242424", secondary: "#6C6B6B", light: "#FAF8F6", placeholder: "#A5A4A3" },
+  gray: { 100, 200, 300 },
+  watch: { 1, 2 },
 }
-fontFamily: { sans: ["Lexend", "sans-serif"] }    // imported via Google Fonts in index.css
 borderRadius: { sm: "2px", md: "4px", lg: "8px", xl: "16px", "2xl": "28px" }
 boxShadow: { DEFAULT: "0 4px 16px rgba(36, 36, 36, 0.40)" }
 ```
-Use class names as-defined: `bg-bg-main`, `text-text-primary`, `bg-bg-onTrak`, `text-status-risk`.
 
-### Routes (per CPMS-105 routing skeleton)
-| Path | Page | Roles | Sprint |
-|---|---|---|---|
-| `/login` | `LoginPage` | public | S3 |
-| `/` | → redirect `/dashboard` | all | S3 |
-| `/dashboard` | `DashboardPage` | all | S3/S4 |
-| `/contracts` | `ContractsPage` | all | S2 |
-| `/contracts/upload` | `UploadContractPage` | `contractManager` | S2 |
-| `/contracts/:id` | `ContractDetailPage` | all | S2 |
-| `/contracts/:id/edit` | `ReviewEditFormPage` | `contractManager` | S3 |
-| `/finance` | `FinancePage` | all | S3 |
-| `/finance/:contractId/variance` | `BudgetVariancePage` | all | S3 |
-| `/finance/:contractId/progress` | `ProgressListPage` | all | S4 |
-| `/finance/:contractId/progress/new` | `ProgressFormPage` (create) | `financeTeam` | S4 |
-| `/finance/:contractId/progress/:entryId/edit` | `ProgressFormPage` (edit) | `financeTeam` | S4 |
-| `/finance/:contractId/progress/:entryId/review` | `ReviewProgressPage` | `contractManager` | S4 |
-| `/reports` | `ReportsPage` (tabs) | all | S4 |
-| `*` | `NotFoundPage` | all | S2
+Use: `bg-bg-main`, `text-text-primary`, `text-status-risk`, `bg-status-track`, `bg-primary`.
 
-## Architecture (per sprint plan — existing backend scaffolding is initial recommendation, not team-authored)
-- **Upload flow:** frontend → S3 pre-signed URL → backend saves key → direct server-to-LLM call → status `active` → frontend polls every 5s until done
-- **Auth:** httpOnly cookie with JWT (8hr expiry), `verifyToken` + `requireRole` middleware
-- **Roles (camelCase):** `contractManager`, `financeTeam`, `topManagement`
-- **Contract statuses:** `processing` → `active` (or `analysis_failed`)
-- **Budget:** triggered on `confirm` — splits contract value by milestone periods or evenly
-- **No tests, no CI/CD**
+## Route Table
 
-## Epic Execution Order (Agile sequencing)
-Auth (Epic 1) is intentionally **Sprint 3**. Build order is:
-1. Epic 2 — Upload & AI (Sprint 2)
+| Path                                            | Component                   | Role Guard        | Sprint |
+| ----------------------------------------------- | --------------------------- | ----------------- | ------ |
+| `/login`                                        | `LoginPage`                 | public            | S3     |
+| `/`                                             | → redirect `/dashboard`     | —                 | S3     |
+| `/dashboard`                                    | `DashboardPage`             | all               | S3–S4  |
+| `/contracts/upload`                             | `UploadContractPage`        | `contractManager` | S2     |
+| `/contracts/:id`                                | `ContractDetailPage`        | all               | S2     |
+| `/contracts/:id/edit`                           | `ReviewEditFormPage`        | `contractManager` | S3     |
+| `/finance`                                      | `FinancePage`               | all               | S3     |
+| `/finance/:contractId/variance`                 | `BudgetVariancePage`        | all               | S3     |
+| `/finance/:contractId/progress`                 | `ProgressListPage`          | all               | S4     |
+| `/finance/:contractId/progress/new`             | `ProgressFormPage` (create) | `financeTeam`     | S4     |
+| `/finance/:contractId/progress/:entryId/edit`   | `ProgressFormPage` (edit)   | `financeTeam`     | S4     |
+| `/finance/:contractId/progress/:entryId/review` | `ReviewProgressPage`        | `contractManager` | S4     |
+| `/reports`                                      | `ReportsPage` (tabs)        | all               | S4     |
+| `*`                                             | `NotFoundPage`              | all               | S2     |
+
+No `/contracts` list route. No `PerformancePage` route.
+
+## Auth Architecture
+
+```
+Axios interceptor (api.js)
+    401? → onUnauthorized()
+            │
+     AuthProvider injects logout via setOnUnauthorized()
+            │
+     PrivateRoute / RoleGuard / useAuth()
+```
+
+- **httpOnly cookie** for JWT — no JS token storage
+- `withCredentials: true` on Axios — sends cookie automatically
+- **Callback injection** (not DOM events) — `AuthProvider` calls `setOnUnauthorized(logout)` in `useEffect`, interceptor calls it on 401. No circular dependency.
+- Roles (camelCase): `contractManager`, `financeTeam`, `topManagement`
+
+## Epic Execution Order
+
+1. Epic 2 — Upload & AI (**Sprint 2**)
 2. Epic 3 — Contract Data Review (Sprint 2)
 3. Epic 1 — Auth Infra (Sprint 3)
 4. Epic 4 — Planned Budget (Sprint 3)
 5. Epic 5 — Actual Progress (Sprint 4)
 6. Epic 6 — Reports & KPIs (Sprint 4)
+
+## Reference
+
+- Full route spec: `.opencode/plans/routing-skeleton.md`
+- Sprint breakdown: `Octagram_final_sprints.html`
