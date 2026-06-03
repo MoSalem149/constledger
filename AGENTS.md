@@ -5,6 +5,8 @@
 - **CPMS** — Construction Project Management System. ITI graduation project, Team Octagram.
 - **Stack:** React 18 + Vite + Tailwind (JSX, ESM) ← **frontend only, ignore backend**
 - **Current sprint:** Sprint 2 (May 31–Jun 6) — contract upload screen.
+- **Font:** Lexend (loaded from Google Fonts in `index.html`)
+- **Env vars:** `VITE_API_URL` and `VITE_AI_API_URL` via `import.meta.env`
 
 ## Frontend Scaffolding (already built, not stubs)
 
@@ -14,16 +16,21 @@ All infra is wired and compiling:
 - `services/api.js` — Axios instance, `withCredentials: true`, callback-injection 401 handler (`setOnUnauthorized`)
 - `context/AuthContext.jsx` — `AuthProvider` + `useAuth()`, injects `logout` into Axios via `setOnUnauthorized` (no DOM events, no circular deps)
 - `components/common/` — `PrivateRoute`, `RoleGuard`, `DashboardLayout`, `FullPageSpinner`, `NotFoundPage`
-- All 12 page files exist as stubs (to be filled per sprint)
+- `Sidebar.jsx` + `Navbar.jsx` — fully built with SVG icons, not stubs
+- 11 page stubs in `pages/` + `NotFoundPage` = 12 route-able components (to be filled per sprint)
+- `components/icons/` — exists but empty (add component icons here)
+- `contractService.js`, `financeService.js`, `reportService.js` — exist but are **empty** (need API method implementations)
 
 ### Quirks
 
+- **`AuthProvider` and `PrivateRoute` are commented out** in `App.jsx` — the full auth infra exists but is disabled so design work doesn't crash. Enable them when integrating auth. The `Navbar` also has `useAuth()` calls commented out.
 - **No `ContractsPage`** — no Figma screen for a contract list; "Add Project" goes to `/contracts/upload`
 - **`PerformancePage.jsx` deleted** — replaced by `ReportsPage` (tabs). Do not recreate.
 - **No `.eslintrc*`** — `npm run lint` will fail. Ignore it.
 - **No tests, no CI/CD**
 - **No proxy in Vite** — API calls go to `VITE_API_URL` env var. Dev must run backend separately or set up mock.
 - **`strictPort: true`** on port 5173 — crashes if port is taken. Kill any prior vite process if needed.
+- **Sidebar nav** labels "Projects" but links to `/contracts/upload`
 
 ## Commands
 
