@@ -19,6 +19,7 @@ import ProgressListPage from "./pages/ProgressListPage";
 import ProgressFormPage from "./pages/ProgressFormPage";
 import ReviewProgressPage from "./pages/ReviewProgressPage";
 import ReportsPage from "./pages/ReportsPage";
+import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./components/common/NotFoundPage";
 
 function App() {
@@ -110,6 +111,9 @@ function App() {
 
           {/* Reports (tabs) */}
           <Route path="/reports" element={<ReportsPage />} />
+
+          {/* Admin */}
+          <Route path="/admin" element={<AdminPage />} />
 
           {/* 404 catch-all */}
           <Route path="*" element={<NotFoundPage />} />

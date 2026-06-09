@@ -38,5 +38,6 @@ function getPageTitle(path) {
   if (path.startsWith("/contracts")) return "Contract Details";
   if (path.startsWith("/finance")) return "Finance";
   if (path === "/reports") return "Reports";
+  if (path === "/admin") return "Admin";
   return "";
 }

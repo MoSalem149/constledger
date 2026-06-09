@@ -2,12 +2,14 @@ import { Link, useLocation } from "react-router-dom";
 import LogoIcon from "../icons/LogoIcon";
 import DashboardIcon from "../icons/DashboardIcon";
 import FileDocIcon from "../icons/FileDocIcon";
+import ReportsIcon from "../icons/ReportsIcon";
 import PersonIcon from "../icons/PersonIcon";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
   { label: "Projects", to: "/contracts/upload", Icon: FileDocIcon },
-  { label: "Admin", to: "/reports", Icon: PersonIcon },
+  { label: "Reports", to: "/reports", Icon: ReportsIcon },
+  { label: "Admin", to: "/admin", Icon: PersonIcon },
 ];
 
 /* ------------------------------------------------------------------ */
