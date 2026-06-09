@@ -6,10 +6,12 @@
  */
 import { useRef, useState, useCallback } from "react";
 import UploadArrowIcon from "../icons/UploadArrowIcon";
+import { isValidFile } from "../../utils/fileValidation";
 
 export default function UploadDropzone({ onFileSelect }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragError, setDragError] = useState(false);
 
   const handleClick = useCallback(() => {
     inputRef.current?.click();
@@ -23,6 +25,7 @@ export default function UploadDropzone({ onFileSelect }) {
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     setIsDragging(false);
+    setDragError(false);
   }, []);
 
   const handleDrop = useCallback(
@@ -30,9 +33,16 @@ export default function UploadDropzone({ onFileSelect }) {
       e.preventDefault();
       setIsDragging(false);
       const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        onFileSelect(files[0]);
+      if (files.length === 0) return;
+
+      const file = files[0];
+      if (!isValidFile(file)) {
+        setDragError(true);
+        setTimeout(() => setDragError(false), 1000);
+        return;
       }
+
+      onFileSelect(file);
     },
     [onFileSelect],
   );
@@ -40,9 +50,14 @@ export default function UploadDropzone({ onFileSelect }) {
   const handleInputChange = useCallback(
     (e) => {
       const file = e.target.files?.[0];
-      if (file) {
-        onFileSelect(file);
+      if (!file) return;
+      if (!isValidFile(file)) {
+        setDragError(true);
+        setTimeout(() => setDragError(false), 1000);
+        e.target.value = "";
+        return;
       }
+      onFileSelect(file);
       // Reset so the same file can be selected again
       e.target.value = "";
     },
@@ -55,7 +70,7 @@ export default function UploadDropzone({ onFileSelect }) {
         h-[428px] bg-bg-cards1 rounded-lg
         flex flex-col items-center justify-center
         border border-dashed transition-colors cursor-pointer font-sans
-        ${isDragging ? "border-primary bg-bg-mainColor/30" : "border-gray-200"}
+        ${isDragging ? "border-primary bg-bg-mainColor/30" : dragError ? "border-status-risk bg-bg-atRisk200/30" : "border-gray-200"}
         shadow-[0_2px_8px_rgba(136,136,136,0.1)]
       `}
       onClick={handleClick}
@@ -71,7 +86,7 @@ export default function UploadDropzone({ onFileSelect }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf"
+        accept=".pdf,.docx"
         className="hidden"
         onChange={handleInputChange}
       />
@@ -111,8 +126,8 @@ export default function UploadDropzone({ onFileSelect }) {
 
         {/* Security note */}
         <p className="text-xs text-text-secondary text-center">
-          Your files are encrypted and secure. The original PDF never leaves
-          your workspace
+          Your files are encrypted and secure. The original PDF/DOCX never
+          leaves your workspace
         </p>
       </div>
     </div>

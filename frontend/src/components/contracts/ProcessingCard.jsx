@@ -20,7 +20,7 @@ export default function ProcessingCard({
 }) {
   const steps = [
     { key: "upload", label: "Upload", subLabel: "File Received" },
-    { key: "read", label: "Read", subLabel: "Parsing PDF" },
+    { key: "read", label: "Read", subLabel: "Parsing document" },
     { key: "extract", label: "Extract", subLabel: "AI Analysis" },
     { key: "review", label: "Review", subLabel: "Confirm Fields" },
   ];

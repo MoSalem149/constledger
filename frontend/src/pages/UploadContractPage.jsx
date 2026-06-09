@@ -18,6 +18,7 @@ import UploadDropzone from "../components/contracts/UploadDropzone";
 import AIExtractsPanel from "../components/contracts/AIExtractsPanel";
 import ProcessingCard from "../components/contracts/ProcessingCard";
 import { contractService } from "../services/contractService";
+import { isValidFile } from "../utils/fileValidation";
 
 /* ------------------------------------------------------------------ */
 // Helpers
@@ -187,8 +188,8 @@ export default function UploadContractPage() {
   const handleFileSelect = useCallback(
     async (file) => {
       if (!file) return;
-      if (file.type !== "application/pdf") {
-        setError("Please upload a PDF file.");
+      if (!isValidFile(file)) {
+        setError("Only PDF and DOCX files are allowed.");
         return;
       }
       if (file.size > 50 * 1024 * 1024) {
