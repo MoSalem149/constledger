@@ -1,0 +1,135 @@
+/**
+ * UploadDropzone — drag-and-drop file picker card for the upload page.
+ *
+ * Clicking anywhere on the card or the orange CTA button opens the file picker.
+ * Supports drag-and-drop highlighting.
+ */
+import { useRef, useState, useCallback } from "react";
+import UploadArrowIcon from "../icons/UploadArrowIcon";
+import { isValidFile } from "../../utils/fileValidation";
+
+export default function UploadDropzone({ onFileSelect }) {
+  const inputRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragError, setDragError] = useState(false);
+
+  const handleClick = useCallback(() => {
+    inputRef.current?.click();
+  }, []);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setDragError(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const files = e.dataTransfer.files;
+      if (files.length === 0) return;
+
+      const file = files[0];
+      if (!isValidFile(file)) {
+        setDragError(true);
+        setTimeout(() => setDragError(false), 1000);
+        return;
+      }
+
+      onFileSelect(file);
+    },
+    [onFileSelect],
+  );
+
+  const handleInputChange = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (!isValidFile(file)) {
+        setDragError(true);
+        setTimeout(() => setDragError(false), 1000);
+        e.target.value = "";
+        return;
+      }
+      onFileSelect(file);
+      // Reset so the same file can be selected again
+      e.target.value = "";
+    },
+    [onFileSelect],
+  );
+
+  return (
+    <div
+      className={` w-3/4
+        h-[428px] bg-bg-cards1 rounded-lg
+        flex flex-col items-center justify-center
+        border border-dashed transition-colors cursor-pointer font-sans
+        ${isDragging ? "border-primary bg-bg-mainColor/30" : dragError ? "border-status-risk bg-bg-atRisk200/30" : "border-gray-200"}
+        shadow-[0_2px_8px_rgba(136,136,136,0.1)]
+      `}
+      onClick={handleClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/*
+        Hidden native file input. useRef (inputRef) lets us trigger its
+        built-in click() programmatically when the user clicks the styled
+        dropzone area or the orange button — without re-rendering.
+      */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.docx"
+        className="hidden"
+        onChange={handleInputChange}
+      />
+
+      <div className="flex flex-col items-center gap-6 w-[540px]">
+        {/* Upload icon */}
+        <UploadArrowIcon className="w-12 h-12 text-primary" />
+
+        {/* Primary text */}
+        <div className="text-center">
+          <p className="text-lg font-medium text-text-primary leading-5 mb-6">
+            Drag and Drop Your Contract Here
+          </p>
+          <p className="text-xs text-text-secondary">
+            or click to browse (max 50 MB)
+          </p>
+        </div>
+
+        {/* CTA button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClick();
+          }}
+          className="
+            h-10 px-4 bg-primary rounded-[28px]
+            shadow-[0_2px_8px_rgba(136,136,136,0.1)]
+            flex items-center gap-2
+            text-xs text-text-light font-normal
+            hover:opacity-90 transition-opacity
+          "
+        >
+          <UploadArrowIcon className="w-5 h-5 text-text-light" noBackground />
+          Browse Files
+        </button>
+
+        {/* Security note */}
+        <p className="text-xs text-text-secondary text-center">
+          Your files are encrypted and secure. The original PDF/DOCX never
+          leaves your workspace
+        </p>
+      </div>
+    </div>
+  );
+}
