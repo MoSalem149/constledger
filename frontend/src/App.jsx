@@ -1,7 +1,12 @@
 import React from "react";
+import ProjectoPage from "./pages/projectooo/projectooPage";
 
 function App() {
-  return <></>;
+  return (
+    <>
+      <ProjectoPage />
+    </>
+  );
 }
 
 export default App;

@@ -1,5 +1,12 @@
 export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
+    container: {
+      center: true,
+      padding: {
+        DEFAULT: "20px",
+      },
+    },
     extend: {
       fontFamily: {
         sans: ["Lexend", "sans-serif"],
@@ -69,7 +76,7 @@ export default {
       },
 
       boxShadow: {
-        DEFAULT: "0 4px 16px rgba(36, 36, 36, 0.40)",
+        DEFAULT: "0 0px 10px rgba(36, 36, 36, 0.20)",
       },
     },
   },
