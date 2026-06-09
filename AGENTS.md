@@ -1,98 +1,72 @@
 # ConstLedger — Agent Guide
 
-## Project Context
+**Stack:** React 18 + Vite + Tailwind (JSX, ESM). Ignore backend dirs.
+**Font:** Lexend via `font-sans` class (loaded in `index.html` + `index.css`).
+**Env:** `VITE_API_URL`, `VITE_AI_API_URL` via `import.meta.env` (see `frontend/.env.example`).
 
-- **CPMS** — Construction Project Management System. ITI graduation project, Team Octagram.
-- **Stack:** React 18 + Vite + Tailwind (JSX, ESM) ← **frontend only, ignore backend**
-- **Current sprint:** Sprint 2 (May 31–Jun 6) — contract upload screen.
-- **Font:** Lexend (loaded via `<link>` in `index.html` + `@import` in `index.css`; use `font-sans` class)
-- **Env vars:** `VITE_API_URL` and `VITE_AI_API_URL` via `import.meta.env` (see `frontend/.env.example`)
-
-## Commands
+## Commands (run from `frontend/`)
 
 ```bash
-npm run dev       # → :5173 (strictPort: true — kill prior vite if port taken)
+npm run dev       # :5173 — strictPort: true (kill prior vite if port taken)
 npm run build     # vite build → dist/
-npm run preview   # vite preview (also :5173)
-npm run lint      # eslint — fails (no .eslintrc*). Skip it.
+npm run preview   # also :5173
+npm run lint      # fails (no eslintrc). No tests, no CI/CD.
 ```
 
-Run all from `frontend/`. No tests, no CI/CD, no monorepo manager.
+## Auth Infra — All Commented Out
 
-## What's Built vs Stubs
+`AuthProvider`, `PrivateRoute`, `RoleGuard`, Axios 401 interceptor with callback injection — **fully built but disabled** in `App.jsx`. `Navbar` `useAuth()` calls also commented. Enable when integrating auth. Uncommenting without a running backend will crash the app.
 
-| Area                    | Built (Sprint 2)                                                                                                                                                                                      | Stubs (future sprints)                                                                                                |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Pages**               | `UploadContractPage` — full upload flow with drag-drop dropzone, AI info panel, 4-step stepper, progress bar, activity log, 5s polling. `?demo=1` URL param previews processing state with mock data. | 10 other pages are stubs returning placeholders                                                                       |
-| **Contract components** | `UploadDropzone`, `AIExtractsPanel`, `ProcessingCard`, `ContractStepper`, `ActivityLog`                                                                                                               | —                                                                                                                     |
-| **Auth infra**          | `AuthContext`, `PrivateRoute`, `RoleGuard`, `authService`, Axios 401 interceptor with callback injection                                                                                              | **All commented out** in `App.jsx` — enable when integrating auth. `Navbar` also has `useAuth()` calls commented out. |
-| **Layout**              | `Sidebar` (3 items: Dashboard, Projects→`/contracts/upload`, Admin→`/reports`), `Navbar` (search placeholder, notification bell, profile card with hardcoded "Yousef Hany / Contract Manager")        | —                                                                                                                     |
-| **Icons**               | 16 SVG icon components in `components/icons/`                                                                                                                                                         | —                                                                                                                     |
-| **Services**            | `contractService.js` (3 methods: upload, getById, getProgress), `authService.js` (3 methods)                                                                                                          | `financeService.js` & `reportService.js` are empty                                                                    |
+## What Exists vs Stubs
+
+| Area                    | Built                                                                                                                                               | Stubs                                           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Upload page**         | Full flow: drag-drop dropzone, AI info panel, 4-step stepper, progress bar, activity log, 5s polling. `?demo=1` previews processing with mock data. | —                                               |
+| **Contract components** | `UploadDropzone`, `AIExtractsPanel`, `ProcessingCard`, `ContractStepper` (4-step with `active-review` state), `ActivityLog`                         | —                                               |
+| **Icons**               | 16 SVG components in `components/icons/` (extracted from inline SVGs)                                                                               | —                                               |
+| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods)                                                                                      | `financeService.js`, `reportService.js` — empty |
+| **Auth**                | `AuthContext`, `PrivateRoute`, `RoleGuard`, `authService`, Axios interceptor with `setOnUnauthorized` callback injection                            | All commented out in App.jsx                    |
+| **Layout**              | `Sidebar` (Dashboard, Projects→`/contracts/upload`, Admin→`/reports`), `Navbar` (search placeholder, bell, profile)                                 | —                                               |
+| **Other 10 pages**      | —                                                                                                                                                   | Placeholder stubs                               |
+
+## Route Quirks
+
+- **No `/contracts` list** — "Add Project" on dashboard goes to `/contracts/upload`
+- **No `PerformancePage`** — replaced by `ReportsPage` (tabs). Don't recreate.
+- **`/contracts/:id`** and **`/contracts/:id/edit`** exist but are stubs
+- Sidebar label "Projects" links to `/contracts/upload`, not `/projects`
+- All routes in `src/App.jsx`
 
 ## Auth Architecture
 
 ```
-Axios interceptor (api.js)
-    401? → onUnauthorized()
-            │
-     AuthProvider injects logout via setOnUnauthorized()
-            │
-     PrivateRoute / RoleGuard / useAuth()
+api.js interceptor → 401? → onUnauthorized()
+                              ↑
+AuthProvider injects logout via setOnUnauthorized() (useEffect)
+                              ↑
+                    PrivateRoute / RoleGuard / useAuth()
 ```
 
-- **httpOnly cookie** for JWT — no JS token storage
-- `withCredentials: true` on Axios — sends cookie automatically
-- **Callback injection** (not DOM events) — `AuthProvider` calls `setOnUnauthorized(logout)` in `useEffect`, interceptor calls it on 401. No circular dependency.
-- Roles (camelCase): `contractManager`, `financeTeam`, `topManagement`
+- **httpOnly cookie** for JWT — no JS token in memory. `withCredentials: true` on Axios.
+- **Callback injection** (not DOM events) — avoids circular import between api.js and AuthContext.
+- Roles in code are **camelCase**: `contractManager`, `financeTeam`, `topManagement`
 
-## Route Table
+## Tailwind — Nested Keys
 
-| Path                                                                    | Component                                                      | Guard             | Sprint |
-| ----------------------------------------------------------------------- | -------------------------------------------------------------- | ----------------- | ------ |
-| `/login`                                                                | `LoginPage`                                                    | public            | S3     |
-| `/`                                                                     | → redirect `/dashboard`                                        | —                 | S3     |
-| `/dashboard`                                                            | `DashboardPage`                                                | all               | S3–S4  |
-| `/contracts/upload`                                                     | `UploadContractPage`                                           | `contractManager` | **S2** |
-| `/contracts/:id`                                                        | `ContractDetailPage`                                           | all               | S2     |
-| `/contracts/:id/edit`                                                   | `ReviewEditFormPage`                                           | `contractManager` | S3     |
-| `/finance`                                                              | `FinancePage`                                                  | all               | S3     |
-| `/finance/:contractId/variance`                                         | `BudgetVariancePage`                                           | all               | S3     |
-| `/finance/:contractId/progress[/new\|/:entryId/edit\|/:entryId/review]` | `ProgressListPage` / `ProgressFormPage` / `ReviewProgressPage` | varies            | S4     |
-| `/reports`                                                              | `ReportsPage` (tabs)                                           | all               | S4     |
-| `*`                                                                     | `NotFoundPage`                                                 | all               | S2     |
+Config at `frontend/tailwind.config.js` uses **nested** color keys. Write `bg-bg-main`, `text-text-primary`, `bg-primary`, `text-status-risk`, `bg-status-track`. Don't guess flat class names like `bg-main`.
 
-No `/contracts` list route. No `PerformancePage`.
+## Sprints
 
-## Tailwind Design Tokens (`frontend/tailwind.config.js`)
+| Epic | Sprint       | Content                                         |
+| ---- | ------------ | ----------------------------------------------- |
+| 2    | **S2 (now)** | Upload & AI — contract upload, stepper, polling |
+| 3    | S2           | Contract data review form                       |
+| 1    | S3           | Auth (login, guards, roles)                     |
+| 4    | S3           | Planned budget                                  |
+| 5    | S4           | Actual progress                                 |
+| 6    | S4           | Reports & KPIs                                  |
 
-Config uses **nested** keys. Class names follow the nesting — use `bg-bg-main`, `text-text-primary`, `bg-primary`, `text-status-risk`, `bg-status-track`.
+## References
 
-```ts
-colors: {
-  primary: "#FF4800",
-  bg: { main: "#FAF8F6", cards1: "#FFFFFF", cards2: "#FF4800",
-        onTrak: "#D9ECDB", atRisk100: "#FDEFE7", atRisk200: "#FFD9D9",
-        watch: "#FEF2E3", processing: "#DDE9F8", grey: "#EEEEEE", mainColor: "#FFE4D9" },
-  status: { risk: "#FF0000", track: "#007D0F", processing: "#1D6CD3" },
-  text: { primary: "#242424", secondary: "#6C6B6B", light: "#FAF8F6", placeholder: "#A5A4A3" },
-  gray: { 100: "#EBEBEB", 200: "#CCCCCC", 300: "#A5A4A3" },
-  watch: { 1: "#A47339", 2: "#F69521" },
-}
-borderRadius: { sm: "2px", md: "4px", lg: "8px", xl: "16px", "2xl": "28px" }
-boxShadow: { DEFAULT: "0 4px 16px rgba(36, 36, 36, 0.40)" }
-```
-
-## Epic Execution Order
-
-1. Epic 2 — Upload & AI (**Sprint 2 → now**)
-2. Epic 3 — Contract Data Review (Sprint 2)
-3. Epic 1 — Auth Infra (Sprint 3)
-4. Epic 4 — Planned Budget (Sprint 3)
-5. Epic 5 — Actual Progress (Sprint 4)
-6. Epic 6 — Reports & KPIs (Sprint 4)
-
-## Reference
-
-- Full route spec: `.opencode/plans/routing-skeleton.md`
-- Sprint breakdown: `Octagram_final_sprints.html`
+- `.opencode/plans/routing-skeleton.md` — full route spec
+- `Octagram_final_sprints.html` — original sprint plan
