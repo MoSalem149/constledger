@@ -1,100 +1,9 @@
-import { useState, Fragment } from "react";
-import { contractData } from "../../data/projectData";
-
-// =================== ICONS ===================
-const TrashIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <polyline points="3 6 5 6 21 6" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6M14 11v6" />
-    <path d="M9 6V4h6v2" />
-  </svg>
-);
-const CheckMark = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="white"
-    strokeWidth="3"
-  >
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const ArrowIcon = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-  >
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
-const DollarIcon = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <line x1="12" y1="1" x2="12" y2="23" />
-    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-  </svg>
-);
-const TrendIcon = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-    <polyline points="16 7 22 7 22 13" />
-  </svg>
-);
-const ClockIcon = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <polyline points="12 6 12 12 16 14" />
-  </svg>
-);
-const InfoIcon = () => (
-  <svg
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="16" x2="12" y2="12" />
-    <line x1="12" y1="8" x2="12.01" y2="8" />
-  </svg>
-);
+import { useState } from "react";
+import { TrashIcon } from "../icons/TrashIcon";
+import { InfoIcon } from "../icons/InfoIcon";
+import { ClockIcon } from "../icons/ClockIcon";
+import { DollarIcon } from "../icons/DollarIcon.jsx";
+import { TrendIcon } from "../icons/TrendIcon";
 
 // =================== STATUS DOT ===================
 const statusClass = {
@@ -102,92 +11,10 @@ const statusClass = {
   orange: "bg-orange-500",
   red: "bg-red-500",
 };
-
 const Dot = ({ status }) => (
   <div
     className={`w-2 h-2 rounded-full flex-shrink-0 ${statusClass[status]}`}
   />
-);
-
-// =================== CONTRACT HEADER ===================
-const ContractHeader = ({ file }) => (
-  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start px-4 sm:px-6 pt-5 pb-4 ">
-    <div>
-      <p className="text-[11px] text-text-secondary tracking-widest mb-1.5">
-        CONTRACTS . NEW . REVIEW
-      </p>
-      <h1 className="text-lg sm:text-xl font-medium text-text-primary mb-1">
-        Review Extracted Contract Data
-      </h1>
-      <p className="text-xs text-text-secondary">{file}</p>
-    </div>
-
-    <div className="flex gap-2.5 flex-wrap">
-      <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
-        <ArrowIcon /> Re-upload
-      </button>
-      <button className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap">
-        Confirm Contract
-      </button>
-    </div>
-  </div>
-);
-
-// =================== EXTRACTION LEGEND ===================
-const ExtractionLegend = ({ stats }) => (
-  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
-    <div className="flex flex-wrap gap-3 sm:gap-5">
-      {[
-        {
-          color: "bg-green-500",
-          label: "High confidence — verified pattern match",
-        },
-        { color: "bg-orange-500", label: "Low confidence — please review" },
-        { color: "bg-red-500", label: "Not found — enter manually" },
-      ].map(({ color, label }) => (
-        <div key={label} className="flex items-center gap-1.5">
-          <div
-            className={`w-[7px] h-[7px] rounded-full flex-shrink-0 ${color}`}
-          />
-          <span className="text-xs text-text-secondary">{label}</span>
-        </div>
-      ))}
-    </div>
-    <p className="text-xs text-text-secondary whitespace-nowrap">
-      <span className="text-text-primary font-medium">
-        {stats.total}/{stats.total} fields extracted.
-      </span>{" "}
-      <span className="text-primary font-medium">
-        {stats.needReview} need review
-      </span>
-    </p>
-  </div>
-);
-
-// =================== INNER TABS ===================
-const ContractInnerTabs = ({ tabs, active, onSelect }) => (
-  <div className="bg-bg-cards1 shadow rounded mb-5 overflow-x-auto px-4 sm:px-6 py-2.5">
-    <div className="flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
-      {tabs.map((tab) => (
-        <button
-          key={tab.name}
-          onClick={() => onSelect(tab.name)}
-          className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
-            ${active === tab.name ? "font-medium text-text-primary" : "text-text-secondary"}`}
-        >
-          {tab.name}
-          {tab.badge && (
-            <span className="bg-red-500 text-white text-[9.5px] font-bold rounded-full w-[15px] h-[15px] flex items-center justify-center">
-              {tab.badge}
-            </span>
-          )}
-          {active === tab.name && (
-            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full" />
-          )}
-        </button>
-      ))}
-    </div>
-  </div>
 );
 
 // =================== PARTY FIELD ===================
@@ -341,7 +168,6 @@ const RetentionCard = ({ data }) => (
 const PaymentTermsSection = ({ payment }) => (
   <div>
     <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
-    {/* ✅ FIX: stack on mobile, row on md+ */}
     <div className="flex flex-col md:flex-row gap-3">
       <AdvancePaymentCard data={payment.advance} />
       <ProgressPaymentCard data={payment.progress} />
@@ -351,38 +177,10 @@ const PaymentTermsSection = ({ payment }) => (
 );
 
 // =================== BASIC INFO CONTENT ===================
-const BasicInfoContent = ({ data }) => (
+export const BasicInfoContent = ({ data }) => (
   <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
     <ContractPartiesSection parties={data.parties} />
     <ContractFieldsGrid fields={data.fields} />
     <PaymentTermsSection payment={data.payment} />
   </div>
 );
-
-// =================== CONTRACT SECTION (MAIN) ===================
-const ContractSection = () => {
-  const [activeTab, setActiveTab] = useState("Basic Info");
-
-  return (
-    <div className="bg-bg-main min-h-screen">
-      <ContractHeader file={contractData.file} />
-      <ExtractionLegend stats={contractData.stats} />
-      <div className="pt-4 pb-8">
-        <ContractInnerTabs
-          tabs={contractData.innerTabs}
-          active={activeTab}
-          onSelect={setActiveTab}
-        />
-        {activeTab === "Basic Info" ? (
-          <BasicInfoContent data={contractData} />
-        ) : (
-          <div className="flex items-center justify-center h-40 text-text-secondary text-sm">
-            {activeTab}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default ContractSection;

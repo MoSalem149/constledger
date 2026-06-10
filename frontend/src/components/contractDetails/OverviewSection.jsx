@@ -1,6 +1,7 @@
-import { overviewData } from "../../data/projectData";
 import { useState } from "react";
-import ContractSection from "./Contract";
+import { BudgetAndProgressSection } from "./BudgetAndProgressSection";
+import { ApprovalsSection } from "./ApprovalsSection";
+import ContractSection from "./ContractSection";
 
 // =================== ICONS ===================
 const ChartIcon = () => (
@@ -106,7 +107,6 @@ const WhatsHappeningSection = ({ data }) => (
       A plain-English snapshot of this project right now
     </p>
 
-    {/* ✅ FIX: stack on mobile, row on md+ */}
     <div className="flex flex-col md:flex-row gap-2.5">
       <InsightCard icon="chart" title="Where the money is">
         You've spent about EGP {data.budget.spent}M of your EGP{" "}
@@ -143,7 +143,6 @@ const KPICard = ({ label, value, sub }) => (
 
 // =================== KPI SECTION ===================
 const KPIMetricsSection = ({ kpis }) => (
-  // ✅ FIX: 2-col grid on mobile, single row on sm+
   <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3.5">
     {kpis.map((k, i) => (
       <KPICard key={i} {...k} />
@@ -193,69 +192,10 @@ const RecentActivitySection = ({ activities }) => (
 );
 
 // =================== OVERVIEW SECTION ===================
-const OverviewSection = ({ data }) => (
+export const OverviewSection = ({ data }) => (
   <div className="flex flex-col gap-3.5">
     <WhatsHappeningSection data={data} />
     <KPIMetricsSection kpis={data.kpis} />
     <RecentActivitySection activities={data.activities} />
   </div>
 );
-
-// =================== PLACEHOLDER SECTIONS ===================
-const PlaceholderSection = ({ name }) => (
-  <div className="bg-bg-cards1 shadow rounded-lg flex items-center justify-center h-40 text-text-secondary text-[15px]">
-    {name}
-  </div>
-);
-
-const BudgetAndProgressSection = () => (
-  <PlaceholderSection name="Budget and Progress" />
-);
-const ApprovalsSection = () => <PlaceholderSection name="Approvals" />;
-
-// =================== TABS ===================
-const TABS = ["Overview", "Contract", "Budget and Progress", "Approvals"];
-
-const TabNavigation = ({ active, onSelect }) => (
-  // ✅ FIX: horizontal scroll on mobile so tabs never wrap or overflow
-  <div className="border-b border-border mb-5 overflow-x-auto">
-    <div className="flex gap-4 sm:gap-6 min-w-max sm:min-w-0">
-      {TABS.map((tab) => (
-        <button
-          key={tab}
-          onClick={() => onSelect(tab)}
-          className={`pb-3 text-sm whitespace-nowrap relative transition-colors ${
-            active === tab
-              ? "font-medium text-text-primary"
-              : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          {tab}
-          {active === tab && (
-            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 rounded-full" />
-          )}
-        </button>
-      ))}
-    </div>
-  </div>
-);
-
-const OverView = () => {
-  const [activeTab, setActiveTab] = useState("Overview");
-
-  const sections = {
-    Overview: <OverviewSection data={overviewData} />,
-    Contract: <ContractSection />,
-    "Budget and Progress": <BudgetAndProgressSection />,
-    Approvals: <ApprovalsSection />,
-  };
-
-  return (
-    <div className="min-h-screen py-6 sm:py-10">
-      <TabNavigation active={activeTab} onSelect={setActiveTab} />
-      {sections[activeTab]}
-    </div>
-  );
-};
-
-export default OverView;

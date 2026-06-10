@@ -31,7 +31,7 @@ const cardBottomData = [
   },
 ];
 
-const ProjectooMainCard = () => {
+export const ContarctCard = () => {
   return (
     <div className="ProjectooMainCard rounded-lg overflow-hidden w-full mt-5 shadow">
       <div className="image relative w-full">
@@ -42,9 +42,7 @@ const ProjectooMainCard = () => {
         />
       </div>
 
-      {/* ✅ FIX: stack on mobile, side-by-side on md+ */}
       <div className="content flex flex-col md:flex-row w-full h-full">
-        {/* ✅ FIX: full width on mobile, 9/12 on md+ */}
         <div className="left bg-bg-cards1 w-full md:w-9/12">
           <div className="top text-sm pt-5 px-5">
             <span className="text-text-secondary mr-4 sm:mr-10">
@@ -66,7 +64,6 @@ const ProjectooMainCard = () => {
             </p>
           </div>
 
-          {/* ✅ FIX: wrap to 2 cols on mobile, single row on md+ */}
           <div className="bottom p-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:flex sm:justify-between sm:items-start">
             {cardBottomData.map((d, index) => (
               <div key={index} className="item text-text-secondary text-sm">
@@ -84,7 +81,6 @@ const ProjectooMainCard = () => {
           </div>
         </div>
 
-        {/* ✅ FIX: full width on mobile, 3/12 on md+, fixed min-height on mobile */}
         <div className="right w-full md:w-3/12 bg-bg-main min-h-[10rem] md:h-full">
           <CircularProgress value={projectCard.Progress} />
         </div>
@@ -92,8 +88,6 @@ const ProjectooMainCard = () => {
     </div>
   );
 };
-
-export default ProjectooMainCard;
 
 // CircularProgress.jsx
 const CircularProgress = ({ value = 0 }) => {

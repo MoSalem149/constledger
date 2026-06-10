@@ -6,7 +6,7 @@ export const projectCard = {
   projectTitle: "Aswan Solar Park",
   NREAContracting: "Elsewedy Electric T&D",
   TotalBudget: "30200000",
-  Progress: 0,
+  Progress: 40,
   Timeline: {
     from: "12 Oct 2026",
     to: "12 Oct 2027 ",
@@ -67,7 +67,7 @@ export const contractData = {
       value: "New and Renewable Energy Authority (NREA)",
     },
     { label: "Contractor", status: "green", value: "Elsewedy Electric T&D" },
-    { label: "Subcontractor", status: "red", value: "" },
+    { label: "Subcontractor", status: "green", value: "" },
   ],
   fields: [
     { label: "Contract Value", status: "green", value: "28,900,000" },
@@ -97,10 +97,3 @@ export const contractData = {
     },
   },
 };
-
-export const steps = [
-  { label: "Upload", sub: "File Received", done: true, active: false },
-  { label: "Read", sub: "Parsing PDF", done: true, active: false },
-  { label: "Extract", sub: "AI Analysis", done: true, active: false },
-  { label: "Review", sub: "Confirm Fields", done: false, active: true },
-];
