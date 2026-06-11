@@ -36,15 +36,13 @@ export const contractService = {
 
   /**
    * GET /contracts/:id/progress
-   * Polls the AI processing progress for a contract.
-   *! Expected response:
-   * {
-   *   contractId: string,
-   *   status: 'uploading' | 'reading' | 'extracting' | 'active' | 'analysis_failed',
-   *   progress: number,      // 0-100
-   *   currentStep: number, // 0=Upload, 1=Read, 2=Extract, 3=Review
-   *   activityLog: Array<{ timestamp: string, message: string }>
-   * }
+   * Polls the contract processing status.
+   *
+   *! Backend only returns terminal statuses:
+   * { contractId: string, status: 'active' | 'analysis_failed' }
+   *
+   *! All intermediate progress (stepper, progress bar, activity log)
+   *! is simulated on the frontend via `fakeProgress.js`.
    */
   getContractProgress: (id) =>
     api.get(`/contracts/${id}/progress`).then((res) => res.data),
