@@ -5,7 +5,7 @@
  * by the AI can be reviewed and corrected before final save.
  * Triggering "confirm" also creates the planned budget.
  *
- * Role: contractManager only (enforced by RoleGuard in App.jsx).
+ * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  * Path: /contracts/:id/edit
  */
 export default function ReviewEditFormPage() {

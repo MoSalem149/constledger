@@ -76,8 +76,8 @@ export function AuthProvider({ children }) {
   // 4. Role checker
   // ------------------------------------------------------------------
   // Spreads args so you can call:
-  //   hasRole('contractManager')
-  //   hasRole('contractManager', 'financeTeam')
+  //   hasRole('contract_manager')
+  //   hasRole('contract_manager', 'finance_team')
   const hasRole = useCallback(
     (...roles) => {
       return user ? roles.includes(user.role) : false;

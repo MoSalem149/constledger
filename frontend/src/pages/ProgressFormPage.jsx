@@ -5,7 +5,7 @@
  * create mode (/new) and edit mode (/edit) via a mode flag.
  * Only the prefill data and API endpoint differ.
  *
- * Role: financeTeam only (enforced by RoleGuard in App.jsx).
+ * Role: finance_team only (enforced by RoleGuard in App.jsx).
  * Paths:
  *   /finance/:contractId/progress/new          → create mode
  *   /finance/:contractId/progress/:entryId/edit → edit mode

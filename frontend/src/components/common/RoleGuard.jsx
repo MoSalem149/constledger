@@ -10,7 +10,7 @@ import { useAuth } from '../../context/AuthContext';
  *
  * Usage:
  *   <Route path="/contracts/upload" element={
- *     <RoleGuard roles={['contractManager']}>
+ *     <RoleGuard roles={['contract_manager']}>
  *       <UploadContractPage />
  *     </RoleGuard>
  *   } />

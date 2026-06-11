@@ -4,7 +4,7 @@
  * Sprint 4 builds the full screen: view the submitted progress data,
  * add approval comments, and approve/reject the entry.
  *
- * Role: contractManager only (enforced by RoleGuard in App.jsx).
+ * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  * Path: /finance/:contractId/progress/:entryId/review
  */
 export default function ReviewProgressPage() {

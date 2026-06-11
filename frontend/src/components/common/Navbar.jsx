@@ -9,8 +9,11 @@ import PersonIcon from "../icons/PersonIcon";
 
 function formatRole(role) {
   if (!role) return "";
-  // "contractManager" → "Contract Manager"
-  return role.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+  // "contract_manager" → "Contract Manager"
+  return role
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 export default function Navbar({ title }) {

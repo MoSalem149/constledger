@@ -49,7 +49,7 @@ AuthProvider injects logout via setOnUnauthorized() (useEffect)
 
 - **httpOnly cookie** for JWT — no JS token in memory. `withCredentials: true` on Axios.
 - **Callback injection** (not DOM events) — avoids circular import between api.js and AuthContext.
-- Roles in code are **camelCase**: `contractManager`, `financeTeam`, `topManagement`
+- Roles in code are **snake_case**: `contract_manager`, `finance_team`, `top_management`
 
 ## Tailwind — Nested Keys
 

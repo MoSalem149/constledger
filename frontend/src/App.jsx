@@ -58,7 +58,7 @@ function App() {
             path="/contracts/upload"
             element={
               // ! commented for now so we can work on the design without crashing
-              ////<RoleGuard roles={["contractManager"]}>
+              ////<RoleGuard roles={["contract_manager"]}>
               <UploadContractPage />
               //! commented out for now so we can work on the design without crashing
               //// </RoleGuard>
@@ -68,7 +68,7 @@ function App() {
           <Route
             path="/contracts/:id/edit"
             element={
-              <RoleGuard roles={["contractManager"]}>
+              <RoleGuard roles={["contract_manager"]}>
                 <ReviewEditFormPage />
               </RoleGuard>
             }
@@ -87,7 +87,7 @@ function App() {
           <Route
             path="/finance/:contractId/progress/new"
             element={
-              <RoleGuard roles={["financeTeam"]}>
+              <RoleGuard roles={["finance_team"]}>
                 <ProgressFormPage />
               </RoleGuard>
             }
@@ -95,7 +95,7 @@ function App() {
           <Route
             path="/finance/:contractId/progress/:entryId/edit"
             element={
-              <RoleGuard roles={["financeTeam"]}>
+              <RoleGuard roles={["finance_team"]}>
                 <ProgressFormPage />
               </RoleGuard>
             }
@@ -103,7 +103,7 @@ function App() {
           <Route
             path="/finance/:contractId/progress/:entryId/review"
             element={
-              <RoleGuard roles={["contractManager"]}>
+              <RoleGuard roles={["contract_manager"]}>
                 <ReviewProgressPage />
               </RoleGuard>
             }

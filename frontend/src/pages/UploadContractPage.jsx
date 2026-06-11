@@ -9,7 +9,7 @@
  * The "Back to Projects" button navigates to /dashboard.
  * Pass ?demo=1 in the URL to preview the processing state with mock data.
  *
- * Role: contractManager only (enforced by RoleGuard in App.jsx).
+ * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
