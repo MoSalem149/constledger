@@ -21,13 +21,13 @@ npm run lint      # fails (no eslintrc). No tests, no CI/CD.
 
 | Area                    | Built                                                                                                                                               | Stubs                                           |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Upload page**         | Full flow: drag-drop dropzone, AI info panel, 4-step stepper, progress bar, activity log, 5s polling. `?demo=1` previews processing with mock data. | —                                               |
-| **Contract components** | `UploadDropzone`, `AIExtractsPanel`, `ProcessingCard`, `ContractStepper` (4-step with `active-review` state), `ActivityLog`                         | —                                               |
-| **Icons**               | 16 SVG components in `components/icons/` (extracted from inline SVGs)                                                                               | —                                               |
-| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods)                                                                                      | `financeService.js`, `reportService.js` — empty |
-| **Auth**                | `AuthContext`, `PrivateRoute`, `RoleGuard`, `authService`, Axios interceptor with `setOnUnauthorized` callback injection                            | All commented out in App.jsx                    |
-| **Layout**              | `Sidebar` (Dashboard, Projects→`/contracts/upload`, Admin→`/reports`), `Navbar` (search placeholder, bell, profile)                                 | —                                               |
-| **Other 10 pages**      | —                                                                                                                                                   | Placeholder stubs                               |
+| **Upload page**         | Full flow: drag-drop dropzone (`UploadDropzone`), AI info panel (`AIExtractsPanel`), 4-step stepper (`ContractStepper`), progress bar, activity log (`ActivityLog`). Supports PDF + DOCX. Accepts `.pdf`, `.docx`. `?demo=1` previews processing with mock data. | — |
+| **Progress simulation** | `fakeProgress.js` — all intermediate stepper/progress/activity log simulated locally. Backend only returns terminal status (`active`/`analysis_failed`). Frontend still polls every 5s for that. | — |
+| **Icons**               | 16 SVG components in `components/icons/` (extracted from inline SVGs) | — |
+| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods) | `financeService.js`, `reportService.js` — empty |
+| **Auth**                | `AuthContext`, `PrivateRoute`, `RoleGuard`, `authService`, Axios interceptor with `setOnUnauthorized` callback injection | All commented out in App.jsx |
+| **Layout**              | `Sidebar` (4 items: Dashboard, Projects→`/contracts/upload`, Reports→`/reports`, Admin→`/admin`), `Navbar` (search placeholder, bell, profile) | — |
+| **Other 10 pages**      | — | Placeholder stubs; `AdminPage` at `/admin` exists but is a stub |
 
 ## Route Quirks
 
