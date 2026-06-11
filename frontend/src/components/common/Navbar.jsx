@@ -17,8 +17,8 @@ function formatRole(role) {
 }
 
 export default function Navbar({ title }) {
-  //! commented out for now so we can work on the design without crashing
-  // const { user } = useAuth();
+  //! comment it out so you can work on the design without crashing
+  const { user } = useAuth();
 
   return (
     <header className="pt-6 flex items-center justify-between pl-5 pr-16">
@@ -64,14 +64,12 @@ export default function Navbar({ title }) {
           {/* Name + role */}
           <div className="flex flex-col gap-1 pr-3 font-sans">
             <span className="text-xs font-medium text-text-primary leading-none whitespace-nowrap">
-              {/* //! commented out for now so we can work on the design without crashing */}
-              {/* {user?.name || "User"} */}
-              Yousef Hany
+              //! comment it out so you can work on the design without crashing
+              {user?.name || "User"}
             </span>
             <span className="text-xs text-text-secondary leading-none whitespace-nowrap">
-              {/* //! commented out for now so we can work on the design without crashing */}
-              {/* {formatRole(user?.role)} */}
-              Contract Manager
+              //! comment it out so you can work on the design without crashing
+              {formatRole(user?.role)}
             </span>
           </div>
         </div>
