@@ -1,3 +1,8 @@
+import { ContarctDetailsSections } from "../components/contractDetails/ContarctDetailsSections";
+import { ContarctCard } from "../components/contractDetails/ContractCard";
+
+import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
+
 /**
  * ReviewEditFormPage — 13-field contract review/edit form.
  *
@@ -11,8 +16,18 @@
 export default function ReviewEditFormPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text-primary">Review &amp; Edit Contract</h1>
-      <p className="text-text-secondary mt-2">13-field review form coming in Sprint 3</p>
+      <div className="project pt-6 sm:pt-10 bg-bg-main">
+        <div className="container px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 text-text-secondary">
+            <ArrowLeftIcon />
+
+            <div className="text-sm sm:text-base">All Projects</div>
+          </div>
+
+          <ContarctCard />
+          <ContarctDetailsSections />
+        </div>
+      </div>
     </div>
   );
 }

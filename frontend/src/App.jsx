@@ -68,9 +68,9 @@ function App() {
           <Route
             path="/contracts/:id/edit"
             element={
-              <RoleGuard roles={["contractManager"]}>
-                <ReviewEditFormPage />
-              </RoleGuard>
+              //<RoleGuard roles={["contractManager"]}>
+              <ReviewEditFormPage />
+              // </RoleGuard>
             }
           />
 

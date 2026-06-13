@@ -46,7 +46,7 @@ export default function DashboardPage() {
   const userName = "Mohamed";
 
   return (
-    <div className="min-h-[calc(100vh-80px)] flex flex-col">
+    <div className="min-h-[calc(100vh-116px)] flex flex-col">
       {/* Header */}
       <div>
         <p className="text-[11px] tracking-widest text-text-secondary mb-1.5">
