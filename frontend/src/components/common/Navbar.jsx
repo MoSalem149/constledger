@@ -116,7 +116,7 @@ export default function Navbar({ title }) {
             <div
               ref={dropdownRef}
               role="menu"
-              className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl
+              className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl font-sans
                          shadow-[0_2px_8px_rgba(136,136,136,0.1)] py-3 px-3 z-50"
             >
               {/* User info */}

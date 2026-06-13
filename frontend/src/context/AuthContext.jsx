@@ -11,6 +11,16 @@ import { setOnUnauthorized } from "../services/api";
 const AuthContext = createContext(null);
 
 /**
+ * Backend returns `_id` for /auth/me and `id` for /login. We normalize to `id`
+ * so the rest of the frontend can always read `user.id`.
+ */
+function normalizeUser(raw) {
+  if (!raw) return null;
+  const { _id, ...rest } = raw;
+  return { ...rest, id: rest.id ?? _id };
+}
+
+/**
  * AuthProvider — wraps the entire app and manages authentication state.
  *
  * Holds:
@@ -37,7 +47,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     authService
       .checkAuth()
-      .then((data) => setUser(data.user))
+      .then((data) => setUser(normalizeUser(data.user)))
       .catch(() => setUser(null)) // 401 or network error → not authenticated
       .finally(() => setLoading(false));
   }, []);
@@ -68,8 +78,9 @@ export function AuthProvider({ children }) {
   // ------------------------------------------------------------------
   const login = useCallback(async (email, password) => {
     const data = await authService.login(email, password);
-    setUser(data.user);
-    return data.user;
+    const normalized = normalizeUser(data.user);
+    setUser(normalized);
+    return normalized;
   }, []);
 
   // ------------------------------------------------------------------
