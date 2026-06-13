@@ -30,100 +30,101 @@ function App() {
      * function into the Axios instance so 401 responses are handled globally.
      */
     //! comment it out so you can work on the design without crashing
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          {/* ---------------------------------------------------------- */}
-          {/* Protected routes — all require authentication                */}
-          {/*                                                            */}
-          {/* Nesting: PrivateRoute → DashboardLayout → page routes       */}
-          {/*   1. PrivateRoute checks auth (loading→spinner, !auth→login) */}
-          {/*   2. DashboardLayout renders sidebar + topbar + <Outlet /> */}
-          {/*   3. Matched page route renders inside the outlet            */}
-          {/*                                                            */}
-          {/* This means every new page automatically gets auth + chrome.  */}
-          {/* ---------------------------------------------------------- */}
-          //! comment it out so you can work on the design without crashing
-          <Route element={<PrivateRoute />}>
-            <Route element={<DashboardLayout />}>
-              {/* Dashboard */}
-              <Route path="/dashboard" element={<DashboardPage />} />
+    // <AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        //! comment it out so you can work on the design without crashing
+        {/* <Route path="/login" element={<LoginPage />} /> */}
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        {/* ---------------------------------------------------------- */}
+        {/* Protected routes — all require authentication                */}
+        {/*                                                            */}
+        {/* Nesting: PrivateRoute → DashboardLayout → page routes       */}
+        {/*   1. PrivateRoute checks auth (loading→spinner, !auth→login) */}
+        {/*   2. DashboardLayout renders sidebar + topbar + <Outlet /> */}
+        {/*   3. Matched page route renders inside the outlet            */}
+        {/*                                                            */}
+        {/* This means every new page automatically gets auth + chrome.  */}
+        {/* ---------------------------------------------------------- */}
+        //! comment it out so you can work on the design without crashing
+        {/* <Route element={<PrivateRoute />}> */}
+        <Route element={<DashboardLayout />}>
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<DashboardPage />} />
 
-              {/* Contracts */}
-              {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
-              {/* button on dashboard navigates directly to /contracts/upload. */}
-              <Route
-                path="/contracts/upload"
-                element={
-                  // ! commented for now so we can work on the design without crashing
-                  ////<RoleGuard roles={["contract_manager"]}>
-                  <UploadContractPage />
-                  //! commented out for now so we can work on the design without crashing
-                  //// </RoleGuard>
-                }
-              />
-              <Route path="/contracts/:id" element={<ContractDetailPage />} />
-              <Route
-                path="/contracts/:id/edit"
-                element={
-                  <RoleGuard roles={["contract_manager"]}>
-                    <ReviewEditFormPage />
-                  </RoleGuard>
-                }
-              />
+          {/* Contracts */}
+          {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
+          {/* button on dashboard navigates directly to /contracts/upload. */}
+          <Route
+            path="/contracts/upload"
+            element={
+              // ! commented for now so we can work on the design without crashing
+              ////<RoleGuard roles={["contract_manager"]}>
+              <UploadContractPage />
+              //! commented out for now so we can work on the design without crashing
+              //// </RoleGuard>
+            }
+          />
+          <Route path="/contracts/:id" element={<ContractDetailPage />} />
+          <Route
+            path="/contracts/:id/edit"
+            element={
+              <RoleGuard roles={["contract_manager"]}>
+                <ReviewEditFormPage />
+              </RoleGuard>
+            }
+          />
 
-              {/* Finance */}
-              <Route path="/finance" element={<FinancePage />} />
-              <Route
-                path="/finance/:contractId/variance"
-                element={<BudgetVariancePage />}
-              />
-              <Route
-                path="/finance/:contractId/progress"
-                element={<ProgressListPage />}
-              />
-              <Route
-                path="/finance/:contractId/progress/new"
-                element={
-                  <RoleGuard roles={["finance_team"]}>
-                    <ProgressFormPage />
-                  </RoleGuard>
-                }
-              />
-              <Route
-                path="/finance/:contractId/progress/:entryId/edit"
-                element={
-                  <RoleGuard roles={["finance_team"]}>
-                    <ProgressFormPage />
-                  </RoleGuard>
-                }
-              />
-              <Route
-                path="/finance/:contractId/progress/:entryId/review"
-                element={
-                  <RoleGuard roles={["contract_manager"]}>
-                    <ReviewProgressPage />
-                  </RoleGuard>
-                }
-              />
+          {/* Finance */}
+          <Route path="/finance" element={<FinancePage />} />
+          <Route
+            path="/finance/:contractId/variance"
+            element={<BudgetVariancePage />}
+          />
+          <Route
+            path="/finance/:contractId/progress"
+            element={<ProgressListPage />}
+          />
+          <Route
+            path="/finance/:contractId/progress/new"
+            element={
+              <RoleGuard roles={["finance_team"]}>
+                <ProgressFormPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/finance/:contractId/progress/:entryId/edit"
+            element={
+              <RoleGuard roles={["finance_team"]}>
+                <ProgressFormPage />
+              </RoleGuard>
+            }
+          />
+          <Route
+            path="/finance/:contractId/progress/:entryId/review"
+            element={
+              <RoleGuard roles={["contract_manager"]}>
+                <ReviewProgressPage />
+              </RoleGuard>
+            }
+          />
 
-              {/* Reports (tabs) */}
-              <Route path="/reports" element={<ReportsPage />} />
+          {/* Reports (tabs) */}
+          <Route path="/reports" element={<ReportsPage />} />
 
-              {/* Admin */}
-              <Route path="/admin" element={<AdminPage />} />
+          {/* Admin */}
+          <Route path="/admin" element={<AdminPage />} />
 
-              {/* 404 catch-all */}
-              <Route path="*" element={<NotFoundPage />} />
-            </Route>
-            //! comment it out so you can work on the design without crashing
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      //! comment it out so you can work on the design without crashing
-    </AuthProvider>
+          {/* 404 catch-all */}
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+        //! comment it out so you can work on the design without crashing
+        {/* </Route> */}
+      </Routes>
+    </BrowserRouter>
+    //! comment it out so you can work on the design without crashing
+    // </AuthProvider>
   );
 }
 
