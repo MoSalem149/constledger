@@ -88,12 +88,12 @@ const ContractSection = ({ contractoData }) => {
   const [activeTab, setActiveTab] = useState("Basic Info");
 
   const sections = {
-    "Basic Info": (
-      <BasicInfoContent contractoData={contractoData} data={contractData} />
+    "Basic Info": <BasicInfoContent data={contractoData} />,
+    "Financial Terms": <FinancialTermsSection data={contractoData} />,
+    "Schedule and Milestones": (
+      <ScheduleMilestonesSection data={contractoData} />
     ),
-    "Financial Terms": <FinancialTermsSection />,
-    "Schedule and Milestones": <ScheduleMilestonesSection />,
-    Penalties: <PenaltiesSection />,
+    Penalties: <PenaltiesSection data={contractoData} />,
   };
 
   return (

@@ -370,21 +370,21 @@ const PaymentTermsSection = ({ payment }) => (
 );
 
 // =================== BASIC INFO CONTENT ===================
-export const BasicInfoContent = ({ data, contractoData }) => {
+export const BasicInfoContent = ({ data }) => {
   const contractFields = [
     {
-      value: contractoData.contract_value,
+      value: data.contract_value,
       label: "Contract Value",
       field: "contract_value",
     },
-    { value: contractoData.currency, label: "Currency", field: "currency" },
+    { value: data.currency, label: "Currency", field: "currency" },
     {
-      value: contractoData.duration_days,
+      value: data.duration_days,
       label: "Duration",
       field: "duration_days",
     },
     {
-      value: contractoData.reporting_period,
+      value: data.reporting_period,
       label: "Reporting Period",
       field: "reporting_period",
     },
@@ -392,9 +392,9 @@ export const BasicInfoContent = ({ data, contractoData }) => {
 
   return (
     <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
-      <ContractPartiesSection parties={contractoData.parties} />
+      <ContractPartiesSection parties={data.parties} />
       <ContractFieldsGrid fields={contractFields} />
-      <PaymentTermsSection payment={contractoData} />
+      <PaymentTermsSection payment={data} />
     </div>
   );
 };
