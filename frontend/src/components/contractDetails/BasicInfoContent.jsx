@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { TrashIcon } from "../icons/TrashIcon";
 import { InfoIcon } from "../icons/InfoIcon";
 import { ClockIcon } from "../icons/ClockIcon";
 import { DollarIcon } from "../icons/DollarIcon.jsx";
 import { TrendIcon } from "../icons/TrendIcon";
+import { ContractContext } from "../../context/EditContaractContext.jsx";
 
 // =================== STATUS DOT ===================
 const statusClass = {
@@ -11,28 +12,41 @@ const statusClass = {
   orange: "bg-orange-500",
   red: "bg-red-500",
 };
-const Dot = ({ status }) => (
-  <div
-    className={`w-2 h-2 rounded-full flex-shrink-0 ${statusClass[status]}`}
-  />
+const Dot = () => (
+  <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-green-500`} />
 );
 
 // =================== PARTY FIELD ===================
-const PartyField = ({ label, status, value }) => {
-  const [val, setVal] = useState(value);
+const PartyField = ({
+  index,
+  role,
+  name,
+  onChangeName,
+  onChangeRole,
+  onDelete,
+  onBlur,
+}) => {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2 w-[100px] sm:w-[110px] flex-shrink-0">
-        <Dot status={status} />
-        <span className="text-[13px] text-text-primary truncate">{label}</span>
-      </div>
       <input
-        value={val}
-        onChange={(e) => setVal(e.target.value)}
-        placeholder="Not found — leave blank or add"
-        className="flex-1 min-w-0 px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary placeholder:text-text-secondary bg-bg-cards1 outline-none focus:border-primary"
+        value={role ? role : "null"}
+        onChange={(e) => onChangeRole(index, e.target.value)}
+        onBlur={onBlur}
+        className="w-[140px] px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1"
       />
-      <button className="text-text-secondary p-1 flex-shrink-0">
+
+      <input
+        value={name}
+        onChange={(e) => onChangeName(index, e.target.value)}
+        onBlur={onBlur}
+        placeholder="Party name"
+        className="flex-1 min-w-0 px-3 py-2.5 border border-border rounded-lg text-[13px]"
+      />
+
+      <button
+        onClick={() => onDelete(index)}
+        className="text-text-secondary p-1 flex-shrink-0"
+      >
         <TrashIcon />
       </button>
     </div>
@@ -40,35 +54,133 @@ const PartyField = ({ label, status, value }) => {
 };
 
 // =================== CONTRACT PARTIES ===================
-const ContractPartiesSection = ({ parties }) => (
-  <div className="mb-5">
-    <p className="text-[15px] font-medium mb-1">Contract parties</p>
-    <p className="text-xs text-text-secondary mb-3.5">
-      Review, edit, or remove any optional data before saving
-    </p>
-    <div className="flex flex-col gap-2.5 mb-3">
-      {parties.map((p, i) => (
-        <PartyField key={i} {...p} />
-      ))}
+const ContractPartiesSection = ({ parties = [] }) => {
+  const { changeData, data } = useContext(ContractContext);
+
+  const [localParties, setLocalParties] = useState(parties);
+
+  useEffect(() => {
+    setLocalParties(parties);
+  }, [parties]);
+
+  // ================= EDIT =================
+  function handleChangeName(index, value) {
+    setLocalParties((prev) =>
+      prev.map((party, i) =>
+        i === index
+          ? {
+              ...party,
+              name: value,
+            }
+          : party,
+      ),
+    );
+  }
+
+  function handleChangeRole(index, value) {
+    setLocalParties((prev) =>
+      prev.map((party, i) =>
+        i === index
+          ? {
+              ...party,
+              role: value,
+            }
+          : party,
+      ),
+    );
+  }
+
+  // ================= DELETE =================
+  function handleDelete(index) {
+    const updated = localParties.filter((_, i) => i !== index);
+
+    setLocalParties(updated);
+
+    changeData({
+      parties: updated,
+    });
+  }
+
+  // ================= ADD =================
+  function handleAddParty() {
+    const updated = [
+      ...localParties,
+      {
+        role: "new_party",
+        name: "",
+      },
+    ];
+
+    setLocalParties(updated);
+
+    changeData({
+      parties: updated,
+    });
+  }
+
+  // ================= SAVE TO CONTEXT =================
+  function saveToContext() {
+    changeData({
+      parties: localParties,
+    });
+  }
+
+  return (
+    <div className="mb-5">
+      <p className="text-[15px] font-medium mb-1">Contract parties</p>
+
+      <p className="text-xs text-text-secondary mb-3.5">
+        Review, edit, or remove any optional data before saving
+      </p>
+
+      <div className="flex flex-col gap-2.5 mb-3">
+        {localParties.map((p, i) => (
+          <PartyField
+            key={i}
+            index={i}
+            role={p.role}
+            name={p.name}
+            onChangeName={handleChangeName}
+            onChangeRole={handleChangeRole}
+            onDelete={handleDelete}
+            onBlur={saveToContext}
+          />
+        ))}
+      </div>
+
+      <button
+        onClick={handleAddParty}
+        className="w-full py-2.5 border-2 border-dashed border-primary rounded-lg text-primary text-[13px] font-medium"
+      >
+        + Add party
+      </button>
     </div>
-    <button className="w-full py-2.5 border-2 border-dashed border-primary rounded-lg text-primary text-[13px] font-medium">
-      + Add party
-    </button>
-  </div>
-);
+  );
+};
 
 // =================== FIELD BOX ===================
-const FieldBox = ({ label, status, value }) => (
-  <div>
-    <div className="flex items-center gap-2 mb-2">
-      <Dot status={status} />
-      <span className="text-xs text-text-secondary">{label}</span>
+const FieldBox = ({ label, value, field }) => {
+  const { changeData, data } = useContext(ContractContext);
+  const [val, setVal] = useState(value);
+
+  function saveData() {
+    changeData({ [field]: val });
+  }
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <Dot />
+        <span className="text-xs text-text-secondary">{label}</span>
+      </div>
+      <input
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={saveData}
+        className="px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary w-full"
+      />
     </div>
-    <div className="px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary">
-      {value}
-    </div>
-  </div>
-);
+  );
+};
 
 // =================== CONTRACT FIELDS GRID ===================
 const ContractFieldsGrid = ({ fields }) => (
@@ -80,107 +192,209 @@ const ContractFieldsGrid = ({ fields }) => (
 );
 
 // =================== PAYMENT CARDS ===================
-const NoteBox = ({ bgClass, textClass, children }) => (
+const NoteBox = ({ bgClass, textClass, children, onBlur, onChange }) => (
   <div className={`${bgClass} p-2 flex gap-2 items-start rounded`}>
     <div className={`${textClass} mt-0.5 flex-shrink-0`}>
       <InfoIcon />
     </div>
-    <p className={`text-[11.5px] ${textClass} leading-relaxed`}>{children}</p>
+    <textarea
+      defaultValue={children}
+      onChange={onChange}
+      onBlur={onBlur}
+      className={`text-[11.5px] ${textClass} leading-relaxed bg-transparent border-none outline-none w-full`}
+    />
   </div>
 );
 
-const AdvancePaymentCard = ({ data }) => (
-  <div className="flex-1 border border-border rounded-xl overflow-hidden px-3.5">
-    <div className="py-3.5">
+const AdvancePaymentCard = ({ data }) => {
+  const { changeData } = useContext(ContractContext);
+  const [localData, setLocalData] = useState({
+    percentage: data[0].percentage,
+    description: data[0].description,
+  });
+
+  const handleBlur = (field) => {
+    changeData({
+      payment_terms: data.map((term, i) =>
+        i === 0 ? { ...term, [field]: localData[field] } : term,
+      ),
+    });
+  };
+
+  return (
+    <div className="flex-1 border border-border rounded-xl overflow-hidden px-3.5">
+      <div className="py-3.5">
+        <div className="flex items-center gap-2.5 mb-3.5">
+          <div className="w-[30px] h-[30px] rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+            <DollarIcon />
+          </div>
+          <span className="text-[13.5px] font-medium">{data[0].name}</span>
+        </div>
+        <div className="mb-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Dot />
+            <span className="text-xs text-text-secondary">Percentage</span>
+          </div>
+          <input
+            value={localData.percentage}
+            onChange={(e) =>
+              setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
+            }
+            onBlur={() => handleBlur("percentage")}
+            className="px-3 py-2 w-full border border-border rounded-lg text-[13px]"
+          />
+        </div>
+      </div>
+      <NoteBox
+        bgClass="bg-bg-onTrak"
+        textClass="text-green-700"
+        onChange={(e) =>
+          setLocalData((prev) => ({ ...prev, description: e.target.value }))
+        }
+        onBlur={() => handleBlur("description")}
+      >
+        {localData.description}
+      </NoteBox>
+    </div>
+  );
+};
+
+const ProgressPaymentCard = ({ data }) => {
+  const { changeData } = useContext(ContractContext);
+  const [localData, setLocalData] = useState({
+    basis: data.basis,
+    frequency: data.frequency,
+    dueTo: data.dueTo,
+  });
+
+  const fields = [
+    { field: "basis", label: "Basis" },
+    { field: "frequency", label: "Frequency" },
+    { field: "dueTo", label: "Payment Due" },
+  ];
+
+  return (
+    <div className="flex-1 border border-border rounded-xl p-3.5">
       <div className="flex items-center gap-2.5 mb-3.5">
-        <div className="w-[30px] h-[30px] rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
-          <DollarIcon />
+        <div className="w-[30px] h-[30px] rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center">
+          <TrendIcon />
         </div>
-        <span className="text-[13.5px] font-medium">Advance Payment</span>
+        <span className="text-[13.5px] font-medium">Progress Payment</span>
       </div>
-      <div className="mb-2.5">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Dot status="green" />
-          <span className="text-xs text-text-secondary">Percentage</span>
+      {fields.map(({ field, label }) => (
+        <div key={field} className="mb-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Dot />
+            <span className="text-xs text-text-secondary">{label}</span>
+          </div>
+          <input
+            value={localData[field]}
+            onChange={(e) =>
+              setLocalData((prev) => ({ ...prev, [field]: e.target.value }))
+            }
+            onBlur={() =>
+              changeData({
+                paymentProgress: { ...data, [field]: localData[field] },
+              })
+            }
+            className="px-3 py-2 border border-border rounded-lg text-[13px]"
+          />
         </div>
-        <div className="px-3 py-2 border border-border rounded-lg text-[13px]">
-          {data.percentage}
-        </div>
-      </div>
+      ))}
     </div>
-    <NoteBox bgClass="bg-bg-onTrak" textClass="text-green-700">
-      {data.note}
-    </NoteBox>
-  </div>
-);
+  );
+};
 
-const ProgressPaymentCard = ({ data }) => (
-  <div className="flex-1 border border-border rounded-xl p-3.5">
-    <div className="flex items-center gap-2.5 mb-3.5">
-      <div className="w-[30px] h-[30px] rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center">
-        <TrendIcon />
-      </div>
-      <span className="text-[13.5px] font-medium">Progress Payment</span>
-    </div>
-    {[
-      { label: "Basis", value: data.basis },
-      { label: "Frequency", value: data.frequency },
-      { label: "Payment Due", value: data.paymentDue },
-    ].map(({ label, value }) => (
-      <div key={label} className="mb-2.5">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Dot status="green" />
-          <span className="text-xs text-text-secondary">{label}</span>
-        </div>
-        <div className="px-3 py-2 border border-border rounded-lg text-[13px]">
-          {value}
-        </div>
-      </div>
-    ))}
-  </div>
-);
+const RetentionCard = ({ data }) => {
+  const { changeData } = useContext(ContractContext);
+  const [localData, setLocalData] = useState({
+    percentage: data[2].percentage,
+    description: data[2].description,
+  });
 
-const RetentionCard = ({ data }) => (
-  <div className="flex-1 border border-border rounded-xl overflow-hidden px-3.5">
-    <div className="py-3.5">
-      <div className="flex items-center gap-2.5 mb-3.5">
-        <div className="w-[30px] h-[30px] rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
-          <ClockIcon />
+  const handleBlur = (field) => {
+    changeData({
+      payment_terms: data.map((term, i) =>
+        i === 2 ? { ...term, [field]: localData[field] } : term,
+      ),
+    });
+  };
+
+  return (
+    <div className="flex-1 border border-border rounded-xl overflow-hidden px-3.5">
+      <div className="py-3.5">
+        <div className="flex items-center gap-2.5 mb-3.5">
+          <div className="min-w-[30px] min-h-[30px] rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+            <ClockIcon />
+          </div>
+          <span className="text-[13.5px] font-medium">{data[2].name}</span>
         </div>
-        <span className="text-[13.5px] font-medium">Retention</span>
+        <div className="mb-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Dot />
+            <span className="text-xs text-text-secondary">Percentage</span>
+          </div>
+          <input
+            value={localData.percentage}
+            onChange={(e) =>
+              setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
+            }
+            onBlur={() => handleBlur("percentage")}
+            className="px-3 py-2 w-full border border-border rounded-lg text-[13px]"
+          />
+        </div>
       </div>
-      <div className="mb-2.5">
-        <div className="flex items-center gap-1.5 mb-1.5">
-          <Dot status="green" />
-          <span className="text-xs text-text-secondary">Percentage</span>
-        </div>
-        <div className="px-3 py-2 border border-border rounded-lg text-[13px]">
-          {data.percentage}
-        </div>
-      </div>
+      <NoteBox
+        bgClass="bg-bg-atRisk100"
+        textClass="text-orange-700"
+        onChange={(e) =>
+          setLocalData((prev) => ({ ...prev, description: e.target.value }))
+        }
+        onBlur={() => handleBlur("description")}
+      >
+        {localData.description}
+      </NoteBox>
     </div>
-    <NoteBox bgClass="bg-bg-atRisk100" textClass="text-orange-700">
-      {data.note}
-    </NoteBox>
-  </div>
-);
+  );
+};
 
 const PaymentTermsSection = ({ payment }) => (
   <div>
     <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
     <div className="flex flex-col md:flex-row gap-3">
-      <AdvancePaymentCard data={payment.advance} />
-      <ProgressPaymentCard data={payment.progress} />
-      <RetentionCard data={payment.retention} />
+      <AdvancePaymentCard data={payment.payment_terms} />
+      <ProgressPaymentCard data={payment.paymentProgress} />
+      <RetentionCard data={payment.payment_terms} />
     </div>
   </div>
 );
 
 // =================== BASIC INFO CONTENT ===================
-export const BasicInfoContent = ({ data }) => (
-  <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
-    <ContractPartiesSection parties={data.parties} />
-    <ContractFieldsGrid fields={data.fields} />
-    <PaymentTermsSection payment={data.payment} />
-  </div>
-);
+export const BasicInfoContent = ({ data, contractoData }) => {
+  const contractFields = [
+    {
+      value: contractoData.contract_value,
+      label: "Contract Value",
+      field: "contract_value",
+    },
+    { value: contractoData.currency, label: "Currency", field: "currency" },
+    {
+      value: contractoData.duration_days,
+      label: "Duration",
+      field: "duration_days",
+    },
+    {
+      value: contractoData.reporting_period,
+      label: "Reporting Period",
+      field: "reporting_period",
+    },
+  ];
+
+  return (
+    <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
+      <ContractPartiesSection parties={contractoData.parties} />
+      <ContractFieldsGrid fields={contractFields} />
+      <PaymentTermsSection payment={contractoData} />
+    </div>
+  );
+};

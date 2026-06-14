@@ -32,12 +32,12 @@ const TabNavigation = ({ active, onSelect }) => (
   </div>
 );
 
-export const ContarctDetailsSections = () => {
+export const ContarctDetailsSections = ({ contractData }) => {
   const [activeTab, setActiveTab] = useState("Overview");
 
   const sections = {
     Overview: <OverviewSection data={overviewData} />,
-    Contract: <ContractSection />,
+    Contract: <ContractSection contractoData={contractData} />,
     "Budget and Progress": <BudgetAndProgressSection />,
     Approvals: <ApprovalsSection />,
   };

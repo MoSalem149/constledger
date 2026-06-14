@@ -13,7 +13,7 @@ const steps = [
   { key: "extract", label: "Extract" },
   { key: "review", label: "Review" },
 ];
-const stepStatus = ["completed", "completed", "active", "pending"];
+const stepStatus = ["completed", "completed", "completed", "active-review"];
 
 const currentStepIndex = stepStatus.findIndex(
   (s) => s === "active" || s === "active-review",
@@ -84,11 +84,13 @@ const ContractInnerTabs = ({ tabs, active, onSelect }) => (
   </div>
 );
 // =================== CONTRACT SECTION (MAIN) ===================
-const ContractSection = () => {
+const ContractSection = ({ contractoData }) => {
   const [activeTab, setActiveTab] = useState("Basic Info");
 
   const sections = {
-    "Basic Info": <BasicInfoContent data={contractData} />,
+    "Basic Info": (
+      <BasicInfoContent contractoData={contractoData} data={contractData} />
+    ),
     "Financial Terms": <FinancialTermsSection />,
     "Schedule and Milestones": <ScheduleMilestonesSection />,
     Penalties: <PenaltiesSection />,
@@ -101,7 +103,7 @@ const ContractSection = () => {
         steps={steps}
         currentStep={currentStep}
         stepStatus={stepStatus}
-        progress={20}
+        progress={null}
       />
       <div className="pt-4 pb-8">
         <ContractInnerTabs

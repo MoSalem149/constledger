@@ -213,7 +213,7 @@ export default function ReviewEditFormPage() {
           </Link>
 
           <ContarctCard contractData={contractData} />
-          <ContarctDetailsSections />
+          <ContarctDetailsSections contractData={contractData} />
         </div>
       </div>
     </div>
