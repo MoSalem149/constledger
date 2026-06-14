@@ -37,7 +37,7 @@ function App() {
       <EditContractContext>
         <Routes>
           //! comment it out so you can work on the design without crashing
-          <Route path="/login" element={<LoginPage />} />
+          {/* <Route path="/login" element={<LoginPage />} /> */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           {/* ---------------------------------------------------------- */}
           {/* Protected routes — all require authentication                */}
@@ -67,7 +67,7 @@ function App() {
                 //<RoleGuard roles={["contract_manager"]}>
                 <UploadContractPage />
                 //! commented out for now so we can work on the design without crashing
-                //// </RoleGuard>
+                // </RoleGuard>
               }
             />
             <Route path="/contracts/:id" element={<ContractDetailPage />} />
