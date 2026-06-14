@@ -35,6 +35,12 @@ export const contractService = {
   getContractById: (id) => api.get(`/contracts/${id}`).then((res) => res.data),
 
   /**
+   * GET /contracts
+   * Fetches all contracts
+   */
+  getAllContracts: () => api.get(`/contracts}`).then((res) => res.data),
+
+  /**
    * GET /contracts/:id/progress
    * Polls the contract processing status.
    *

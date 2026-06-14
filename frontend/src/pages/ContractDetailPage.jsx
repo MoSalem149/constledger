@@ -10,8 +10,10 @@
 export default function ContractDetailPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold text-text-primary">Contract Details</h1>
-      <p className="text-text-secondary mt-2">Contract detail view coming in Sprint 2</p>
+      <h1 className="text-2xl font-bold text-text-primary">Contract details</h1>
+      <p className="text-text-secondary mt-2">
+        13-field review form coming in Sprint 3
+      </p>
     </div>
   );
 }
