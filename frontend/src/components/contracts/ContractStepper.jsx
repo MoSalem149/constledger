@@ -54,7 +54,7 @@ export default function ContractStepper({
   progress,
 }) {
   return (
-    <div className="flex flex-col w-full bg-bg-cards1 p-4 shadow rounded">
+    <div className="flex flex-col w-full bg-bg-cards1 p-4 rounded">
       {/* Stepper row */}
       <div className="flex items-center justify-center gap-0">
         {steps.map((step, index) => {

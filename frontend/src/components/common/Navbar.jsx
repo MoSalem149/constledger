@@ -20,9 +20,7 @@ function formatRole(role) {
 }
 
 export default function Navbar({ title }) {
-  //! If you disabled AuthProvider in App.jsx, comment out the next
-  //! line and hardcode the user name/role strings shown below.
-  // const { user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef(null);
@@ -47,8 +45,8 @@ export default function Navbar({ title }) {
 
   async function handleLogout() {
     setDropdownOpen(false);
-    // !comment it out so you can work on the design without crashing
-    // await logout();
+
+    await logout();
     navigate("/login", { replace: true });
   }
 
@@ -101,12 +99,10 @@ export default function Navbar({ title }) {
             {/* Name + role */}
             <div className="flex flex-col gap-1 pr-3 font-sans text-left">
               <span className="text-xs font-medium text-text-primary leading-none whitespace-nowrap">
-                Yousef Hany
-                {/* {user?.name || "User"} */}
+                {user?.name || "User"}
               </span>
               <span className="text-xs text-text-secondary leading-none whitespace-nowrap">
-                Contract Manager
-                {/* {formatRole(user?.role)} */}
+                {formatRole(user?.role)}
               </span>
             </div>
           </button>
@@ -126,12 +122,10 @@ export default function Navbar({ title }) {
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium text-text-primary truncate">
-                    Yousef Hany
-                    {/* {user?.name || "User"} */}
+                    {user?.name || "User"}
                   </span>
                   <span className="text-xs text-text-secondary truncate">
-                    Contract Manager
-                    {/* {formatRole(user?.role)} */}
+                    {formatRole(user?.role)}
                   </span>
                 </div>
               </div>

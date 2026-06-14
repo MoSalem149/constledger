@@ -4,21 +4,13 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { authService } from "../services/authService";
 import { setOnUnauthorized } from "../services/api";
+import { normalizeId } from "../utils/normalizeId";
 
 const AuthContext = createContext(null);
-
-/**
- * Backend returns `_id` for /auth/me and `id` for /login. We normalize to `id`
- * so the rest of the frontend can always read `user.id`.
- */
-function normalizeUser(raw) {
-  if (!raw) return null;
-  const { _id, ...rest } = raw;
-  return { ...rest, id: rest.id ?? _id };
-}
 
 /**
  * AuthProvider — wraps the entire app and manages authentication state.
@@ -36,20 +28,31 @@ function normalizeUser(raw) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
-  // loading=true until the first /auth/me call resolves.
-  // This prevents a flash of the login screen while we check if the
-  // httpOnly cookie is still valid on page refresh.
+  // loading=true initially to prevent flash redirect in PrivateRoute.
+  // PrivateRoute calls checkSession() on mount; LoginPage never reads loading.
   const [loading, setLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   // ------------------------------------------------------------------
-  // 1. Restore session from cookie on mount
+  // 1. Restore session — called by PrivateRoute on mount (not on mount of
+  //    AuthProvider). This avoids a wasteful /auth/me call when the user
+  //    opens the public /login page without a cookie.
   // ------------------------------------------------------------------
-  useEffect(() => {
-    authService
-      .checkAuth()
-      .then((data) => setUser(normalizeUser(data.user)))
-      .catch(() => setUser(null)) // 401 or network error → not authenticated
-      .finally(() => setLoading(false));
+  const checkSession = useCallback(async () => {
+    if (initializedRef.current) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await authService.checkAuth();
+      setUser(normalizeId(data.user));
+    } catch {
+      setUser(null);
+    } finally {
+      initializedRef.current = true;
+      setLoading(false);
+    }
   }, []);
 
   // ------------------------------------------------------------------
@@ -78,8 +81,10 @@ export function AuthProvider({ children }) {
   // ------------------------------------------------------------------
   const login = useCallback(async (email, password) => {
     const data = await authService.login(email, password);
-    const normalized = normalizeUser(data.user);
+    const normalized = normalizeId(data.user);
     setUser(normalized);
+    initializedRef.current = true;
+    setLoading(false);
     return normalized;
   }, []);
 
@@ -99,10 +104,11 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
-    isAuthenticated: !!user, // convenient boolean
+    isAuthenticated: !!user,
     login,
     logout,
     hasRole,
+    checkSession,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
