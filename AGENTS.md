@@ -13,29 +13,32 @@ npm run preview   # also :5173
 npm run lint      # fails (no eslintrc). No tests, no CI/CD.
 ```
 
-## Auth Is Commented Out (Again)
+## Auth Is Live
 
-`AuthProvider`, `PrivateRoute`, `RoleGuard`, Axios 401 interceptor — **fully built but disabled** in `App.jsx`. `LoginPage` route is also commented. `Navbar` hardcodes user name/role and shows a profile dropdown with a logout button (logout calls `navigate("/login")` but that route won't resolve until auth is re-enabled). Enable all three pieces (`AuthProvider`, `<PrivateRoute>`, `/login` route) when integrating auth.
+`AuthProvider`, `PrivateRoute`, `RoleGuard`, Axios 401 interceptor — **all active** in `App.jsx`. `LoginPage` at `/login`, `Navbar` shows real user name/role from context with profile dropdown + logout. `EditContractContext` wraps protected routes. Requires backend running.
 
 ## What Exists vs Stubs
 
-| Area                    | Built                                                                                                                                               | Stubs                                           |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| **Upload page**         | Full flow: drag-drop dropzone (`UploadDropzone`), AI info panel (`AIExtractsPanel`), 4-step stepper (`ContractStepper`), progress bar, activity log (`ActivityLog`). Supports PDF + DOCX. Accepts `.pdf`, `.docx`. `?demo=1` previews processing with mock data. | — |
-| **Progress simulation** | `fakeProgress.js` — all intermediate stepper/progress/activity log simulated locally. Backend only returns terminal status (`active`/`analysis_failed`). Frontend still polls every 5s for that. | — |
-| **Icons**               | 19 SVG components in `components/icons/` (extracted from inline SVGs) | — |
-| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods) | `financeService.js`, `reportService.js` — empty |
-| **Auth**                | `AuthContext`, `PrivateRoute`, `RoleGuard`, `authService`, Axios interceptor with `setOnUnauthorized` callback injection | All commented out in App.jsx (AuthProvider, PrivateRoute, login route). RoleGuard on upload page also commented. |
-| **Layout**              | `Sidebar` (4 items: Dashboard, Projects→`/contracts/upload`, Reports→`/reports`, Admin→`/admin`), `Navbar` (search placeholder, bell, profile dropdown with logout button) | — |
-| **Login page**          | Full form UI: email/password inputs, show/hide password toggle (`EyeIcon`/`EyeOffIcon`), client-side validation, error display, loading spinner. Calls `useAuth().login()`. | — |
-| **Other 9 pages**       | — | Placeholder stubs; `AdminPage` at `/admin` exists but is a stub |
+| Area                    | Built                                                                                                                                                                                             | Stubs                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **Upload page**         | Full flow: drag-drop dropzone (`UploadDropzone`), AI info panel (`AIExtractsPanel`), 4-step stepper (`ContractStepper`), progress bar, activity log (`ActivityLog`). Supports PDF + DOCX. `?demo=1` previews processing with mock data. | S3 presigned URL flow being added (uncommitted) |
+| **Progress simulation** | `fakeProgress.js` — all intermediate stepper/progress/activity log simulated locally. Backend only returns terminal status (`active`/`analysis_failed`). Frontend still polls every 5s for that.  | —                                            |
+| **Icons**               | 29 SVG components in `components/icons/` (extracted from inline SVGs)                                                                                                                             | —                                            |
+| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods)                                                                                                                                    | `financeService.js`, `reportService.js` — empty |
+| **Auth**                | `AuthProvider`, `PrivateRoute`, `RoleGuard`, `authService`, `EditContractContext`, Axios 401 interceptor — all active                                                                            | —                                            |
+| **Layout**              | `Sidebar` (Dashboard→`/dashboard`, Projects→`/contracts`, Reports→`/reports`, Admin→`/admin`), `Navbar` (search, bell, profile dropdown with logout using `useAuth()`)                             | —                                            |
+| **Login page**          | Full form UI: email/password inputs, show/hide toggle (`EyeIcon`/`EyeOffIcon`), validation, error display, spinner. Calls `useAuth().login()`                                                    | —                                            |
+| **Dashboard**           | Greeting card, date display, "Add Project" link to `/contracts/upload`                                                                                                                            | —                                            |
+| **Contracts list**      | `/contracts` route, `ContractsPage` with search bar + contract cards                                                                                                                              | —                                            |
+| **Review/edit form**    | `/contracts/:id/edit`, `ReviewEditFormPage` (221 lines), uses `components/contractDetails/` (10 files: BasicInfoContent, FinancialTermsSection, ScheduleMilestonesSection, ContractCard, etc.)      | —                                            |
+| **Contract detail**     | `ContractDetailPage`                                                                                                                                                                              | Still a stub (placeholder)                   |
+| **Other 6 pages**       | —                                                                                                                                                                                                | Finance, BudgetVariance, ProgressList, ProgressForm, ReviewProgress, Reports — all stubs. AdminPage stub. |
 
 ## Route Quirks
 
-- **No `/contracts` list** — "Add Project" on dashboard goes to `/contracts/upload`
 - **No `PerformancePage`** — replaced by `ReportsPage` (tabs). Don't recreate.
-- **`/contracts/:id`** and **`/contracts/:id/edit`** exist but are stubs
-- Sidebar label "Projects" links to `/contracts/upload`, not `/projects`
+- **`/contracts/:id`** is still a stub (placeholder)
+- Sidebar label "Projects" links to `/contracts` (list page), not `/contracts/upload`
 
 ## Auth Architecture
 
