@@ -1,4 +1,4 @@
-import projectImage from "../assets/projecto/projectImage.png";
+import projectImage from "../assets/projectImage.png";
 
 export const projectCard = {
   projectImage: projectImage,

@@ -1,43 +1,59 @@
-import { projectCard } from "../../data/projectData";
+import ProjectImage from "../../assets/projectImage.png";
 
-const formatBudget = (value) => {
-  const num = +value;
-  if (num >= 1_000_000_000)
-    return (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") + "B EGP";
-  if (num >= 1_000_000)
-    return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M EGP";
-  if (num >= 1_000)
-    return (num / 1_000).toFixed(1).replace(/\.0$/, "") + "K EGP";
-  return num.toLocaleString() + " EGP";
-};
+export const ContarctCard = ({ contractData }) => {
+  const formatBudget = (value) => {
+    const num = +value;
+    if (num >= 1_000_000_000)
+      return (
+        (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") +
+        "B " +
+        contractData.currency
+      );
+    if (num >= 1_000_000)
+      return (
+        (num / 1_000_000).toFixed(1).replace(/\.0$/, "") +
+        "M " +
+        contractData.currency
+      );
+    if (num >= 1_000)
+      return (
+        (num / 1_000).toFixed(1).replace(/\.0$/, "") +
+        "K " +
+        contractData.currency
+      );
+    return num.toLocaleString() + " EGP";
+  };
 
-const cardBottomData = [
-  {
-    title: "Total Budget",
-    data: projectCard.TotalBudget,
-  },
-  {
-    title: "Progress",
-    data: projectCard.Progress,
-    footerData: "Earned 0 EGP",
-  },
-  {
-    title: "Timeline",
-    data: `${projectCard.Timeline.from} -> ${projectCard.Timeline.to}`,
-  },
-  {
-    title: "Next Milestone",
-    data: projectCard.NextMilestone,
-  },
-];
+  const nextMilestone = contractData.milestones
+    .filter((milestone) => new Date(milestone.dueDate) > new Date())
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
-export const ContarctCard = () => {
+  const cardBottomData = [
+    {
+      title: "Total Budget",
+      data: contractData.contract_value,
+    },
+    {
+      title: "Progress",
+      data: contractData.paymentProgress.frequency,
+      footerData: "Earned 0 EGP",
+    },
+    {
+      title: "Timeline",
+      data: `${contractData.start_date.split(" ").slice(0, 4).join(" ")} -> ${contractData.end_date.split(" ").slice(0, 4).join(" ")}`,
+    },
+    {
+      title: "Next Milestone",
+      data: nextMilestone.length == 0 ? "null" : nextMilestone[0].name,
+    },
+  ];
+
   return (
     <div className="ProjectooMainCard rounded-lg overflow-hidden w-full mt-5 shadow">
       <div className="image relative w-full">
         <img
           className="w-full object-cover max-h-64 sm:max-h-80 md:max-h-none"
-          src={projectCard.projectImage}
+          src={ProjectImage}
           alt="projectImage"
         />
       </div>
@@ -46,20 +62,21 @@ export const ContarctCard = () => {
         <div className="left bg-bg-cards1 w-full md:w-9/12">
           <div className="top text-sm pt-5 px-5">
             <span className="text-text-secondary mr-4 sm:mr-10">
-              {projectCard.projectId}
+              {contractData.contractNumber}
             </span>{" "}
             <span className="text-primary bg-bg-cards2/15 px-2 rounded-full">
               Contract Analysis Complete
             </span>
           </div>
           <div className="middle px-5 border-b pb-4">
-            <h2 className="text-xl sm:text-2xl my-4">
-              {projectCard.projectTitle}
-            </h2>
+            <h2 className="text-xl sm:text-2xl my-4">{contractData.name}</h2>
             <p className="text-text-secondary text-sm">
               NREA contracting{" "}
               <span className="text-text-primary">
-                {projectCard.NREAContracting}
+                {
+                  contractData.parties.find((p) => p.role === "main_contractor")
+                    ?.name
+                }
               </span>
             </p>
           </div>
@@ -82,14 +99,14 @@ export const ContarctCard = () => {
         </div>
 
         <div className="right w-full md:w-3/12 bg-bg-main min-h-[10rem] md:h-full">
-          <CircularProgress value={projectCard.Progress} />
+          <CircularProgress value={contractData.paymentProgress.frequency} />
         </div>
       </div>
     </div>
   );
 };
 
-// CircularProgress.jsx
+// CircularProgress
 const CircularProgress = ({ value = 0 }) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;

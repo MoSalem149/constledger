@@ -21,6 +21,7 @@ import ReviewProgressPage from "./pages/ReviewProgressPage";
 import ReportsPage from "./pages/ReportsPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./components/common/NotFoundPage";
+import ContractsPage from "./pages/ContractsPage";
 
 function App() {
   return (
@@ -50,10 +51,11 @@ function App() {
         <Route element={<DashboardLayout />}>
           {/* Dashboard */}
           <Route path="/dashboard" element={<DashboardPage />} />
-
           {/* Contracts */}
           {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
           {/* button on dashboard navigates directly to /contracts/upload. */}
+          //^ Make sure you make the role gard of this route
+          <Route path="/contracts" element={<ContractsPage />} />
           <Route
             path="/contracts/upload"
             element={
@@ -73,7 +75,6 @@ function App() {
               // </RoleGuard>
             }
           />
-
           {/* Finance */}
           <Route path="/finance" element={<FinancePage />} />
           <Route
@@ -108,13 +109,10 @@ function App() {
               </RoleGuard>
             }
           />
-
           {/* Reports (tabs) */}
           <Route path="/reports" element={<ReportsPage />} />
-
           {/* Admin */}
           <Route path="/admin" element={<AdminPage />} />
-
           {/* 404 catch-all */}
           <Route path="*" element={<NotFoundPage />} />
         </Route>
