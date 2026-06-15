@@ -1,5 +1,5 @@
 // PMO-only CRUD for users — password hashing handled by the User model pre-save hook
-const User = require('../models/User');
+import User from '../models/User.js';
 
 // Guard: resolve the protected admin account ID once
 let _protectedAdminId = null;
@@ -17,7 +17,7 @@ async function isProtectedAdmin(id) {
 }
 
 // POST /api/users
-exports.createUser = async (req, res, next) => {
+export const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
     const existing = await User.findOne({ email });
@@ -28,7 +28,7 @@ exports.createUser = async (req, res, next) => {
 };
 
 // GET /api/users  (optional filters: ?role=&isActive=)
-exports.listUsers = async (req, res, next) => {
+export const listUsers = async (req, res, next) => {
   try {
     const adminId = await getProtectedAdminId();
     const filter = {};
@@ -44,7 +44,7 @@ exports.listUsers = async (req, res, next) => {
 };
 
 // GET /api/users/:id
-exports.getUser = async (req, res, next) => {
+export const getUser = async (req, res, next) => {
   try {
     if (await isProtectedAdmin(req.params.id))
       return res.status(403).json({ message: 'Access denied' });
@@ -56,7 +56,7 @@ exports.getUser = async (req, res, next) => {
 };
 
 // PUT /api/users/:id — supports updating name, email, role, isActive, and password
-exports.updateUser = async (req, res, next) => {
+export const updateUser = async (req, res, next) => {
   try {
     if (await isProtectedAdmin(req.params.id))
       return res.status(403).json({ message: 'The master PMO account cannot be modified' });
@@ -88,7 +88,7 @@ exports.updateUser = async (req, res, next) => {
 };
 
 // DELETE /api/users/:id — hard delete
-exports.deleteUser = async (req, res, next) => {
+export const deleteUser = async (req, res, next) => {
   try {
     if (await isProtectedAdmin(req.params.id))
       return res.status(403).json({ message: 'The master PMO account cannot be deleted' });

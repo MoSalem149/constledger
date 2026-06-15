@@ -1,8 +1,8 @@
 // Application bootstrap, Loads environment variables, connects the database, and starts the HTTP server.
-require('dotenv').config();
+import 'dotenv/config';
 
-const app = require('./app');
-const connectDB = require('./config/database');
+import app from './app.js';
+import connectDB from './config/database.js';
 
 const PORT = process.env.PORT || 3000;
 

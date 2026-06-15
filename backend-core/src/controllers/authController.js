@@ -1,6 +1,6 @@
 // Handles login, logout, and current user
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 const COOKIE_NAME = 'token';
 const COOKIE_OPTS = {
@@ -15,7 +15,7 @@ const signToken = (user) =>
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
   });
 
-exports.login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password)
@@ -36,11 +36,11 @@ exports.login = async (req, res, next) => {
   }
 };
 
-exports.logout = (_req, res) => {
+export const logout = (_req, res) => {
   res.clearCookie(COOKIE_NAME, { httpOnly: true, sameSite: 'strict' });
   res.json({ message: 'Logged out successfully' });
 };
 
-exports.me = async (req, res) => {
+export const me = async (req, res) => {
   res.json({ user: req.user });
 };

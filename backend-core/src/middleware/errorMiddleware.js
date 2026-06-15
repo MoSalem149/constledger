@@ -1,9 +1,9 @@
 // notFound: catches unmatched routes — errorHandler: formats all thrown errors
-exports.notFound = (req, res) => {
+export const notFound = (req, res) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 };
 
-exports.errorHandler = (err, req, res, _next) => {
+export const errorHandler = (err, req, res, _next) => {
   const status = err.statusCode || 500;
   console.error(`[error] ${err.message}`);
   res.status(status).json({
