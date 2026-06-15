@@ -49,7 +49,7 @@ api.interceptors.response.use(
       // Otherwise, onUnauthorized → logout → POST /auth/logout →
       // 401 → onUnauthorized → ... infinite loop.
       const url = error.config?.url || '';
-      if (!url.includes('/auth/logout') && !url.includes('/auth/me')) {
+      if (!url.includes('/auth/logout')) {
         onUnauthorized();
       }
     }
