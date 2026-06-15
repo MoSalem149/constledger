@@ -1,4 +1,5 @@
 import ProjectImage from "../../assets/projectImage.png";
+import { formatDate } from "../../utils/formatDate";
 
 export const ContarctCard = ({ contractData }) => {
   const formatBudget = (value) => {
@@ -40,7 +41,7 @@ export const ContarctCard = ({ contractData }) => {
     },
     {
       title: "Timeline",
-      data: `${contractData.start_date.split(" ").slice(0, 4).join(" ")} -> ${contractData.end_date.split(" ").slice(0, 4).join(" ")}`,
+      data: `${formatDate(contractData.start_date)} -> ${formatDate(contractData.end_date)}`,
     },
     {
       title: "Next Milestone",
