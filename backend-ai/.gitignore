@@ -1,32 +1,37 @@
-# ── Dependencies ─────────────────────────────────────────────────────
+# ── Dependencies ──────────────────────────────────────────────────────
 node_modules/
 
-# ── TypeScript build output (never commit compiled JS) ───────────────
+# ── TypeScript build output (never commit compiled JS) ────────────────
 dist/
 *.tsbuildinfo
 
-# ── Environment / secrets ────────────────────────────────────────────
+# ── Environment / secrets ─────────────────────────────────────────────
 # .env.example is committed — actual env files are NOT
 .env
 .env.production
 .env.staging
+.env.local
 
-# ── Logs ─────────────────────────────────────────────────────────────
+# ── Logs ──────────────────────────────────────────────────────────────
 logs/
 *.log
 npm-debug.log*
 
 # ── Temp / downloaded files ───────────────────────────────────────────
-# Contract files are downloaded temporarily during analysis then discarded
+# Contract PDFs are downloaded temporarily during analysis then discarded
 tmp/
 temp/
 downloads/
 
-# ── OS / Editor ──────────────────────────────────────────────────────
+# ── Tesseract language data ───────────────────────────────────────────
+# Downloaded automatically by tesseract.js on first run — never bundle in repo
+*.traineddata
+
+# ── OS / Editor ───────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
 
-# ── Testing ──────────────────────────────────────────────────────────
+# ── Tests / coverage ──────────────────────────────────────────────────
 coverage/

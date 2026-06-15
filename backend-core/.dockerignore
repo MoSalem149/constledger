@@ -1,5 +1,33 @@
-node_modules
+# ── Dependencies ──────────────────────────────────────────────────────
+# Installed fresh inside the container — never copy from host
+node_modules/
+
+# ── Environment / secrets ─────────────────────────────────────────────
+# Secrets are injected at runtime via Deno Deploy environment variables
 .env
+.env.*
+
+# ── Logs ──────────────────────────────────────────────────────────────
+logs/
 *.log
+npm-debug.log*
+
+# ── Temp files ────────────────────────────────────────────────────────
 tmp/
-uploads/
+
+# ── Git ───────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Docs (not needed at runtime) ──────────────────────────────────────
+README.md
+*.md
+
+# ── OS / Editor ───────────────────────────────────────────────────────
+.DS_Store
+Thumbbs.db
+.vscode/
+.idea/
+
+# ── Tests / coverage ──────────────────────────────────────────────────
+coverage/

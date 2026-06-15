@@ -6,13 +6,15 @@ services:
     container_name: cpms-mongo
     restart: unless-stopped
     ports:
-      - '27017:27017'           # MongoDB default
+      - '27017:27017'
     volumes:
       - mongo_data:/data/db
     networks:
       - cpms-net
 
   # ── Core Backend (Node/Express JS) ──────────────────────────────────
+  # Handles authentication & user management only.
+  # Issues JWTs; never exposes business APIs directly.
   backend-core:
     build:
       context: ./backend-core
@@ -21,19 +23,24 @@ services:
     restart: unless-stopped
     env_file: ./backend-core/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - AI_SERVICE_URL=http://backend-ai:5000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/cpms
+      PORT: "3000"
+      # JWT_SECRET, JWT_EXPIRES_IN, FRONTEND_URL — set in backend-core/.env
     ports:
-      - '3000:3000'             # Express default
+      - '3000:3000'
     depends_on:
       - mongo
     networks:
       - cpms-net
     volumes:
-      # hot-reload in dev — comment out for production image
+      # hot-reload in dev — remove for production image
       - ./backend-core/src:/app/src:ro
 
   # ── AI Backend (Node/Express TS) ─────────────────────────────────────
+  # Owns all SRS business APIs: contracts, finance, performance, reports.
+  # Verifies JWTs issued by backend-core; never issues them.
+  # Uses AWS S3 for contract file storage and OpenAI for AI analysis.
   backend-ai:
     build:
       context: ./backend-ai
@@ -42,10 +49,16 @@ services:
     restart: unless-stopped
     env_file: ./backend-ai/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - CORE_SERVICE_URL=http://backend-core:3000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/cpms
+      PORT: "5000"
+      # The following must match their counterparts in backend-core/.env:
+      #   JWT_SECRET        — shared for token verification
+      #   AI_SERVICE_SECRET — shared for internal backend-core → backend-ai calls
+      # All other secrets (OPENAI_API_KEY, AWS_*, S3_*, FRONTEND_URL)
+      # are loaded from backend-ai/.env via env_file above.
     ports:
-      - '5000:5000'             # AI service default
+      - '5000:5000'
     depends_on:
       - mongo
       - backend-core
@@ -60,10 +73,11 @@ services:
     container_name: cpms-frontend
     restart: unless-stopped
     environment:
-      - VITE_API_URL=http://localhost:3000/api
-      - VITE_AI_API_URL=http://localhost:5000/api
+      # Base URLs without trailing /api — the frontend services append paths themselves.
+      VITE_API_URL: http://localhost:3000
+      VITE_AI_API_URL: http://localhost:5000
     ports:
-      - '5173:5173'             # Vite default
+      - '5173:5173'
     depends_on:
       - backend-core
       - backend-ai

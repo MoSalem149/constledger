@@ -2,6 +2,10 @@ import api from './api';
 
 /**
  * Auth API calls — thin wrappers around the backend auth endpoints.
+ *
+ * Auth is httpOnly cookie only. We never send or store a Bearer token;
+ * the browser sends the cookie automatically thanks to withCredentials:true.
+ *
  * This layer knows nothing about React state; it just returns data.
  * The AuthContext calls these functions and manages user state.
  */

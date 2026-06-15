@@ -1,3 +1,4 @@
+// notFound: catches unmatched routes — errorHandler: formats all thrown errors
 exports.notFound = (req, res) => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 };

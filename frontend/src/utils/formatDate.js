@@ -1,0 +1,1 @@
+export const formatDate = (d) => d.split(" ").slice(0, 4).join(" ");

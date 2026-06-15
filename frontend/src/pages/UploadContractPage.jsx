@@ -1,15 +1,19 @@
 /**
- * UploadContractPage — drag-and-drop contract upload with async polling.
+ * UploadContractPage — drag-and-drop contract upload with frontend-simulated progress.
  *
  * Sprint 2 builds the full screen:
  *   idle      → file picker + "What AI Extracts" side panel
  *   uploading → brief loading state while POST is in flight
- *   processing→ stepper + progress bar + activity log (polling every 5s)
+ *   processing→ stepper + progress bar + activity log (frontend simulation)
+ *
+ * The backend only returns terminal statuses ("active" or "analysis_failed").
+ * All intermediate progress (stepper, progress bar, activity log) is simulated
+ * on the frontend via `fakeProgress.js` for a smooth UX.
  *
  * The "Back to Projects" button navigates to /dashboard.
  * Pass ?demo=1 in the URL to preview the processing state with mock data.
  *
- * Role: contractManager only (enforced by RoleGuard in App.jsx).
+ * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -19,6 +23,7 @@ import AIExtractsPanel from "../components/contracts/AIExtractsPanel";
 import ProcessingCard from "../components/contracts/ProcessingCard";
 import { contractService } from "../services/contractService";
 import { isValidFile } from "../utils/fileValidation";
+import { startSimulation } from "../utils/fakeProgress";
 
 /* ------------------------------------------------------------------ */
 // Helpers
@@ -30,36 +35,11 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function statusToStepStatus(status) {
-  switch (status) {
-    case "uploading":
-      return ["active", "pending", "pending", "pending"];
-    case "reading":
-      return ["completed", "active", "pending", "pending"];
-    case "extracting":
-      return ["completed", "completed", "active", "pending"];
-    case "active":
-      return ["completed", "completed", "completed", "active-review"];
-    case "analysis_failed":
-      return ["completed", "completed", "completed", "active-review"];
-    default:
-      return ["pending", "pending", "pending", "pending"];
-  }
-}
-
 /* ------------------------------------------------------------------ */
 // Mock data for ?demo=1
 /* ------------------------------------------------------------------ */
 
 const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
-
-const DEMO_EVENTS = [
-  { timestamp: "10:30 AM", message: "Contract uploaded successfully" },
-  { timestamp: "10:30 AM", message: "AI is reading the document..." },
-  { timestamp: "10:31 AM", message: "Extracting contract structure..." },
-  { timestamp: "10:31 AM", message: "Parsing milestone schedules..." },
-  { timestamp: "10:32 AM", message: "Identifying payment terms..." },
-];
 
 /* ------------------------------------------------------------------ */
 // Page
@@ -83,19 +63,14 @@ export default function UploadContractPage() {
   const [contractId, setContractId] = useState(null);
   const [stepStatus, setStepStatus] = useState(
     isDemo
-      ? ["completed", "completed", "active", "pending"]
+      ? ["completed", "active", "pending", "pending"]
       : ["pending", "pending", "pending", "pending"],
   );
-  const [progress, setProgress] = useState(
-    isDemo
-      ? { label: "AI Analyzing Contract Structure...", percent: 91 }
-      : null,
-  );
-  const [activityLog, setActivityLog] = useState(isDemo ? DEMO_EVENTS : []);
+  const [progress, setProgress] = useState(null);
+  const [activityLog, setActivityLog] = useState([]);
 
-  // Polling ref — stores the setInterval timer ID so we can clear it later
-  // without triggering re-renders. useRef persists across renders.
-  const pollRef = useRef(null);
+  // Simulation cleanup ref — stores the cleanup function returned by startSimulation
+  const cleanupRef = useRef(null);
 
   /* ---------------------------------------------------------------- */
   // Demo mode simulation
@@ -104,82 +79,23 @@ export default function UploadContractPage() {
   useEffect(() => {
     if (!isDemo || pageState !== "processing") return;
 
-    let progressVal = 91;
-    let eventIdx = DEMO_EVENTS.length - 1;
-    const interval = setInterval(() => {
-      progressVal = Math.min(progressVal + Math.random() * 3, 99);
-      setProgress({
-        label: "AI Analyzing Contract Structure...",
-        percent: Math.round(progressVal),
-      });
+    const cleanup = startSimulation("demo-contract-id", {
+      onStepChange: setStepStatus,
+      onProgress: setProgress,
+      onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
+      onDone: (id) => navigate(`/contracts/${id}`),
+      onFail: (err) => {
+        setError(err);
+        setPageState("idle");
+      },
+    });
 
-      // Simulate adding events
-      if (Math.random() > 0.7 && eventIdx < 8) {
-        eventIdx++;
-        setActivityLog((prev) => [
-          ...prev,
-          {
-            timestamp: "10:32 AM",
-            message: `Processing field group ${eventIdx - 2}...`,
-          },
-        ]);
-      }
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isDemo, pageState]);
-
-  /* ---------------------------------------------------------------- */
-  // Real polling
-  /* ---------------------------------------------------------------- */
-
-  const startPolling = useCallback(
-    (id) => {
-      if (pollRef.current) clearInterval(pollRef.current);
-
-      pollRef.current = setInterval(async () => {
-        try {
-          const data = await contractService.getContractProgress(id);
-          setStepStatus(statusToStepStatus(data.status));
-          setProgress({
-            label:
-              data.status === "reading"
-                ? "AI is reading the document..."
-                : data.status === "extracting"
-                  ? "AI Analyzing Contract Structure..."
-                  : "Processing...",
-            percent: data.progress ?? 0,
-          });
-          setActivityLog(data.activityLog ?? []);
-
-          if (data.status === "active") {
-            clearInterval(pollRef.current);
-            pollRef.current = null;
-            navigate(`/contracts/${id}`);
-          }
-
-          if (data.status === "analysis_failed") {
-            clearInterval(pollRef.current);
-            pollRef.current = null;
-            setError("AI analysis failed. Please try again.");
-            setPageState("idle");
-          }
-        } catch {
-          // Network errors during polling — keep polling
-        }
-      }, 5000);
-    },
-    [navigate],
-  );
-
-  useEffect(() => {
+    cleanupRef.current = cleanup;
     return () => {
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
+      cleanup();
+      cleanupRef.current = null;
     };
-  }, []);
+  }, [isDemo, pageState, navigate]);
 
   /* ---------------------------------------------------------------- */
   // Handlers
@@ -200,18 +116,27 @@ export default function UploadContractPage() {
       setError(null);
       setFileInfo({ name: file.name, size: formatFileSize(file.size) });
       setPageState("uploading");
+      setActivityLog([]);
+      setProgress(null);
 
       try {
         const result = await contractService.uploadContract(file);
         setContractId(result.contractId);
         setPageState("processing");
-        setStepStatus(statusToStepStatus(result.status || "uploading"));
-        setProgress({
-          label: "AI Analyzing Contract Structure...",
-          percent: result.progress ?? 0,
+
+        // Start frontend-simulated progress
+        const cleanup = startSimulation(result.contractId, {
+          onStepChange: setStepStatus,
+          onProgress: setProgress,
+          onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
+          onDone: (id) => navigate(`/contracts/${id}`),
+          onFail: (err) => {
+            setError(err);
+            setPageState("idle");
+          },
         });
-        setActivityLog(result.activityLog ?? []);
-        startPolling(result.contractId);
+
+        cleanupRef.current = cleanup;
       } catch (err) {
         setError(
           err?.response?.data?.message ||
@@ -220,16 +145,29 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [startPolling],
+    [navigate],
   );
 
   const handleBack = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
     }
     navigate("/dashboard");
   }, [navigate]);
+
+  /* ---------------------------------------------------------------- */
+  // Cleanup on unmount
+  /* ---------------------------------------------------------------- */
+
+  useEffect(() => {
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []);
 
   /* ---------------------------------------------------------------- */
   // Subtitle text based on state

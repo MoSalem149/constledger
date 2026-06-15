@@ -1,4 +1,40 @@
-node_modules
-dist
+# ── Dependencies ──────────────────────────────────────────────────────
+# Installed fresh inside the container — never copy from host
+node_modules/
+
+# ── TypeScript build output ───────────────────────────────────────────
+# Built inside the container by the builder stage
+dist/
+*.tsbuildinfo
+
+# ── Environment / secrets ─────────────────────────────────────────────
+# Secrets are injected at runtime via Cloud Run environment variables
 .env
+.env.*
+
+# ── Logs ──────────────────────────────────────────────────────────────
+logs/
 *.log
+npm-debug.log*
+
+# ── Temp / downloaded files ───────────────────────────────────────────
+tmp/
+temp/
+downloads/
+
+# ── Tesseract language data ───────────────────────────────────────────
+# Downloaded automatically at runtime — bloats image if bundled
+*.traineddata
+
+# ── Git ───────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── OS / Editor ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ── Tests / coverage ──────────────────────────────────────────────────
+coverage/

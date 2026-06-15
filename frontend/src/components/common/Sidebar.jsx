@@ -7,7 +7,7 @@ import PersonIcon from "../icons/PersonIcon";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
-  { label: "Projects", to: "/contracts/upload", Icon: FileDocIcon },
+  { label: "Projects", to: "/contracts", Icon: FileDocIcon },
   { label: "Reports", to: "/reports", Icon: ReportsIcon },
   { label: "Admin", to: "/admin", Icon: PersonIcon },
 ];

@@ -1,45 +1,59 @@
 // ── Shared types for the AI service ──────────────────────────────────
 
-export interface ContractParty {
+export type ReportingPeriod = 'weekly' | 'monthly';
+
+export interface PaymentProgress {
+  basis: string | null;
+  frequency: number | null;
+  dueTo: number | null;
+}
+
+export interface PaymentTerm {
   name: string;
-  role: string;
+  percentage: number | null;
+  description: string | null;
 }
 
-export interface UnitPrice {
-  item: string;
-  unit: string;
-  unit_price: number;
-}
-
-export interface Milestone {
-  name: string;
-  due_date: string;
-}
-
-export interface Penalty {
-  condition: string;
-  penalty: string;
-}
-
-export interface PaymentScheduleItem {
-  date: string;
-  amount: number;
-}
-
-/** The full structured JSON the LLM must return for contract analysis */
+/** SRS §3.3 — exact fields, no more, no less */
 export interface ContractExtraction {
-  parties: ContractParty[] | null;
+  /** All contract parties with their role */
+  parties: { name: string; role: string }[];
+
+  /** Total contract price */
   contract_value: number | null;
+
+  /** ISO-4217 currency code e.g. USD, EGP */
   currency: string | null;
-  unit_prices: UnitPrice[] | null;
-  payment_terms: string | null;
-  payment_schedule: PaymentScheduleItem[] | null;
+
+  /** Price per unit for each work item */
+  unit_prices: { item: string; unit: string; unit_price: number }[];
+
+  /** Progress payment card — one per contract */
+  paymentProgress: PaymentProgress | null;
+
+  /** Structured payment milestones (advance, progress, retention, etc.) */
+  payment_terms: PaymentTerm[];
+
+  /** Specific payment dates and amounts */
+  payment_schedule: { date: string; amount: number }[];
+
+  /** Official project start date (YYYY-MM-DD) */
   start_date: string | null;
+
+  /** Official project end date (YYYY-MM-DD) */
   end_date: string | null;
+
+  /** Total duration in days */
   duration_days: number | null;
-  reporting_period: 'weekly' | 'monthly' | null;
-  milestones: Milestone[] | null;
-  penalties: Penalty[] | null;
+
+  /** Is progress reported weekly or monthly? */
+  reporting_period: ReportingPeriod | null;
+
+  /** Key deliverables and their deadlines */
+  milestones: { name: string; due_date: string }[];
+
+  /** Delay penalties: condition and amount/formula */
+  penalties: { condition: string; penalty: string }[];
 }
 
 export interface FinanceForecast {

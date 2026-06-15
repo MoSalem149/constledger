@@ -9,9 +9,11 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
 
   // withCredentials is REQUIRED for the httpOnly cookie auth flow.
-  // The JWT lives in an httpOnly cookie set by the server; the browser
-  // must send that cookie on every request. We never store or read the
-  // token in JS — this keeps us XSS-safe by design per CPMS-105.
+  // The access token lives in an httpOnly cookie set by the server; the
+  // browser sends it automatically on every request. There is no refresh
+  // token and we never store or read the token in JS — this keeps us
+  // XSS-safe by design. On 401 the interceptor calls onUnauthorized() to
+  // clear the React auth state and redirect to /login.
   withCredentials: true,
 
   headers: { 'Content-Type': 'application/json' },

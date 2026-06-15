@@ -1,28 +1,57 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
+/**
+ * Express application setup.
+ * Registers middleware, CORS, health check, business routes, and global error handlers.
+ */
+import express, { Request, Response } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import cookieParser from "cookie-parser";
 
-import contractAiRoutes from './routes/contractAiRoutes';
-import financeAiRoutes from './routes/financeAiRoutes';
-import performanceAiRoutes from './routes/performanceAiRoutes';
-import { errorHandler, notFound } from './middleware/errorMiddleware';
+import contractRoutes from "./routes/contractRoutes";
+import financeRoutes from "./routes/financeRoutes";
+import reportRoutes from "./routes/reportRoutes";
+import uploadRoutes from "./routes/uploadRoutes";
+import { errorHandler, notFound } from "./middleware/errorMiddleware";
 
 const app = express();
 
-app.use(helmet());
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use(cors({ origin: process.env.CORE_SERVICE_URL }));
-app.use(express.json({ limit: '50mb' })); // large — contracts can be big
+// Allowed CORS origins
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
+].filter(Boolean) as string[];
 
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', service: 'cpms-ai' });
+// Security & logging
+app.use(helmet());
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
+app.use(express.json({ limit: "50mb" }));
+app.use(cookieParser());
+
+// Health check
+app.get("/health", (_req: Request, res: Response) => {
+  res.json({ status: "ok", service: "cpms-ai" });
 });
 
-app.use('/api/ai/contracts', contractAiRoutes);
-app.use('/api/ai/finance', financeAiRoutes);
-app.use('/api/ai/performance', performanceAiRoutes);
+// Business routes
+app.use("/api/contracts", contractRoutes);
+app.use("/api/finance", financeRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/uploads", uploadRoutes);
 
+// Error handling
 app.use(notFound);
 app.use(errorHandler);
 
