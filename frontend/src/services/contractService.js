@@ -1,5 +1,16 @@
 import api from "./api";
+import axios from "axios";
 import { normalizeId } from "../utils/normalizeId";
+
+/**
+ * Separate Axios instance for the AI service (S3 sign & complete).
+ * Uses VITE_AI_API_URL instead of VITE_API_URL.
+ */
+const aiApi = axios.create({
+  baseURL: import.meta.env.VITE_AI_API_URL,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
 
 /**
  * Contract API calls — thin wrappers around the backend contract endpoints.
@@ -26,7 +37,7 @@ export const contractService = {
    * Request a presigned S3 URL for file upload.
    */
   signUpload: ({ filename, mimeType, size }) =>
-    api
+    aiApi
       .post("/uploads/sign", { filename, mimeType, size })
       .then((res) => res.data),
 
@@ -35,7 +46,7 @@ export const contractService = {
    * Notify the backend that the file has been uploaded to S3.
    */
   completeUpload: ({ s3Key, fileName, mimeType, size }) =>
-    api
+    aiApi
       .post("/uploads/complete", { s3Key, fileName, mimeType, size })
       .then((res) => res.data),
 
