@@ -131,12 +131,12 @@ const contractData = JSON.parse(`{
         },
         {
             "name": "Preliminary handover",
-            "dueDate": "Sun Dec 25 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+            "dueDate": "Sun Dec 25 2026 02:00:00 GMT+0200 (Eastern European Standard Time)",
             "isDue": true
         },
         {
             "name": "Final handover",
-            "dueDate": "Mon Dec 25 2023 02:00:00 GMT+0200 (Eastern European Standard Time)",
+            "dueDate": "Mon Dec 25 2027 02:00:00 GMT+0200 (Eastern European Standard Time)",
             "isDue": true
         }
     ],

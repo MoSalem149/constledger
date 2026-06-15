@@ -19,6 +19,7 @@ const Dot = ({ status }) => {
 };
 
 const parseDate = (str) => {
+  if (!str || !str.trim()) return null;
   const M = {
     Jan: 0,
     Feb: 1,
@@ -34,52 +35,73 @@ const parseDate = (str) => {
     Nov: 10,
     Dec: 11,
   };
-  const [d, m, y] = str.split(" ");
-  return new Date(+y, M[m], +d);
+  const parts = str.trim().split(" ");
+  if (parts.length < 3) return null;
+  const [d, m, y] = parts;
+  const month = M[m];
+  if (month === undefined || isNaN(+d) || isNaN(+y)) return null;
+  return new Date(+y, month, +d);
 };
 
 const toPct = (dateStr, startStr, endStr) => {
   const d = parseDate(dateStr),
     s = parseDate(startStr),
     e = parseDate(endStr);
-  return Math.min(97, Math.max(3, ((d - s) / (e - s)) * 100));
+  if (!d || !s || !e || e - s === 0) return null;
+  return Math.min(96, Math.max(4, ((d - s) / (e - s)) * 100));
 };
 
-const TimelinePreview = ({ milestones, startDate, endDate }) => (
-  <div>
-    <h2 className="text-[17px] font-medium text-text-primary mb-3">
-      Timeline Preview
-    </h2>
-    <div className="flex justify-between text-xs text-text-secondary mb-1 px-1">
-      <span>{startDate}</span>
-      <span>{endDate}</span>
-    </div>
-    <div
-      className="relative bg-bg-main border border-gray-100 rounded-lg"
-      style={{ height: 58 }}
-    >
+// =================== TIMELINE PREVIEW ===================
+const TimelinePreview = ({ milestones, startDate, endDate }) => {
+  const validMilestones = milestones.filter((m) => parseDate(m.dueDate));
+
+  const formattedStart = formatDate(startDate);
+  const formattedEnd = formatDate(endDate);
+
+  return (
+    <div>
+      <h2 className="text-[17px] font-medium text-text-primary mb-3">
+        Timeline Preview
+      </h2>
+      <div className="flex justify-between text-xs text-text-secondary mb-1 px-1">
+        <span>{formattedStart}</span>
+        <span>{formattedEnd}</span>
+      </div>
       <div
-        className="absolute left-0 right-0 h-0.5 bg-bg-main rounded-full"
-        style={{ top: 20 }}
-      />
-      {milestones.map((m, i) => {
-        const pct = toPct(m.dueDate, startDate, endDate);
-        return (
-          <div
-            key={m.id}
-            className="absolute flex flex-col items-center"
-            style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}
-          >
-            <div className="w-3.5 h-3.5 bg-primary rotate-45 mt-[13px]" />
-            <span className="text-[10px] font-medium text-text-secondary mt-[10px] whitespace-nowrap">
-              M{i + 1}
-            </span>
-          </div>
-        );
-      })}
+        className="relative bg-bg-main border border-gray-100 rounded-lg"
+        style={{ height: 80 }}
+      >
+        <div
+          className="absolute h-0.5 bg-gray-300 rounded-full"
+          style={{ top: 26, left: "3%", right: "3%" }}
+        />
+
+        {validMilestones.length === 0 && (
+          <p className="text-xs text-text-secondary text-center leading-[80px]">
+            No milestones with valid dates
+          </p>
+        )}
+
+        {validMilestones.map((m, i) => {
+          const pct = toPct(m.dueDate, formattedStart, formattedEnd);
+          if (pct === null) return null;
+          return (
+            <div
+              key={m.id}
+              className="absolute flex flex-col items-center"
+              style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}
+            >
+              <div className="w-3.5 h-3.5 bg-primary rotate-45 mt-[19px] flex-shrink-0" />
+              <span className="text-[10px] font-medium text-text-secondary mt-[10px] whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">
+                {m.name || `M${i + 1}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =================== DATE FIELDS ===================
 const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
@@ -98,7 +120,7 @@ const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
           </div>
           <input
             type="text"
-            value={local[field]}
+            value={formatDate(local[field])}
             onChange={(e) =>
               setLocal((p) => ({ ...p, [field]: e.target.value }))
             }
@@ -112,7 +134,7 @@ const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
   );
 };
 
-// =================== MILESTONE ROW (editable) ===================
+// =================== MILESTONE ROW ===================
 const MilestoneRow = ({ milestone, onRemove, onChange }) => {
   const [local, setLocal] = useState({
     name: milestone.name,
@@ -148,6 +170,7 @@ const MilestoneRow = ({ milestone, onRemove, onChange }) => {
   );
 };
 
+// =================== MILESTONES TABLE ===================
 const MilestonesTable = ({ milestones, onRemove, onChange }) => (
   <div className="mb-8">
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
