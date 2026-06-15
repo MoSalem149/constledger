@@ -1,5 +1,3 @@
-import { contractService } from "../services/contractService";
-
 const TICK_MS = 100;
 
 /**
@@ -49,23 +47,20 @@ function getTimestamp() {
 }
 
 /**
- * Start a frontend-simulated progress animation while polling the backend.
+ * Start a frontend-simulated progress animation.
  *
- * The backend only returns terminal statuses ("active" or "analysis_failed").
- * All intermediate states (stepper, progress bar, activity log) are faked
- * on the frontend to provide a smooth UX.
+ * This is pure eye candy — no polling. The caller is responsible for
+ * stopping the simulation when the real work (e.g., `createContract`) is done.
  *
- * @param {string} contractId — the contract ID to poll
- * @param {Object} callbacks — { onStepChange, onProgress, onEvent, onDone, onFail }
- * @returns {function} cleanup — call to stop all timers and polling
+ * @param {Object} callbacks — { onStepChange, onProgress, onEvent }
+ * @returns {function} cleanup — call to stop all timers
  */
-export function startSimulation(contractId, callbacks) {
-  const { onStepChange, onProgress, onEvent, onDone, onFail } = callbacks;
+export function startSimulation(callbacks) {
+  const { onStepChange, onProgress, onEvent } = callbacks;
 
   const startTime = Date.now();
   let isRunning = true;
   let tickInterval = null;
-  let pollInterval = null;
 
   // Flatten all scheduled events from phases
   const scheduledEvents = [];
@@ -86,8 +81,6 @@ export function startSimulation(contractId, callbacks) {
   scheduledEvents.sort((a, b) => a.at - b.at);
 
   let nextEventIndex = 0;
-  let holdMode = false;
-  let holdStartTime = null;
 
   function tick() {
     if (!isRunning) return;
@@ -144,26 +137,9 @@ export function startSimulation(contractId, callbacks) {
   // Start tick interval (handles events + progress bar)
   tickInterval = setInterval(tick, TICK_MS);
 
-  // Start polling for terminal status (active / analysis_failed)
-  pollInterval = setInterval(async () => {
-    try {
-      const data = await contractService.getContractProgress(contractId);
-      if (data.status === "active") {
-        cleanup();
-        onDone(contractId);
-      } else if (data.status === "analysis_failed") {
-        cleanup();
-        onFail("AI analysis failed. Please try again.");
-      }
-    } catch {
-      // Network blip — keep polling and simulating
-    }
-  }, 5000);
-
   function cleanup() {
     isRunning = false;
     if (tickInterval) clearInterval(tickInterval);
-    if (pollInterval) clearInterval(pollInterval);
   }
 
   return cleanup;

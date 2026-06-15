@@ -254,7 +254,7 @@ const ContractsPage = () => {
   );
 
   return (
-    <div className="bg-bg-main min-h-screen p-6">
+    <div className="bg-bg-main min-h-[calc(100vh-116px)] ">
       <div className="mb-6">
         <SearchBar value={search} onChange={setSearch} />
       </div>

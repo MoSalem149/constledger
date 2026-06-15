@@ -44,7 +44,14 @@ api.interceptors.response.use(
       // Cookie expired or invalid — force logout.
       // AuthProvider clears user state, which triggers PrivateRoute
       // to redirect to /login automatically.
-      onUnauthorized();
+      //
+      // Guard: skip if the failing request is itself /auth/logout.
+      // Otherwise, onUnauthorized → logout → POST /auth/logout →
+      // 401 → onUnauthorized → ... infinite loop.
+      const url = error.config?.url || '';
+      if (!url.includes('/auth/logout')) {
+        onUnauthorized();
+      }
     }
     return Promise.reject(error);
   }

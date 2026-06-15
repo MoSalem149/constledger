@@ -1,55 +1,116 @@
 import api from "./api";
+import { normalizeId } from "../utils/normalizeId";
 
 /**
  * Contract API calls — thin wrappers around the backend contract endpoints.
- * The upload flow works with multipart/form-data for file transfers.
  *
- * Flow:
- *   1. uploadContract(file) → POST /contracts/upload
- *      Returns { contractId, status, ... }
- *   2. Poll getContractProgress(id) every 5s
- *      Returns { status, progress, currentStep, activityLog }
- *   3. status === 'active' → contract ready, navigate to /contracts/:id
- *   4. status === 'analysis_failed' → show error
+ * The upload flow is a 4-step S3 presigned URL process:
+ *   1. signUpload({ filename, mimeType, size }) → POST /api/uploads/sign
+ *      Returns { uploadUrl, key, expiresIn }
+ *   2. PUT file to uploadUrl (direct to S3, no auth headers)
+ *   3. completeUpload({ s3Key, fileName, mimeType, size }) → POST /api/uploads/complete
+ *      Returns { uploadId, s3Key, status }
+ *   4. createContract(name, uploadId) → POST /api/contracts/upload
+ *      Sends JSON { name, uploadId }. Backend downloads the file from S3.
+ *      Returns full contract record (normalized _id → id).
+ *
+ * All responses that may contain `_id` are normalized to `id` where needed.
  */
 export const contractService = {
-  /**
-   * POST /contracts/upload
-   * Uploads a PDF contract file.
-   * Returns the created contract record with initial status.
-   */
-  uploadContract: (file) => {
-    const formData = new FormData();
-    formData.append("contract", file);
-    return api
-      .post("/contracts/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((res) => res.data);
-  },
+  /* ------------------------------------------------------------------ */
+  // 1. S3 upload flow
+  /* ------------------------------------------------------------------ */
 
   /**
-   * GET /contracts/:id
-   * Fetches a single contract by ID.
+   * POST /api/uploads/sign
+   * Request a presigned S3 URL for file upload.
    */
-  getContractById: (id) => api.get(`/contracts/${id}`).then((res) => res.data),
+  signUpload: ({ filename, mimeType, size }) =>
+    api
+      .post("/uploads/sign", { filename, mimeType, size })
+      .then((res) => res.data),
 
   /**
-   * GET /contracts
-   * Fetches all contracts
+   * POST /api/uploads/complete
+   * Notify the backend that the file has been uploaded to S3.
    */
-  getAllContracts: () => api.get(`/contracts}`).then((res) => res.data),
+  completeUpload: ({ s3Key, fileName, mimeType, size }) =>
+    api
+      .post("/uploads/complete", { s3Key, fileName, mimeType, size })
+      .then((res) => res.data),
 
   /**
-   * GET /contracts/:id/progress
-   * Polls the contract processing status.
+   * POST /api/contracts/upload
+   * Create the contract record with the uploaded file.
    *
-   *! Backend only returns terminal statuses:
-   * { contractId: string, status: 'active' | 'analysis_failed' }
+   * The backend reads the file from S3 (no binary upload needed).
+   * Backend runs AI analysis synchronously (blocks 20-30s).
    *
-   *! All intermediate progress (stepper, progress bar, activity log)
-   *! is simulated on the frontend via `fakeProgress.js`.
+   * On success (201): returns the full contract record with normalized `id`.
+   * On failure (422): returns { message, error, contract } where contract has
+   *   status: "analysis_failed" and may contain partial data.
+   * On conflict (409): returns { message } when upload is already linked.
+   *
+   * @param {string} name — contract name (defaults to fileName on backend)
+   * @param {string} uploadId — the uploadId from completeUpload
    */
-  getContractProgress: (id) =>
-    api.get(`/contracts/${id}/progress`).then((res) => res.data),
+  createContract: (name, uploadId) =>
+    api
+      .post("/contracts/upload", { name, uploadId })
+      .then((res) => normalizeId(res.data)),
+
+  /* ------------------------------------------------------------------ */
+  // 2. Contract CRUD
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * GET /api/contracts/:id
+   * Fetch a single contract by ID.
+   *
+   * The backend already normalizes _id → id, but we run it through
+   * normalizeId as a safety net for any edge cases (e.g., populated
+   * contractDocId with _id).
+   */
+  getContractById: (id) =>
+    api.get(`/contracts/${id}`).then((res) => normalizeId(res.data)),
+
+  /**
+   * GET /api/contracts
+   * List contracts with optional filters.
+   *
+   * Query params (all optional):
+   *   status, year, name, search, limit, skip
+   *
+   * The backend already returns a normalized flat array:
+   *   { id, name, status, contractValue, currency, startDate, endDate }
+   * No additional normalization needed.
+   */
+  getContracts: (params = {}) =>
+    api.get("/contracts", { params }).then((res) => res.data),
+
+  /**
+   * PUT /api/contracts/:id
+   * Update any contract fields. The backend uses findByIdAndUpdate
+   * with the full request body, so any field can be updated.
+   *
+   * Response: { message, id }
+   */
+  updateContract: (id, data) =>
+    api.put(`/contracts/${id}`, data).then((res) => res.data),
+
+  /**
+   * POST /api/contracts/:id/analyze
+   * Re-trigger AI analysis for an existing contract.
+   * Returns { message } immediately (analysis runs asynchronously).
+   */
+  reanalyzeContract: (id) =>
+    api.post(`/contracts/${id}/analyze`).then((res) => res.data),
+
+  /**
+   * GET /api/contracts/:id/timeline
+   * Get milestone timeline for a contract.
+   * Returns { milestones, start_date, end_date }
+   */
+  getContractTimeline: (id) =>
+    api.get(`/contracts/${id}/timeline`).then((res) => res.data),
 };

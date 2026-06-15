@@ -16,11 +16,11 @@ export default function DashboardLayout() {
       <Sidebar />
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-auto">
         <Navbar title={getPageTitle(location.pathname)} />
 
         {/* Page content */}
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6">
           <Outlet />
         </main>
       </div>
@@ -35,7 +35,7 @@ export default function DashboardLayout() {
 function getPageTitle(path) {
   if (path === "/dashboard") return "Dashboard";
   if (path.startsWith("/contracts/upload")) return "New Project";
-  if (path.startsWith("/contracts")) return "Contract Details";
+  if (path.startsWith("/contracts")) return "Projects";
   if (path.startsWith("/finance")) return "Finance";
   if (path === "/reports") return "Reports";
   if (path === "/admin") return "Admin";
