@@ -13,10 +13,10 @@ export const analyzeContract = async (req: Request, res: Response, next: NextFun
     );
 
     // 2. Download & parse the contract file
-    const contractText = await parseContractFile(contract.fileUrl);
+    const { pages, isScanned } = await parseContractFile(contract.fileUrl);
 
     // 3. Run LLM extraction
-    const extraction = await extractContractData(contractText);
+    const { data: extraction } = await extractContractData(pages, isScanned);
 
     // 4. Write extraction back to core
     await axios.put(

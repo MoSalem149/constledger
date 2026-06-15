@@ -1,15 +1,15 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+// User schema — password is hashed automatically on create or when modified
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true, trim: true },
-  email: { type: String, required: true, unique: true, lowercase: true },
+  name:     { type: String, required: true, trim: true },
+  email:    { type: String, required: true, unique: true, lowercase: true },
   password: { type: String, required: true, minlength: 8 },
-  // Roles: contract_manager | pmo | finance_team | top_management
   role: {
     type: String,
     enum: ['contract_manager', 'pmo', 'finance_team', 'top_management'],
-    default: 'finance_team',
+    default: 'contract_manager',
   },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
@@ -24,4 +24,4 @@ userSchema.methods.matchPassword = function (plain) {
   return bcrypt.compare(plain, this.password);
 };
 
-module.exports = mongoose.model('User', userSchema);
+export default mongoose.model('User', userSchema);

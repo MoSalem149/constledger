@@ -5,8 +5,18 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 5173, // Vite default
+    port: 5173,
     strictPort: true,
+    proxy: {
+      // Core backend (auth + users)
+      '/api/auth': 'http://localhost:3000',
+      '/api/users': 'http://localhost:3000',
+      // AI backend (contracts, uploads, finance, reports)
+      '/api/contracts': 'http://localhost:5000',
+      '/api/uploads': 'http://localhost:5000',
+      '/api/finance': 'http://localhost:5000',
+      '/api/reports': 'http://localhost:5000',
+    },
   },
   preview: {
     port: 5173,

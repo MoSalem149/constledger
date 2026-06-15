@@ -15,7 +15,8 @@
  *   1. signUpload    → get presigned URL
  *   2. putFileToS3   → PUT file directly to S3
  *   3. completeUpload→ notify backend upload is done
- *   4. createContract→ POST with file + uploadId (blocks until AI finishes)
+ *   4. createContract→ POST JSON { name, uploadId } (blocks until AI finishes)
+ *                      Backend downloads the file from S3 itself.
  *
  * The "Back to Projects" button navigates to /dashboard.
  * Pass ?demo=1 in the URL to preview the processing state with mock data.
@@ -166,7 +167,6 @@ export default function UploadContractPage() {
         cleanupRef.current = cleanup;
 
         const contract = await contractService.createContract(
-          file,
           file.name,
           uploadId,
         );
@@ -182,11 +182,42 @@ export default function UploadContractPage() {
           cleanupRef.current = null;
         }
 
-        const message =
-          err?.response?.data?.message ||
-          err?.message ||
-          "Upload failed. Please check your connection and try again.";
-        setError(message);
+        const status = err?.response?.status;
+        const data = err?.response?.data;
+
+        if (status === 409) {
+          // Upload already linked to a contract
+          setError(
+            data?.message ||
+              "This file is already linked to a contract. Please upload a different file.",
+          );
+        } else if (status === 422) {
+          // AI analysis failed — contract may have partial data
+          const contract = data?.contract;
+          if (contract?._id || contract?.id) {
+            // Navigate to edit page so user can see partial data
+            const id = contract.id || contract._id;
+            navigate(`/contracts/${id}/edit`, {
+              state: {
+                analysisError: data?.error || "AI analysis failed",
+                partialData: true,
+              },
+            });
+            return;
+          }
+          setError(
+            data?.message ||
+              data?.error ||
+              "AI analysis failed. Please try again or contact support.",
+          );
+        } else {
+          setError(
+            data?.message ||
+              err?.message ||
+              "Upload failed. Please check your connection and try again.",
+          );
+        }
+
         setPageState("idle");
       }
     },

@@ -4,8 +4,8 @@ node_modules/
 # ── Environment / secrets ────────────────────────────────────────────
 # .env.example is committed — actual env files are NOT
 .env
-.env.production
-.env.staging
+.env.*
+!.env.example
 
 # ── Logs ─────────────────────────────────────────────────────────────
 logs/
@@ -13,7 +13,6 @@ logs/
 npm-debug.log*
 
 # ── Uploads / temp files ─────────────────────────────────────────────
-# Local multer temp directory — files go to Cloudinary, never to git
 tmp/
 uploads/
 
@@ -25,3 +24,9 @@ Thumbs.db
 
 # ── Testing ──────────────────────────────────────────────────────────
 coverage/
+
+# ── Build / distribution ─────────────────────────────────────────────
+dist/
+
+# ── Deno Deploy ──────────────────────────────────────────────────────
+.deno/

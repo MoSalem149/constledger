@@ -17,6 +17,11 @@ function formatRole(role) {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
+  // "contract_manager" → "Contract Manager"
+  // return role
+  //   .split("_")
+  //   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+  //   .join(" ");
 }
 
 export default function Navbar({ title }) {
