@@ -8,6 +8,15 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+// ⚠️  Import ALL models here so Mongoose registers their schemas before any
+// controller runs populate(). Order matters: referenced models first.
+import "./models/User.model";
+import "./models/UploadJob.model";
+import "./models/Contract.model";
+import "./models/ContractExtraction.model";
+import "./models/ActualReport.model";
+import "./models/PlannedBudget.model";
+
 import contractRoutes from "./routes/contractRoutes";
 import financeRoutes from "./routes/financeRoutes";
 import reportRoutes from "./routes/reportRoutes";
@@ -16,7 +25,7 @@ import { errorHandler, notFound } from "./middleware/errorMiddleware";
 
 const app = express();
 
-// Allowed CORS origins
+// Allowed CORS origins — reads FRONTEND_URL from env at startup.
 const allowedOrigins = [
   "http://localhost:5173",
   process.env.FRONTEND_URL,
