@@ -1,0 +1,1154 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "CPMS API Collection",
+    "description": "CPMS SRS v1.1 — endpoints split by backend server.\n\n• Core Backend (port 3000): Authentication & Access + User Management\n• AI Backend (port 5000): Contracts, Finance, Performance & Reports (AI-powered)\n\nWorkflow: 1) Login on Core → 2) Token auto-saved → 3) Call AI endpoints with Bearer token",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {
+    "/api/contracts/upload": {
+      "post": {
+        "summary": "POST /api/contracts/upload",
+        "deprecated": false,
+        "description": "SRS: Upload contract file, trigger AI job.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uploadId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "uploadId",
+                  "name"
+                ]
+              },
+              "example": {
+                "uploadId": "6a2f0d878ca59a958fc1dbf3",
+                "name": "Contract - Zone R - Ps2.pdf"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "1": {
+                    "summary": "Example 1",
+                    "value": {
+                      "name": "توشكا - ZONE R - محطة رفع 2",
+                      "parties": [
+                        {
+                          "name": "شركة مدكور للمشروعات",
+                          "role": "main_contractor"
+                        },
+                        {
+                          "name": "شركة الهاشمية الدولية للمقاولات",
+                          "role": "subcontractor"
+                        },
+                        {
+                          "name": "الهيئة الهندسية للقوات المسلحة - إدارة المياه",
+                          "role": "owner"
+                        }
+                      ],
+                      "contract_value": 8750000,
+                      "currency": "EGP",
+                      "unit_prices": [
+                        {
+                          "item": "Horizontal pumps Q=2000 L/s H=22m — 18 main + 2 standby",
+                          "unit": "no",
+                          "unit_price": 135000
+                        },
+                        {
+                          "item": "Submersible drainage pump 20 L/s, 10m lift, IP68",
+                          "unit": "no",
+                          "unit_price": 45000
+                        },
+                        {
+                          "item": "Suction/discharge/gate valves and connectors",
+                          "unit": "no",
+                          "unit_price": 70000
+                        },
+                        {
+                          "item": "Supply-line valves, gate valves, shafts and connectors",
+                          "unit": "no",
+                          "unit_price": 61500
+                        },
+                        {
+                          "item": "Main header pipe Ø 2.5 m incl. intake housing",
+                          "unit": "no",
+                          "unit_price": 450000
+                        },
+                        {
+                          "item": "Reverse-flow gauge / drainage measurement system",
+                          "unit": "lump_sum",
+                          "unit_price": 72000
+                        },
+                        {
+                          "item": "Perimeter fence/grid around station",
+                          "unit": "no",
+                          "unit_price": 22500
+                        },
+                        {
+                          "item": "External-area drainage pump (submersible)",
+                          "unit": "lump_sum",
+                          "unit_price": 90000
+                        }
+                      ],
+                      "paymentProgress": {
+                        "basis": "Completed deliveries against BOQ unit prices",
+                        "frequency": 15,
+                        "dueTo": 15
+                      },
+                      "payment_terms": [
+                        {
+                          "name": "Advance Payment",
+                          "percentage": 15,
+                          "description": "Paid by bank check"
+                        },
+                        {
+                          "name": "Retention — Preliminary Acceptance",
+                          "percentage": 5,
+                          "description": "Held until preliminary acceptance"
+                        },
+                        {
+                          "name": "Retention — Final Acceptance",
+                          "percentage": 5,
+                          "description": "Held until final acceptance"
+                        },
+                        {
+                          "name": "VAT",
+                          "percentage": null,
+                          "description": "Prices exclude VAT"
+                        }
+                      ],
+                      "payment_schedule": [
+                        {
+                          "date": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "amount": 1312500
+                        }
+                      ],
+                      "start_date": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "end_date": "Sun Dec 25 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "duration_days": 60,
+                      "reporting_period": "monthly",
+                      "milestones": [
+                        {
+                          "name": "Contract signed",
+                          "dueDate": "Mon Sep 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "isDue": true
+                        },
+                        {
+                          "name": "Execution start",
+                          "dueDate": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "isDue": true
+                        },
+                        {
+                          "name": "Extraction #1 due",
+                          "dueDate": "Thu Nov 10 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "isDue": true
+                        },
+                        {
+                          "name": "Preliminary handover",
+                          "dueDate": "Sun Dec 25 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "isDue": true
+                        },
+                        {
+                          "name": "Final handover",
+                          "dueDate": "Mon Dec 25 2023 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                          "isDue": true
+                        }
+                      ],
+                      "penalties": [
+                        {
+                          "condition": "Delay exceeding 1 week",
+                          "penalty": "1% of contract value per week"
+                        },
+                        {
+                          "condition": "HSE violation — failure to follow safety instructions (1st offence)",
+                          "penalty": "500 EGP fine"
+                        },
+                        {
+                          "condition": "HSE violation — same rule (2nd offence)",
+                          "penalty": "1000 EGP fine"
+                        },
+                        {
+                          "condition": "HSE violation — same rule (3rd offence)",
+                          "penalty": "5000 EGP fine"
+                        },
+                        {
+                          "condition": "Smoking in hazardous areas causing damage",
+                          "penalty": "Immediate termination"
+                        },
+                        {
+                          "condition": "Drugs or alcohol on site",
+                          "penalty": "Immediate termination"
+                        }
+                      ],
+                      "status": "active",
+                      "uploadedBy": {
+                        "_id": "6a23632b7be65daa24981fc2",
+                        "name": "Test User",
+                        "email": "test@test.com"
+                      },
+                      "createdAt": "2022-09-26T00:00:00.000Z",
+                      "updatedAt": "2026-06-13T22:51:30.235Z",
+                      "contractNumber": "CPMS-LEGACY-6a2c6beebd1ac75698e9e4aa",
+                      "contractDocId": "6a2daf968ca59a958fc1d4fc",
+                      "_id": "6a2c6beebd1ac75698e9e4aa",
+                      "pdfUrl": null
+                    }
+                  },
+                  "2": {
+                    "summary": "",
+                    "value": ""
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "422": {
+            "$ref": "#/components/responses/Analsys Fail",
+            "description": ""
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/contracts": {
+      "get": {
+        "summary": "GET /api/contracts",
+        "deprecated": false,
+        "description": "SRS: List all contracts (filters: status, year, search).",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "active",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "description": "",
+            "required": true,
+            "example": "2026",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": [
+                  {
+                    "id": "6a2b1a0c9734c8eae15c7841",
+                    "name": "Contract - Zone R - Ps2.pdf",
+                    "status": "pending_review",
+                    "contractValue": 8750000,
+                    "currency": "EGP",
+                    "startDate": "2022-09-26",
+                    "endDate": "2022-11-25"
+                  },
+                  {
+                    "id": "6a29d417b520c9b1d8a5ccd5",
+                    "name": "Contract - Zone R - Ps2.pdf",
+                    "status": "analysis_failed",
+                    "contractValue": 8750000,
+                    "currency": "EGP",
+                    "startDate": "2022-09-26",
+                    "endDate": "2022-11-26"
+                  },
+                  {
+                    "id": "6a29d22ffdc1337853e4a47f",
+                    "name": "Contract - Zone R - Ps2.pdf",
+                    "status": "pending_review",
+                    "contractValue": 8750000,
+                    "currency": "EGP",
+                    "startDate": "2022-09-26",
+                    "endDate": "2022-11-26"
+                  },
+                  {
+                    "id": "6a288d557171601dfee883fd",
+                    "name": "Contract - Zone R - Ps2.pdf",
+                    "status": "pending_review",
+                    "contractValue": 8750000,
+                    "currency": "EGP",
+                    "startDate": "2022-09-26",
+                    "endDate": "2022-11-26"
+                  },
+                  {
+                    "id": "6a288b827171601dfee883f7",
+                    "name": "1-00013-SC-00006.PDF",
+                    "status": "active",
+                    "contractValue": 59660455,
+                    "currency": "EGP",
+                    "startDate": "2022-09-04",
+                    "endDate": null
+                  }
+                ]
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/contracts/{id}": {
+      "get": {
+        "summary": "GET /api/contracts/:id",
+        "deprecated": false,
+        "description": "SRS: Get full contract data.",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "name": "توشكا - ZONE R - محطة رفع 2",
+                  "parties": [
+                    {
+                      "name": "شركة مدكور للمشروعات",
+                      "role": "main_contractor"
+                    },
+                    {
+                      "name": "شركة الهاشمية الدولية للمقاولات",
+                      "role": "subcontractor"
+                    },
+                    {
+                      "name": "الهيئة الهندسية للقوات المسلحة - إدارة المياه",
+                      "role": "owner"
+                    }
+                  ],
+                  "contract_value": 8750000,
+                  "currency": "EGP",
+                  "unit_prices": [
+                    {
+                      "item": "Horizontal pumps Q=2000 L/s H=22m — 18 main + 2 standby",
+                      "unit": "no",
+                      "unit_price": 135000
+                    },
+                    {
+                      "item": "Submersible drainage pump 20 L/s, 10m lift, IP68",
+                      "unit": "no",
+                      "unit_price": 45000
+                    },
+                    {
+                      "item": "Suction/discharge/gate valves and connectors",
+                      "unit": "no",
+                      "unit_price": 70000
+                    },
+                    {
+                      "item": "Supply-line valves, gate valves, shafts and connectors",
+                      "unit": "no",
+                      "unit_price": 61500
+                    },
+                    {
+                      "item": "Main header pipe Ø 2.5 m incl. intake housing",
+                      "unit": "no",
+                      "unit_price": 450000
+                    },
+                    {
+                      "item": "Reverse-flow gauge / drainage measurement system",
+                      "unit": "lump_sum",
+                      "unit_price": 72000
+                    },
+                    {
+                      "item": "Perimeter fence/grid around station",
+                      "unit": "no",
+                      "unit_price": 22500
+                    },
+                    {
+                      "item": "External-area drainage pump (submersible)",
+                      "unit": "lump_sum",
+                      "unit_price": 90000
+                    }
+                  ],
+                  "paymentProgress": {
+                    "basis": "Completed deliveries against BOQ unit prices",
+                    "frequency": 15,
+                    "dueTo": 15
+                  },
+                  "payment_terms": [
+                    {
+                      "name": "Advance Payment",
+                      "percentage": 15,
+                      "description": "Paid by bank check"
+                    },
+                    {
+                      "name": "Retention — Preliminary Acceptance",
+                      "percentage": 5,
+                      "description": "Held until preliminary acceptance"
+                    },
+                    {
+                      "name": "Retention — Final Acceptance",
+                      "percentage": 5,
+                      "description": "Held until final acceptance"
+                    },
+                    {
+                      "name": "VAT",
+                      "percentage": null,
+                      "description": "Prices exclude VAT"
+                    }
+                  ],
+                  "payment_schedule": [
+                    {
+                      "date": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "amount": 1312500
+                    }
+                  ],
+                  "start_date": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                  "end_date": "Sun Dec 25 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                  "duration_days": 60,
+                  "reporting_period": "monthly",
+                  "milestones": [
+                    {
+                      "name": "Contract signed",
+                      "dueDate": "Mon Sep 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "isDue": true
+                    },
+                    {
+                      "name": "Execution start",
+                      "dueDate": "Wed Oct 26 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "isDue": true
+                    },
+                    {
+                      "name": "Extraction #1 due",
+                      "dueDate": "Thu Nov 10 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "isDue": true
+                    },
+                    {
+                      "name": "Preliminary handover",
+                      "dueDate": "Sun Dec 25 2022 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "isDue": true
+                    },
+                    {
+                      "name": "Final handover",
+                      "dueDate": "Mon Dec 25 2023 02:00:00 GMT+0200 (Eastern European Standard Time)",
+                      "isDue": true
+                    }
+                  ],
+                  "penalties": [
+                    {
+                      "condition": "Delay exceeding 1 week",
+                      "penalty": "1% of contract value per week"
+                    },
+                    {
+                      "condition": "HSE violation — failure to follow safety instructions (1st offence)",
+                      "penalty": "500 EGP fine"
+                    },
+                    {
+                      "condition": "HSE violation — same rule (2nd offence)",
+                      "penalty": "1000 EGP fine"
+                    },
+                    {
+                      "condition": "HSE violation — same rule (3rd offence)",
+                      "penalty": "5000 EGP fine"
+                    },
+                    {
+                      "condition": "Smoking in hazardous areas causing damage",
+                      "penalty": "Immediate termination"
+                    },
+                    {
+                      "condition": "Drugs or alcohol on site",
+                      "penalty": "Immediate termination"
+                    }
+                  ],
+                  "status": "active",
+                  "uploadedBy": {
+                    "id": "6a23632b7be65daa24981fc2",
+                    "name": "Test User",
+                    "email": "test@test.com"
+                  },
+                  "createdAt": "2022-09-26T00:00:00.000Z",
+                  "updatedAt": "2026-06-13T22:51:30.235Z",
+                  "contractNumber": "CPMS-LEGACY-6a2c6beebd1ac75698e9e4aa",
+                  "contractDocId": "6a2daf968ca59a958fc1d4fc",
+                  "id": "6a2c6beebd1ac75698e9e4aa",
+                  "pdfUrl": null
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "put": {
+        "summary": "PUT /api/contracts/:id",
+        "deprecated": false,
+        "description": "SRS: Update contract fields after review.",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "status"
+                ]
+              },
+              "example": {
+                "status": "active"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "message": "Successfully updated contract",
+                  "id": "6a2c6beebd1ac75698e9e4aa"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/uploads/sign": {
+      "post": {
+        "summary": "POST /api/uploads/sign",
+        "deprecated": false,
+        "description": "SRS: Upload contract file, trigger AI job.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "mimeType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "filename",
+                  "mimeType",
+                  "size"
+                ]
+              },
+              "example": {
+                "filename": "Contract - Zone R - Ps2.pdf",
+                "mimeType": "application/pdf",
+                "size": 7421
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "uploadUrl": "https://constledger-dev.s3.us-east-1.amazonaws.com/contracts/6a23632b7be65daa24981fc2/original/ca860525-fad7-43c0-9ce9-330b97630b2a-contract-zone-r-ps2.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=AKIAWWBB3WEHAZEXNP3I%2F20260613%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20260613T222244Z&X-Amz-Expires=300&X-Amz-Signature=43e6dfc37063f7fa82903fd233b697cc8ab25939f60962cf07af40d20472f330&X-Amz-SignedHeaders=host&x-amz-checksum-crc32=AAAAAA%3D%3D&x-amz-sdk-checksum-algorithm=CRC32&x-id=PutObject",
+                  "key": "contracts/6a23632b7be65daa24981fc2/original/ca860525-fad7-43c0-9ce9-330b97630b2a-contract-zone-r-ps2.pdf",
+                  "expiresIn": 300
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/contracts/6a23632b7be65daa24981fc4/original/cab6526b-bc90-42ff-96f8-b9d2758e2262-contract.pdf": {
+      "put": {
+        "summary": "the url returned from sign",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "X-Amz-Algorithm",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "AWS4-HMAC-SHA256",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Amz-Content-Sha256",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "UNSIGNED-PAYLOAD",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Amz-Credential",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": [
+              "AKIAWWBB3WEHAZEXNP3I%2F20260613%2Fus-east-1%2Fs3%2Faws4_request",
+              "AKIAWWBB3WEHAZEXNP3I%2F20260614%2Fus-east-1%2Fs3%2Faws4_request"
+            ],
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "X-Amz-Date",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": [
+              "20260613T222244Z",
+              "20260614T205408Z",
+              "20260614T210001Z"
+            ],
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "X-Amz-Expires",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "300",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Amz-Signature",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": [
+              "43e6dfc37063f7fa82903fd233b697cc8ab25939f60962cf07af40d20472f330",
+              "dac119ec78f0fe4e133d85872367eb7bee00ec050fa00384e5d26ab27faded6c",
+              "9cb9e71112571e49c4c1a447c1e7fb1d4e0fb308a3f56f5665380eadbe9ba880"
+            ],
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "name": "X-Amz-SignedHeaders",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "host",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-amz-checksum-crc32",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "AAAAAA%3D%3D",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-amz-sdk-checksum-algorithm",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "CRC32",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-id",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "PutObject",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": false,
+            "example": "application/pdf",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              },
+              "example": "cmMtdXBsb2FkLTE3ODE0Njg3MDg1NTMtOA==/Contract - Zone R - Ps2.pdf"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/uploads/complete": {
+      "post": {
+        "summary": "POST /api/uploads/complete",
+        "deprecated": false,
+        "description": "SRS: Upload contract file, trigger AI job.",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "mimeType": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "filename",
+                  "mimeType",
+                  "size"
+                ]
+              },
+              "example": {
+                "s3Key": "contracts/6a23632b7be65daa24981fc2/original/5986c448-4ffa-4888-8c14-a185ffdebbf4-contract-zone-r-ps2.pdf",
+                "fileName": "Contract - Zone R - Ps2.pdf",
+                "mimeType": "application/pdf",
+                "size": 7421
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "uploadId": "6a2daf968ca59a958fc1d4fc",
+                  "s3Key": "contracts/6a23632b7be65daa24981fc2/original/5986c448-4ffa-4888-8c14-a185ffdebbf4-contract-zone-r-ps2.pdf",
+                  "status": "uploaded"
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/contracts/{id}/timeline": {
+      "get": {
+        "summary": "GET /api/contracts/:id/timeline",
+        "deprecated": false,
+        "description": "Implemented extra: milestone timeline (SRS feature, not listed in API table).",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/aiUrl/api/contracts/{id}/analyze": {
+      "post": {
+        "summary": "POST /api/contracts/:id/analyze",
+        "deprecated": false,
+        "description": "SRS: Re-trigger AI analysis.",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {
+      "Analsys Fail": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                },
+                "error": {
+                  "type": "string"
+                },
+                "contract": {
+                  "type": "object",
+                  "properties": {
+                    "_id": {
+                      "type": "string"
+                    },
+                    "contractNumber": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "uploadedBy": {
+                      "type": "string"
+                    },
+                    "contractDocId": {
+                      "type": "object",
+                      "properties": {
+                        "_id": {
+                          "type": "string"
+                        },
+                        "uploadedBy": {
+                          "type": "string"
+                        },
+                        "s3Key": {
+                          "type": "string"
+                        },
+                        "__v": {
+                          "type": "integer"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "fileName": {
+                          "type": "string"
+                        },
+                        "mimeType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "updatedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "_id",
+                        "uploadedBy",
+                        "s3Key",
+                        "__v",
+                        "createdAt",
+                        "fileName",
+                        "mimeType",
+                        "sizeBytes",
+                        "status",
+                        "updatedAt"
+                      ]
+                    },
+                    "parties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "unit_prices": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "payment_terms": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "payment_schedule": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "milestones": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "penalties": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "type": "string"
+                    },
+                    "__v": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "_id",
+                    "contractNumber",
+                    "name",
+                    "status",
+                    "uploadedBy",
+                    "contractDocId",
+                    "parties",
+                    "unit_prices",
+                    "payment_terms",
+                    "payment_schedule",
+                    "milestones",
+                    "penalties",
+                    "createdAt",
+                    "updatedAt",
+                    "__v"
+                  ]
+                },
+                "uploadId": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "message",
+                "error",
+                "contract",
+                "uploadId",
+                "name"
+              ]
+            },
+            "examples": {
+              "Example 1": {
+                "summary": "Example 1",
+                "value": {
+                  "message": "AI contract analysis failed",
+                  "error": "429 You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+                  "contract": {
+                    "_id": "6a2f0d0c08fcf3cc2a8b440f",
+                    "contractNumber": "CPMS-9e4d92b6-a1f2-4f8b-bd53-afdbc0d48db6",
+                    "name": "Contract - Zone R - Ps2.pdf",
+                    "status": "analysis_failed",
+                    "uploadedBy": "6a23632b7be65daa24981fc4",
+                    "contractDocId": {
+                      "_id": "6a2f0d878ca59a958fc1dbf3",
+                      "uploadedBy": "6a23632b7be65daa24981fc4",
+                      "s3Key": "contracts/6a23632b7be65daa24981fc4/original/59ae3ef2-6f9e-46b7-a6b2-1033cd8b36f7-contract-zone-r-ps2.pdf",
+                      "__v": 0,
+                      "createdAt": "2026-06-14T20:18:09.595Z",
+                      "fileName": "Contract - Zone R - Ps2.pdf",
+                      "mimeType": "application/pdf",
+                      "sizeBytes": 7421,
+                      "status": "linked",
+                      "updatedAt": "2026-06-14T20:20:28.541Z"
+                    },
+                    "parties": [],
+                    "unit_prices": [],
+                    "payment_terms": [],
+                    "payment_schedule": [],
+                    "milestones": [],
+                    "penalties": [],
+                    "createdAt": "2026-06-14T20:20:28.468Z",
+                    "updatedAt": "2026-06-14T20:22:30.651Z",
+                    "__v": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {}
+  },
+  "servers": [],
+  "security": []
+}
