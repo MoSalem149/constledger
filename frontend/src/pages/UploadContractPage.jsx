@@ -1,14 +1,21 @@
 /**
- * UploadContractPage — drag-and-drop contract upload with frontend-simulated progress.
+ * UploadContractPage — drag-and-drop contract upload with S3 presigned URL flow.
  *
  * Sprint 2 builds the full screen:
  *   idle      → file picker + "What AI Extracts" side panel
- *   uploading → brief loading state while POST is in flight
- *   processing→ stepper + progress bar + activity log (frontend simulation)
+ *   uploading → stepper steps 1-3 (S3 sign, S3 PUT, complete upload)
+ *   processing→ stepper step 4 active + progress bar + activity log (frontend simulation)
  *
- * The backend only returns terminal statuses ("active" or "analysis_failed").
+ * The backend only returns terminal status after `createContract` completes.
+ * `createContract` is synchronous (blocks 20-30s during AI analysis).
  * All intermediate progress (stepper, progress bar, activity log) is simulated
  * on the frontend via `fakeProgress.js` for a smooth UX.
+ *
+ * S3 flow:
+ *   1. signUpload    → get presigned URL
+ *   2. putFileToS3   → PUT file directly to S3
+ *   3. completeUpload→ notify backend upload is done
+ *   4. createContract→ POST with file + uploadId (blocks until AI finishes)
  *
  * The "Back to Projects" button navigates to /dashboard.
  * Pass ?demo=1 in the URL to preview the processing state with mock data.
@@ -24,6 +31,7 @@ import ProcessingCard from "../components/contracts/ProcessingCard";
 import { contractService } from "../services/contractService";
 import { isValidFile } from "../utils/fileValidation";
 import { startSimulation } from "../utils/fakeProgress";
+import { putFileToS3 } from "../utils/s3Upload";
 
 /* ------------------------------------------------------------------ */
 // Helpers
@@ -60,7 +68,6 @@ export default function UploadContractPage() {
       ? { name: DEMO_FILE.name, size: formatFileSize(DEMO_FILE.size) }
       : null,
   );
-  const [contractId, setContractId] = useState(null);
   const [stepStatus, setStepStatus] = useState(
     isDemo
       ? ["completed", "active", "pending", "pending"]
@@ -69,8 +76,9 @@ export default function UploadContractPage() {
   const [progress, setProgress] = useState(null);
   const [activityLog, setActivityLog] = useState([]);
 
-  // Simulation cleanup ref — stores the cleanup function returned by startSimulation
+  // Refs for cleanup
   const cleanupRef = useRef(null);
+  const demoTimerRef = useRef(null);
 
   /* ---------------------------------------------------------------- */
   // Demo mode simulation
@@ -79,21 +87,28 @@ export default function UploadContractPage() {
   useEffect(() => {
     if (!isDemo || pageState !== "processing") return;
 
-    const cleanup = startSimulation("demo-contract-id", {
+    // Start simulation for visual preview
+    const cleanup = startSimulation({
       onStepChange: setStepStatus,
       onProgress: setProgress,
       onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
-      onDone: (id) => navigate(`/contracts/${id}`),
-      onFail: (err) => {
-        setError(err);
-        setPageState("idle");
-      },
     });
-
     cleanupRef.current = cleanup;
+
+    // Auto-navigate after ~30s
+    demoTimerRef.current = setTimeout(() => {
+      cleanup();
+      cleanupRef.current = null;
+      navigate("/contracts/demo/edit");
+    }, 30000);
+
     return () => {
       cleanup();
       cleanupRef.current = null;
+      if (demoTimerRef.current) {
+        clearTimeout(demoTimerRef.current);
+        demoTimerRef.current = null;
+      }
     };
   }, [isDemo, pageState, navigate]);
 
@@ -118,30 +133,60 @@ export default function UploadContractPage() {
       setPageState("uploading");
       setActivityLog([]);
       setProgress(null);
+      setStepStatus(["completed", "active", "pending", "pending"]);
 
       try {
-        const result = await contractService.uploadContract(file);
-        setContractId(result.contractId);
-        setPageState("processing");
+        // Step 1: Request presigned S3 URL
+        const { uploadUrl, key } = await contractService.signUpload({
+          filename: file.name,
+          mimeType: file.type,
+          size: file.size,
+        });
 
-        // Start frontend-simulated progress
-        const cleanup = startSimulation(result.contractId, {
+        // Step 2: Upload file directly to S3
+        await putFileToS3(uploadUrl, file);
+
+        // Step 3: Notify backend upload is complete
+        const { uploadId } = await contractService.completeUpload({
+          s3Key: key,
+          fileName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        });
+
+        // Step 4: Create contract (synchronous — blocks until AI analysis finishes)
+        setPageState("processing");
+        setStepStatus(["completed", "completed", "active", "pending"]);
+
+        const cleanup = startSimulation({
           onStepChange: setStepStatus,
           onProgress: setProgress,
           onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
-          onDone: (id) => navigate(`/contracts/${id}`),
-          onFail: (err) => {
-            setError(err);
-            setPageState("idle");
-          },
         });
-
         cleanupRef.current = cleanup;
-      } catch (err) {
-        setError(
-          err?.response?.data?.message ||
-            "Upload failed. Please check your connection and try again.",
+
+        const contract = await contractService.createContract(
+          file,
+          file.name,
+          uploadId,
         );
+
+        // Success — stop simulation and navigate to review form
+        cleanup();
+        cleanupRef.current = null;
+        navigate(`/contracts/${contract.id}/edit`);
+      } catch (err) {
+        // Clean up any running simulation
+        if (cleanupRef.current) {
+          cleanupRef.current();
+          cleanupRef.current = null;
+        }
+
+        const message =
+          err?.response?.data?.message ||
+          err?.message ||
+          "Upload failed. Please check your connection and try again.";
+        setError(message);
         setPageState("idle");
       }
     },
@@ -153,7 +198,7 @@ export default function UploadContractPage() {
       cleanupRef.current();
       cleanupRef.current = null;
     }
-    navigate("/dashboard");
+    navigate("/contracts");
   }, [navigate]);
 
   /* ---------------------------------------------------------------- */
@@ -165,6 +210,10 @@ export default function UploadContractPage() {
       if (cleanupRef.current) {
         cleanupRef.current();
         cleanupRef.current = null;
+      }
+      if (demoTimerRef.current) {
+        clearTimeout(demoTimerRef.current);
+        demoTimerRef.current = null;
       }
     };
   }, []);

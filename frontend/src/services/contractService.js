@@ -1,55 +1,87 @@
 import api from "./api";
+import { normalizeId, normalizeIdArray } from "../utils/normalizeId";
 
 /**
  * Contract API calls — thin wrappers around the backend contract endpoints.
- * The upload flow works with multipart/form-data for file transfers.
  *
- * Flow:
- *   1. uploadContract(file) → POST /contracts/upload
- *      Returns { contractId, status, ... }
- *   2. Poll getContractProgress(id) every 5s
- *      Returns { status, progress, currentStep, activityLog }
- *   3. status === 'active' → contract ready, navigate to /contracts/:id
- *   4. status === 'analysis_failed' → show error
+ * The upload flow is now a 4-step S3 presigned URL process:
+ *   1. signUpload({ filename, mimeType, size }) → POST /uploads/sign
+ *      Returns { uploadUrl, key, expiresIn }
+ *   2. PUT file to uploadUrl (direct to S3, no auth headers)
+ *   3. completeUpload({ s3Key, fileName, mimeType, size }) → POST /uploads/complete
+ *      Returns { uploadId, s3Key, status }
+ *   4. createContract(file, name, uploadId) → POST /contracts/upload
+ *      Returns full contract record (normalized _id → id)
+ *
+ * All responses that may contain `_id` are normalized to `id`.
  */
 export const contractService = {
+  /* ------------------------------------------------------------------ */
+  // 1. S3 upload flow
+  /* ------------------------------------------------------------------ */
+
+  /**
+   * POST /uploads/sign
+   * Request a presigned S3 URL for file upload.
+   */
+  signUpload: ({ filename, mimeType, size }) =>
+    api
+      .post("/uploads/sign", { filename, mimeType, size })
+      .then((res) => res.data),
+
+  /**
+   * POST /uploads/complete
+   * Notify the backend that the file has been uploaded to S3.
+   */
+  completeUpload: ({ s3Key, fileName, mimeType, size }) =>
+    api
+      .post("/uploads/complete", { s3Key, fileName, mimeType, size })
+      .then((res) => res.data),
+
   /**
    * POST /contracts/upload
-   * Uploads a PDF contract file.
-   * Returns the created contract record with initial status.
+   * Create the contract record with the uploaded file.
+   * Backend runs AI analysis synchronously (blocks 20-30s).
+   * Returns the full contract record with normalized `id`.
    */
-  uploadContract: (file) => {
+  createContract: (file, name, uploadId) => {
     const formData = new FormData();
-    formData.append("contract", file);
+    formData.append("file", file);
+    formData.append("name", name);
+    formData.append("uploadId", uploadId);
+
     return api
       .post("/contracts/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
-      .then((res) => res.data);
+      .then((res) => normalizeId(res.data));
   },
+
+  /* ------------------------------------------------------------------ */
+  // 2. Contract CRUD
+  /* ------------------------------------------------------------------ */
 
   /**
    * GET /contracts/:id
-   * Fetches a single contract by ID.
+   * Fetch a single contract by ID.
    */
-  getContractById: (id) => api.get(`/contracts/${id}`).then((res) => res.data),
+  getContractById: (id) =>
+    api.get(`/contracts/${id}`).then((res) => normalizeId(res.data)),
 
   /**
    * GET /contracts
-   * Fetches all contracts
+   * Fetch contracts by status and year.
+   * Both query params are required by the backend.
    */
-  getAllContracts: () => api.get(`/contracts}`).then((res) => res.data),
+  getContracts: ({ status, year }) =>
+    api
+      .get("/contracts", { params: { status, year } })
+      .then((res) => normalizeIdArray(res.data)),
 
   /**
-   * GET /contracts/:id/progress
-   * Polls the contract processing status.
-   *
-   *! Backend only returns terminal statuses:
-   * { contractId: string, status: 'active' | 'analysis_failed' }
-   *
-   *! All intermediate progress (stepper, progress bar, activity log)
-   *! is simulated on the frontend via `fakeProgress.js`.
+   * PUT /contracts/:id
+   * Update contract status (e.g., to active).
    */
-  getContractProgress: (id) =>
-    api.get(`/contracts/${id}/progress`).then((res) => res.data),
+  updateContractStatus: (id, status) =>
+    api.put(`/contracts/${id}`, { status }).then((res) => res.data),
 };
