@@ -5,6 +5,7 @@ import { ClockIcon } from "../icons/ClockIcon";
 import { DollarIcon } from "../icons/DollarIcon.jsx";
 import { TrendIcon } from "../icons/TrendIcon";
 import { ContractContext } from "../../context/EditContaractContext.jsx";
+import { addSpace } from "../../utils/textFormater.js";
 
 // =================== STATUS DOT ===================
 const statusClass = {
@@ -29,7 +30,7 @@ const PartyField = ({
   return (
     <div className="flex items-center gap-3">
       <input
-        value={role ? role : "null"}
+        value={role ? addSpace(role) : "add role"}
         onChange={(e) => onChangeRole(index, e.target.value)}
         onBlur={onBlur}
         className="w-[140px] px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1"
@@ -297,7 +298,7 @@ const ProgressPaymentCard = ({ data }) => {
                 paymentProgress: { ...data, [field]: localData[field] },
               })
             }
-            className="px-3 py-2 border border-border rounded-lg text-[13px]"
+            className="w-full px-3 py-2 border border-border rounded-lg text-[13px]"
           />
         </div>
       ))}

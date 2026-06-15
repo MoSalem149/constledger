@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useState, Fragment, useContext } from "react";
 import { contractData } from "../../data/projectData";
 
 import FinancialTermsSection from "./FinancialTermsSection";
@@ -6,6 +6,8 @@ import ScheduleMilestonesSection from "./ScheduleMilestonesSection";
 import PenaltiesSection from "./PenaltiesSection";
 import { BasicInfoContent } from "./BasicInfoContent";
 import ContractStepper from "../contracts/ContractStepper";
+import { contractService } from "../../services/contractService";
+import { ContractContext } from "../../context/EditContaractContext";
 
 const steps = [
   { key: "upload", label: "Upload" },
@@ -40,27 +42,36 @@ const ArrowIcon = () => (
 );
 
 // =================== CONTRACT HEADER ===================
-const ContractHeader = ({ file }) => (
-  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start px-4 sm:px-6 pt-5 pb-4">
-    <div>
-      <p className="text-[11px] text-text-secondary tracking-widest mb-1.5">
-        CONTRACTS . NEW . REVIEW
-      </p>
-      <h1 className="text-lg sm:text-xl font-medium text-text-primary mb-1">
-        Review Extracted Contract Data
-      </h1>
-      <p className="text-xs text-text-secondary">{file}</p>
+const ContractHeader = ({ contractId }) => {
+  const { data } = useContext(ContractContext);
+  const confirmContract = () => {
+    contractService.EditContractById(contractId, data);
+  };
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start px-4 sm:px-6 pt-5 pb-4">
+      <div>
+        <p className="text-[11px] text-text-secondary tracking-widest mb-1.5">
+          CONTRACTS . NEW . REVIEW
+        </p>
+        <h1 className="text-lg sm:text-xl font-medium text-text-primary mb-1">
+          Review Extracted Contract Data
+        </h1>
+      </div>
+      <div className="flex gap-2.5 flex-wrap">
+        <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
+          <ArrowIcon /> Re-upload
+        </button>
+        <button
+          onClick={confirmContract}
+          className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap"
+        >
+          Confirm Contract
+        </button>
+      </div>
     </div>
-    <div className="flex gap-2.5 flex-wrap">
-      <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
-        <ArrowIcon /> Re-upload
-      </button>
-      <button className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap">
-        Confirm Contract
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 // =================== INNER TABS ===================
 const ContractInnerTabs = ({ tabs, active, onSelect }) => (
@@ -96,9 +107,16 @@ const ContractSection = ({ contractoData }) => {
     Penalties: <PenaltiesSection data={contractoData} />,
   };
 
+  const innerTabs = [
+    "Basic Info",
+    "Financial Terms",
+    "Schedule and Milestones",
+    "Penalties",
+  ];
+
   return (
     <div className="bg-bg-main min-h-screen">
-      <ContractHeader file={contractData.file} />
+      <ContractHeader contractId={contractData._id} />
       <ContractStepper
         steps={steps}
         currentStep={currentStep}
@@ -107,7 +125,7 @@ const ContractSection = ({ contractoData }) => {
       />
       <div className="pt-4 pb-8">
         <ContractInnerTabs
-          tabs={contractData.innerTabs}
+          tabs={innerTabs}
           active={activeTab}
           onSelect={setActiveTab}
         />
