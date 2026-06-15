@@ -77,8 +77,13 @@ export function AuthProvider({ children }) {
   // which clears user state. That triggers PrivateRoute to redirect to
   // /login — no manual logout needed.
   const logout = useCallback(async () => {
-    await authService.logout(); // server clears the cookie
-    setUser(null);
+    try {
+      await authService.logout();
+    } catch {
+      // Cookie already expired — safe to ignore, still clear client state
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   useEffect(() => {
