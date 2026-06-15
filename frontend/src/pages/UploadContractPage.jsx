@@ -23,7 +23,7 @@
  *
  * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import UploadDropzone from "../components/contracts/UploadDropzone";
@@ -33,6 +33,7 @@ import { contractService } from "../services/contractService";
 import { isValidFile } from "../utils/fileValidation";
 import { startSimulation } from "../utils/fakeProgress";
 import { putFileToS3 } from "../utils/s3Upload";
+import { UContractContext } from "../context/UploadedContractContext";
 
 /* ------------------------------------------------------------------ */
 // Helpers
@@ -55,6 +56,7 @@ const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
 /* ------------------------------------------------------------------ */
 
 export default function UploadContractPage() {
+  const { setContractData } = useContext(UContractContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isDemo = searchParams.get("demo") === "1";
@@ -170,6 +172,10 @@ export default function UploadContractPage() {
           file.name,
           uploadId,
         );
+
+        // send uploded contract to context
+
+        setContractData(JSON.parse(contract));
 
         // Success — stop simulation and navigate to review form
         cleanup();

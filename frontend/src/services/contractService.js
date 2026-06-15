@@ -74,6 +74,12 @@ export const contractService = {
   getContractById: (id) =>
     api.get(`/contracts/${id}`).then((res) => normalizeId(res.data)),
 
+  EditContractById: (id, data) =>
+    api.put(`/contracts/${id}`, data).then((res) => {
+      console.log(res.data);
+      return normalizeId(res.data);
+    }),
+
   /**
    * GET /api/contracts
    * List contracts with optional filters.
