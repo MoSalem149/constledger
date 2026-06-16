@@ -50,7 +50,10 @@ export default function ReviewEditFormPage() {
           </Link>
 
           <ContarctCard contractData={contractData} />
-          <ContarctDetailsSections contractData={contractData} />
+          <ContarctDetailsSections
+            contractData={contractData}
+            readOnly={false}
+          />
         </div>
       </div>
     </div>
