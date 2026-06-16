@@ -1,5 +1,4 @@
-import { useState, Fragment, useContext } from "react";
-import { contractData } from "../../data/projectData";
+import { useState, Fragment, useContext, useEffect } from "react";
 
 import FinancialTermsSection from "./FinancialTermsSection";
 import ScheduleMilestonesSection from "./ScheduleMilestonesSection";
@@ -8,6 +7,7 @@ import { BasicInfoContent } from "./BasicInfoContent";
 import ContractStepper from "../contracts/ContractStepper";
 import { contractService } from "../../services/contractService";
 import { ContractContext } from "../../context/EditContaractContext";
+import { useNavigate } from "react-router-dom";
 
 const steps = [
   { key: "upload", label: "Upload" },
@@ -42,10 +42,22 @@ const ArrowIcon = () => (
 );
 
 // =================== CONTRACT HEADER ===================
-const ContractHeader = ({ contractId }) => {
+const ContractHeader = ({ contractData }) => {
   const { data } = useContext(ContractContext);
+  const navigate = useNavigate();
+
   const confirmContract = () => {
-    contractService.EditContractById(contractId, data);
+    try {
+      const id = contractData?._id || contractData?.id;
+      const payload = {
+        status: "active",
+        ...data,
+      };
+      contractService.EditContractById(id, payload);
+      navigate("/contracts");
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -79,14 +91,13 @@ const ContractInnerTabs = ({ tabs, active, onSelect }) => (
     <div className="flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
       {tabs.map((tab) => (
         <button
-          key={tab.name}
-          onClick={() => onSelect(tab.name)}
+          key={tab}
+          onClick={() => onSelect(tab)}
           className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
-            ${active === tab.name ? "font-medium text-text-primary" : "text-text-secondary"}`}
+            ${active === tab ? "font-medium text-text-primary" : "text-text-secondary"}`}
         >
-          {tab.name}
-
-          {active === tab.name && (
+          {tab}
+          {active === tab && (
             <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full" />
           )}
         </button>
@@ -95,16 +106,16 @@ const ContractInnerTabs = ({ tabs, active, onSelect }) => (
   </div>
 );
 // =================== CONTRACT SECTION (MAIN) ===================
-const ContractSection = ({ contractoData }) => {
+const ContractSection = ({ contractData }) => {
   const [activeTab, setActiveTab] = useState("Basic Info");
 
   const sections = {
-    "Basic Info": <BasicInfoContent data={contractoData} />,
-    "Financial Terms": <FinancialTermsSection data={contractoData} />,
+    "Basic Info": <BasicInfoContent data={contractData} />,
+    "Financial Terms": <FinancialTermsSection data={contractData} />,
     "Schedule and Milestones": (
-      <ScheduleMilestonesSection data={contractoData} />
+      <ScheduleMilestonesSection data={contractData} />
     ),
-    Penalties: <PenaltiesSection data={contractoData} />,
+    Penalties: <PenaltiesSection data={contractData} />,
   };
 
   const innerTabs = [
@@ -116,7 +127,7 @@ const ContractSection = ({ contractoData }) => {
 
   return (
     <div className="bg-bg-main min-h-screen">
-      <ContractHeader contractId={contractData._id} />
+      <ContractHeader contractData={contractData} />
       <ContractStepper
         steps={steps}
         currentStep={currentStep}

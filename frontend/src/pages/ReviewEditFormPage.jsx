@@ -5,7 +5,7 @@ import { ContarctCard } from "../components/contractDetails/ContractCard";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import { contractService } from "../services/contractService";
 import { Link } from "react-router-dom";
-import UploadContractPage from "./UploadContractPage";
+import { UContractContext } from "../context/UploadedContractContext";
 /**
  * ReviewEditFormPage — 13-field contract review/edit form.
  *
@@ -18,7 +18,8 @@ import UploadContractPage from "./UploadContractPage";
  */
 
 export default function ReviewEditFormPage() {
-  const { contractData } = useContext(UploadContractPage());
+  const { contractData } = useContext(UContractContext);
+
   // const [contractData, setContractData] = useState(null);
   // useEffect(() => {
   //   async function fetchContract() {

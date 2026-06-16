@@ -76,7 +76,6 @@ export const contractService = {
 
   EditContractById: (id, data) =>
     api.put(`/contracts/${id}`, data).then((res) => {
-      console.log(res.data);
       return normalizeId(res.data);
     }),
 

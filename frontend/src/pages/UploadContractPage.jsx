@@ -56,7 +56,7 @@ const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
 /* ------------------------------------------------------------------ */
 
 export default function UploadContractPage() {
-  const { setContractData } = useContext(UContractContext);
+  const { saveContractData } = useContext(UContractContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isDemo = searchParams.get("demo") === "1";
@@ -175,7 +175,7 @@ export default function UploadContractPage() {
 
         // send uploded contract to context
 
-        setContractData(JSON.parse(contract));
+        saveContractData(contract);
 
         // Success — stop simulation and navigate to review form
         cleanup();
@@ -202,6 +202,7 @@ export default function UploadContractPage() {
           const contract = data?.contract;
           if (contract?._id || contract?.id) {
             // Navigate to edit page so user can see partial data
+            saveContractData(contract);
             const id = contract.id || contract._id;
             navigate(`/contracts/${id}/edit`, {
               state: {
