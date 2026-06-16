@@ -62,14 +62,16 @@ const AnalysisFailedBanner = ({ contractData }) => (
 );
 
 // =================== MAIN ===================
-export const ContarctDetailsSections = ({ contractData }) => {
+export const ContarctDetailsSections = ({ contractData, readOnly }) => {
   const [activeTab, setActiveTab] = useState("Overview");
 
   const isFailed = contractData?.status === "analysis_failed";
 
   const sections = {
     Overview: <OverviewSection data={overviewData} />,
-    Contract: <ContractSection contractData={contractData} />,
+    Contract: (
+      <ContractSection contractData={contractData} readOnly={readOnly} />
+    ),
     "Budget and Progress": <BudgetAndProgressSection />,
     Approvals: <ApprovalsSection />,
   };

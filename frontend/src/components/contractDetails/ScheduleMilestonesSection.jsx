@@ -54,7 +54,6 @@ const toPct = (dateStr, startStr, endStr) => {
 // =================== TIMELINE PREVIEW ===================
 const TimelinePreview = ({ milestones, startDate, endDate }) => {
   const validMilestones = milestones.filter((m) => parseDate(m.dueDate));
-
   const formattedStart = formatDate(startDate);
   const formattedEnd = formatDate(endDate);
 
@@ -75,13 +74,11 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
           className="absolute h-0.5 bg-gray-300 rounded-full"
           style={{ top: 26, left: "3%", right: "3%" }}
         />
-
         {validMilestones.length === 0 && (
           <p className="text-xs text-text-secondary text-center leading-[80px]">
             No milestones with valid dates
           </p>
         )}
-
         {validMilestones.map((m, i) => {
           const pct = toPct(m.dueDate, formattedStart, formattedEnd);
           if (pct === null) return null;
@@ -104,7 +101,13 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
 };
 
 // =================== DATE FIELDS ===================
-const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
+const DateFields = ({
+  startDate,
+  endDate,
+  onStartBlur,
+  onEndBlur,
+  readOnly,
+}) => {
   const [local, setLocal] = useState({ start: startDate, end: endDate });
 
   return (
@@ -121,12 +124,17 @@ const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
           <input
             type="text"
             value={formatDate(local[field])}
-            onChange={(e) =>
-              setLocal((p) => ({ ...p, [field]: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) => setLocal((p) => ({ ...p, [field]: e.target.value }))
             }
-            onBlur={() => onBlur(local[field])}
-            className="w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
-              text-text-primary bg-bg-cards1 outline-none focus:border-primary transition-colors"
+            onBlur={readOnly ? undefined : () => onBlur(local[field])}
+            readOnly={readOnly}
+            className={`w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
+              text-text-primary bg-bg-cards1 outline-none transition-colors ${
+                readOnly ? "cursor-default" : "focus:border-primary"
+              }`}
           />
         </div>
       ))}
@@ -135,43 +143,57 @@ const DateFields = ({ startDate, endDate, onStartBlur, onEndBlur }) => {
 };
 
 // =================== MILESTONE ROW ===================
-const MilestoneRow = ({ milestone, onRemove, onChange }) => {
+const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
     name: milestone.name,
     dueDate: milestone.dueDate,
   });
 
   return (
-    <div className="grid grid-cols-[1fr_160px_100px_44px] px-4 py-4 items-center border-b border-gray-100">
+    <div
+      className={`grid ${readOnly ? "grid-cols-[1fr_160px_100px]" : "grid-cols-[1fr_160px_100px_44px]"} px-4 py-4 items-center border-b border-gray-100`}
+    >
       <input
         value={local.name}
-        onChange={(e) => setLocal((p) => ({ ...p, name: e.target.value }))}
-        onBlur={() => onChange({ ...local })}
-        className="text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange({ ...local })}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
       <input
         value={local.dueDate}
-        onChange={(e) => setLocal((p) => ({ ...p, dueDate: e.target.value }))}
-        onBlur={() => onChange({ ...local })}
-        className="text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, dueDate: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange({ ...local })}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
       <span className="text-[13.5px] text-text-secondary">
         {milestone.source}
       </span>
-      <button
-        onClick={onRemove}
-        className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
-      >
-        <TrashIcon />
-      </button>
+      {!readOnly && (
+        <button
+          onClick={onRemove}
+          className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
+        >
+          <TrashIcon />
+        </button>
+      )}
     </div>
   );
 };
 
 // =================== MILESTONES TABLE ===================
-const MilestonesTable = ({ milestones, onRemove, onChange }) => (
+const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
   <div className="mb-8">
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
       <div>
@@ -182,19 +204,23 @@ const MilestonesTable = ({ milestones, onRemove, onChange }) => (
           {milestones.length} milestones
         </p>
       </div>
-      <button
-        onClick={() => onChange("add")}
-        className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-200 rounded-lg
-          text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
-          self-start whitespace-nowrap"
-      >
-        <PlusIcon /> Add Milestone
-      </button>
+      {!readOnly && (
+        <button
+          onClick={() => onChange("add")}
+          className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-200 rounded-lg
+            text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
+            self-start whitespace-nowrap"
+        >
+          <PlusIcon /> Add Milestone
+        </button>
+      )}
     </div>
 
     <div className="overflow-x-auto">
       <div className="min-w-[460px] shadow rounded overflow-hidden">
-        <div className="grid grid-cols-[1fr_160px_100px_44px] bg-gray-100 px-4 py-4">
+        <div
+          className={`grid ${readOnly ? "grid-cols-[1fr_160px_100px]" : "grid-cols-[1fr_160px_100px_44px]"} bg-gray-100 px-4 py-4`}
+        >
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             Name
           </span>
@@ -204,7 +230,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange }) => (
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             Source
           </span>
-          <span />
+          {!readOnly && <span />}
         </div>
         {milestones.map((m) => (
           <MilestoneRow
@@ -212,6 +238,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange }) => (
             milestone={m}
             onRemove={() => onRemove(m.id)}
             onChange={(fields) => onChange("update", m.id, fields)}
+            readOnly={readOnly}
           />
         ))}
       </div>
@@ -220,7 +247,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange }) => (
 );
 
 // =================== EXPORT ===================
-const ScheduleMilestonesSection = ({ data }) => {
+const ScheduleMilestonesSection = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
 
   const [startDate, setStartDate] = useState(data.start_date ?? "10 May 2026");
@@ -274,11 +301,13 @@ const ScheduleMilestonesSection = ({ data }) => {
           setEndDate(val);
           changeData({ end_date: val });
         }}
+        readOnly={readOnly}
       />
       <MilestonesTable
         milestones={milestones}
         onRemove={handleRemove}
         onChange={handleMilestones}
+        readOnly={readOnly}
       />
       <TimelinePreview
         milestones={milestones}
