@@ -37,7 +37,7 @@ const PartyField = ({
       />
 
       <input
-        value={name}
+        value={name || ""}
         onChange={(e) => onChangeName(index, e.target.value)}
         onBlur={onBlur}
         placeholder="Party name"
@@ -56,7 +56,7 @@ const PartyField = ({
 
 // =================== CONTRACT PARTIES ===================
 const ContractPartiesSection = ({ parties = [] }) => {
-  const { changeData, data } = useContext(ContractContext);
+  const { changeData } = useContext(ContractContext);
 
   const [localParties, setLocalParties] = useState(parties);
 
@@ -161,7 +161,8 @@ const ContractPartiesSection = ({ parties = [] }) => {
 
 // =================== FIELD BOX ===================
 const FieldBox = ({ label, value, field }) => {
-  const { changeData, data } = useContext(ContractContext);
+  const { changeData } = useContext(ContractContext);
+
   const [val, setVal] = useState(value);
 
   function saveData() {
@@ -174,7 +175,7 @@ const FieldBox = ({ label, value, field }) => {
         <span className="text-xs text-text-secondary">{label}</span>
       </div>
       <input
-        value={val}
+        value={val || ""}
         onChange={(e) => setVal(e.target.value)}
         onBlur={saveData}
         className="px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary w-full"
@@ -237,7 +238,7 @@ const AdvancePaymentCard = ({ data }) => {
             <span className="text-xs text-text-secondary">Percentage</span>
           </div>
           <input
-            value={localData.percentage}
+            value={localData.percentage || ""}
             onChange={(e) =>
               setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
             }
@@ -289,7 +290,7 @@ const ProgressPaymentCard = ({ data }) => {
             <span className="text-xs text-text-secondary">{label}</span>
           </div>
           <input
-            value={localData[field]}
+            value={localData[field] || ""}
             onChange={(e) =>
               setLocalData((prev) => ({ ...prev, [field]: e.target.value }))
             }
@@ -336,7 +337,7 @@ const RetentionCard = ({ data }) => {
             <span className="text-xs text-text-secondary">Percentage</span>
           </div>
           <input
-            value={localData.percentage}
+            value={localData.percentage || ""}
             onChange={(e) =>
               setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
             }
@@ -359,16 +360,39 @@ const RetentionCard = ({ data }) => {
   );
 };
 
-const PaymentTermsSection = ({ payment }) => (
-  <div>
-    <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
-    <div className="flex flex-col md:flex-row gap-3">
-      <AdvancePaymentCard data={payment.payment_terms} />
-      <ProgressPaymentCard data={payment.paymentProgress} />
-      <RetentionCard data={payment.payment_terms} />
+const PaymentTermsSection = ({ payment }) => {
+  const terms = payment.payment_terms ?? [];
+  const progress = payment.paymentProgress;
+
+  // لو الداتا ناقصة، بلاش تكسر
+  const hasAdvance = terms.length > 0;
+  const hasRetention = terms.length > 2;
+  const hasProgress = !!progress;
+
+  if (!hasAdvance && !hasRetention && !hasProgress) {
+    return (
+      <div>
+        <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
+        <div className="border border-dashed border-gray-200 rounded-xl px-5 py-8 text-center">
+          <p className="text-sm text-text-secondary">
+            No payment terms extracted — fill in manually.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
+      <div className="flex flex-col md:flex-row gap-3">
+        {hasAdvance && <AdvancePaymentCard data={terms} />}
+        {hasProgress && <ProgressPaymentCard data={progress} />}
+        {hasRetention && <RetentionCard data={terms} />}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =================== BASIC INFO CONTENT ===================
 export const BasicInfoContent = ({ data }) => {

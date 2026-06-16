@@ -8,55 +8,7 @@ import SpinnerIcon from "../components/icons/SpinnerIcon";
 import { EmptyIcon } from "../components/icons/EmptyIcon";
 import projectImage from "../assets/projectImage.png";
 import { contractService } from "../services/contractService";
-
-// =================== MOCK DATA ===================
-const contracts = [
-  {
-    id: "6a2b1a0c9734c8eae15c7841",
-    name: "Contract - Zone R - Ps2.pdf",
-    status: "pending_review",
-    contractValue: 8750000,
-    currency: "EGP",
-    startDate: "2022-09-26",
-    endDate: "2022-11-25",
-  },
-  {
-    id: "6a29d417b520c9b1d8a5ccd5",
-    name: "Contract - Zone R - Ps2.pdf",
-    status: "analysis_failed",
-    contractValue: 8750000,
-    currency: "EGP",
-    startDate: "2022-09-26",
-    endDate: "2022-11-26",
-  },
-  {
-    id: "6a29d22ffdc1337853e4a47f",
-    name: "Contract - Zone R - Ps2.pdf",
-    status: "pending_review",
-    contractValue: 8750000,
-    currency: "EGP",
-    startDate: "2022-09-26",
-    endDate: "2022-11-26",
-  },
-  {
-    id: "6a288d557171601dfee883fd",
-    name: "Contract - Zone R - Ps2.pdf",
-    status: "pending_review",
-    contractValue: 8750000,
-    currency: "EGP",
-    startDate: "2022-09-26",
-    endDate: "2022-11-26",
-  },
-  {
-    id: "6a288b827171601dfee883f7",
-    name: "1-00013-SC-00006.PDF",
-    status: "active",
-    contractValue: 59660455,
-    currency: "EGP",
-    startDate: "2022-09-04",
-    endDate: null,
-  },
-];
+import { FadeLoader } from "react-spinners";
 
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
@@ -231,32 +183,55 @@ const SearchBar = ({ value, onChange }) => (
 // =================== PAGE ===================
 const ContractsPage = () => {
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState({ searchValue: "", active: false });
 
-  //   const [contracts, setContracts] = useState(null);
-  //   useEffect(() => {
-  //     async function fetchContract() {
-  //       try {
-  //         const data = await contractService.getAllContracts();
-  //         setContracts(data);
-  //       } catch (err) {
-  //         console.log(err);
-  //       }
-  //     }
+  const handleSearch = (searchVal) => {
+    if (searchVal.length > 0)
+      setSearch((prev) => ({ ...prev, searchValue: searchVal, active: true }));
+    else setSearch((prev) => ({ ...prev, searchValue: "", active: false }));
+  };
 
-  //     fetchContract();
-  //   }, []);
+  const [contracts, setContracts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchContract() {
+      try {
+        const data = await contractService.getContracts();
+        setContracts(data);
+      } catch (err) {
+        console.log(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchContract();
+  }, []);
 
   const filtered = contracts.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.id.toLowerCase().includes(search.toLowerCase()),
+      c.name.toLowerCase().includes(search.searchValue.toLowerCase()) ||
+      c.id.toLowerCase().includes(search.searchValue.toLowerCase()),
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-116px)]">
+        <FadeLoader
+          height={20}
+          margin={2}
+          radius={2}
+          width={4}
+          color="#FF4800"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-bg-main min-h-[calc(100vh-116px)] ">
       <div className="mb-6">
-        <SearchBar value={search} onChange={setSearch} />
+        <SearchBar value={search.searchValue} onChange={handleSearch} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -267,14 +242,14 @@ const ContractsPage = () => {
             onClick={() => navigate(`/contracts/${contract.id}`)}
           />
         ))}
-        {!search && <AddNewCard />}
+        {!search.searchValue && <AddNewCard />}
       </div>
 
-      {filtered.length === 0 && (
+      {filtered.length === 0 && search.active && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <EmptyIcon />
           <p className="text-[14px] text-text-secondary mt-3">
-            No contracts match "<strong>{search}</strong>"
+            No contracts match "<strong>{search.searchValue}</strong>"
           </p>
         </div>
       )}
