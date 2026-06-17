@@ -3,20 +3,27 @@ import { ContractContext } from "../../context/EditContaractContext";
 import { PlusIcon } from "../icons/PlusIcon";
 import { TrashIcon } from "../icons/TrashIcon";
 
-// ... icons كما هي
-
-const ClauseCard = ({ status, condition, penalty, onRemove, onChange }) => {
+const ClauseCard = ({
+  status,
+  condition,
+  penalty,
+  onRemove,
+  onChange,
+  readOnly,
+}) => {
   const [local, setLocal] = useState({ condition, penalty });
 
   return (
     <div className="border border-gray-100 rounded-lg overflow-hidden bg-bg-main">
-      <div className="relative p-4 pr-12">
-        <button
-          onClick={onRemove}
-          className="absolute top-4 right-4 text-text-secondary hover:text-status-risk transition-colors"
-        >
-          <TrashIcon />
-        </button>
+      <div className={`relative p-4 ${!readOnly ? "pr-12" : ""}`}>
+        {!readOnly && (
+          <button
+            onClick={onRemove}
+            className="absolute top-4 right-4 text-text-secondary hover:text-status-risk transition-colors"
+          >
+            <TrashIcon />
+          </button>
+        )}
 
         {/* CONDITION */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:gap-8 gap-1 mb-3">
@@ -27,14 +34,23 @@ const ClauseCard = ({ status, condition, penalty, onRemove, onChange }) => {
           </div>
           <input
             value={local.condition}
-            onChange={(e) =>
-              setLocal((p) => ({ ...p, condition: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) => setLocal((p) => ({ ...p, condition: e.target.value }))
             }
-            onBlur={() =>
-              onChange({ condition: local.condition, penalty: local.penalty })
+            onBlur={
+              readOnly
+                ? undefined
+                : () =>
+                    onChange({
+                      condition: local.condition,
+                      penalty: local.penalty,
+                    })
             }
-            className="text-[13.5px] text-text-primary pl-4 sm:pl-0 bg-transparent border-b border-transparent
-              focus:border-gray-300 outline-none w-full transition-colors"
+            readOnly={readOnly}
+            className={`text-[13.5px] text-text-primary pl-4 sm:pl-0 bg-transparent border-b border-transparent
+              outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
           />
         </div>
 
@@ -47,14 +63,23 @@ const ClauseCard = ({ status, condition, penalty, onRemove, onChange }) => {
           </div>
           <input
             value={local.penalty}
-            onChange={(e) =>
-              setLocal((p) => ({ ...p, penalty: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) => setLocal((p) => ({ ...p, penalty: e.target.value }))
             }
-            onBlur={() =>
-              onChange({ condition: local.condition, penalty: local.penalty })
+            onBlur={
+              readOnly
+                ? undefined
+                : () =>
+                    onChange({
+                      condition: local.condition,
+                      penalty: local.penalty,
+                    })
             }
-            className="text-[13.5px] text-text-secondary pl-4 sm:pl-0 bg-transparent border-b border-transparent
-              focus:border-gray-300 outline-none w-full transition-colors"
+            readOnly={readOnly}
+            className={`text-[13.5px] text-text-secondary pl-4 sm:pl-0 bg-transparent border-b border-transparent
+              outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
           />
         </div>
       </div>
@@ -62,7 +87,7 @@ const ClauseCard = ({ status, condition, penalty, onRemove, onChange }) => {
   );
 };
 
-const PenaltiesSection = ({ data }) => {
+const PenaltiesSection = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
 
   const [clauses, setClauses] = useState(
@@ -70,9 +95,7 @@ const PenaltiesSection = ({ data }) => {
   );
 
   const syncToContext = (updated) => {
-    changeData({
-      penalties: updated.map(({ id, ...rest }) => rest),
-    });
+    changeData({ penalties: updated.map(({ id, ...rest }) => rest) });
   };
 
   const handleChange = (id, newFields) => {
@@ -107,14 +130,16 @@ const PenaltiesSection = ({ data }) => {
             {clauses.length} clauses extracted from §8 Liabilities &amp; Damages
           </p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
-            text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
-            self-start whitespace-nowrap"
-        >
-          <PlusIcon /> Add Clause
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleAdd}
+            className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
+              text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
+              self-start whitespace-nowrap"
+          >
+            <PlusIcon /> Add Clause
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -124,6 +149,7 @@ const PenaltiesSection = ({ data }) => {
             {...c}
             onRemove={() => handleRemove(c.id)}
             onChange={(fields) => handleChange(c.id, fields)}
+            readOnly={readOnly}
           />
         ))}
       </div>

@@ -1,11 +1,13 @@
-import { useState, Fragment } from "react";
-import { contractData } from "../../data/projectData";
+import { useState, useContext } from "react";
 
 import FinancialTermsSection from "./FinancialTermsSection";
 import ScheduleMilestonesSection from "./ScheduleMilestonesSection";
 import PenaltiesSection from "./PenaltiesSection";
 import { BasicInfoContent } from "./BasicInfoContent";
 import ContractStepper from "../contracts/ContractStepper";
+import { contractService } from "../../services/contractService";
+import { ContractContext } from "../../context/EditContaractContext";
+import { useNavigate } from "react-router-dom";
 
 const steps = [
   { key: "upload", label: "Upload" },
@@ -18,13 +20,10 @@ const stepStatus = ["completed", "completed", "completed", "active-review"];
 const currentStepIndex = stepStatus.findIndex(
   (s) => s === "active" || s === "active-review",
 );
-
-// If no active step found (all pending), default to first
 const currentStep =
   currentStepIndex >= 0 ? currentStepIndex : stepStatus.length - 1;
 
 // =================== ICONS ===================
-
 const ArrowIcon = () => (
   <svg
     width="13"
@@ -40,27 +39,49 @@ const ArrowIcon = () => (
 );
 
 // =================== CONTRACT HEADER ===================
-const ContractHeader = ({ file }) => (
-  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start px-4 sm:px-6 pt-5 pb-4">
-    <div>
-      <p className="text-[11px] text-text-secondary tracking-widest mb-1.5">
-        CONTRACTS . NEW . REVIEW
-      </p>
-      <h1 className="text-lg sm:text-xl font-medium text-text-primary mb-1">
-        Review Extracted Contract Data
-      </h1>
-      <p className="text-xs text-text-secondary">{file}</p>
+const ContractHeader = ({ contractData, readOnly }) => {
+  const { data } = useContext(ContractContext);
+  const navigate = useNavigate();
+
+  const confirmContract = () => {
+    try {
+      const id = contractData?._id || contractData?.id;
+      const payload = { status: "active", ...data };
+      contractService.EditContractById(id, payload);
+      navigate("/contracts");
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start px-4 sm:px-6 pt-5 pb-4">
+      <div>
+        <p className="text-[11px] text-text-secondary tracking-widest mb-1.5">
+          {readOnly ? "CONTRACTS . DETAILS" : "CONTRACTS . NEW . REVIEW"}
+        </p>
+        <h1 className="text-lg sm:text-xl font-medium text-text-primary mb-1">
+          {readOnly ? "Contract Details" : "Review Extracted Contract Data"}
+        </h1>
+      </div>
+
+      {/* Only show action buttons in edit mode */}
+      {!readOnly && (
+        <div className="flex gap-2.5 flex-wrap">
+          <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
+            <ArrowIcon /> Re-upload
+          </button>
+          <button
+            onClick={confirmContract}
+            className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap"
+          >
+            Confirm Contract
+          </button>
+        </div>
+      )}
     </div>
-    <div className="flex gap-2.5 flex-wrap">
-      <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
-        <ArrowIcon /> Re-upload
-      </button>
-      <button className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap">
-        Confirm Contract
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 // =================== INNER TABS ===================
 const ContractInnerTabs = ({ tabs, active, onSelect }) => (
@@ -68,14 +89,13 @@ const ContractInnerTabs = ({ tabs, active, onSelect }) => (
     <div className="flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
       {tabs.map((tab) => (
         <button
-          key={tab.name}
-          onClick={() => onSelect(tab.name)}
+          key={tab}
+          onClick={() => onSelect(tab)}
           className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
-            ${active === tab.name ? "font-medium text-text-primary" : "text-text-secondary"}`}
+            ${active === tab ? "font-medium text-text-primary" : "text-text-secondary"}`}
         >
-          {tab.name}
-
-          {active === tab.name && (
+          {tab}
+          {active === tab && (
             <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full" />
           )}
         </button>
@@ -83,31 +103,43 @@ const ContractInnerTabs = ({ tabs, active, onSelect }) => (
     </div>
   </div>
 );
+
 // =================== CONTRACT SECTION (MAIN) ===================
-const ContractSection = ({ contractoData }) => {
+const ContractSection = ({ contractData, readOnly }) => {
   const [activeTab, setActiveTab] = useState("Basic Info");
 
   const sections = {
-    "Basic Info": <BasicInfoContent data={contractoData} />,
-    "Financial Terms": <FinancialTermsSection data={contractoData} />,
-    "Schedule and Milestones": (
-      <ScheduleMilestonesSection data={contractoData} />
+    "Basic Info": <BasicInfoContent data={contractData} readOnly={readOnly} />,
+    "Financial Terms": (
+      <FinancialTermsSection data={contractData} readOnly={readOnly} />
     ),
-    Penalties: <PenaltiesSection data={contractoData} />,
+    "Schedule and Milestones": (
+      <ScheduleMilestonesSection data={contractData} readOnly={readOnly} />
+    ),
+    Penalties: <PenaltiesSection data={contractData} readOnly={readOnly} />,
   };
+
+  const innerTabs = [
+    "Basic Info",
+    "Financial Terms",
+    "Schedule and Milestones",
+    "Penalties",
+  ];
 
   return (
     <div className="bg-bg-main min-h-screen">
-      <ContractHeader file={contractData.file} />
-      <ContractStepper
-        steps={steps}
-        currentStep={currentStep}
-        stepStatus={stepStatus}
-        progress={null}
-      />
+      <ContractHeader contractData={contractData} readOnly={readOnly} />
+      {!readOnly && (
+        <ContractStepper
+          steps={steps}
+          currentStep={currentStep}
+          stepStatus={stepStatus}
+          progress={null}
+        />
+      )}
       <div className="pt-4 pb-8">
         <ContractInnerTabs
-          tabs={contractData.innerTabs}
+          tabs={innerTabs}
           active={activeTab}
           onSelect={setActiveTab}
         />

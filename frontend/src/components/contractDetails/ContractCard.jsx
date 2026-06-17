@@ -1,6 +1,13 @@
 import ProjectImage from "../../assets/projectImage.png";
+import { formatDate } from "../../utils/formatDate";
 
 export const ContarctCard = ({ contractData }) => {
+  const paymentProgress = contractData.paymentProgress ?? {
+    frequency: 0,
+    basis: "—",
+    dueTo: "—",
+  };
+
   const formatBudget = (value) => {
     const num = +value;
     if (num >= 1_000_000_000)
@@ -35,12 +42,12 @@ export const ContarctCard = ({ contractData }) => {
     },
     {
       title: "Progress",
-      data: contractData.paymentProgress.frequency,
+      data: paymentProgress.frequency,
       footerData: "Earned 0 EGP",
     },
     {
       title: "Timeline",
-      data: `${contractData.start_date.split(" ").slice(0, 4).join(" ")} -> ${contractData.end_date.split(" ").slice(0, 4).join(" ")}`,
+      data: `${formatDate(contractData.start_date)} -> ${formatDate(contractData.end_date)}`,
     },
     {
       title: "Next Milestone",
@@ -99,7 +106,7 @@ export const ContarctCard = ({ contractData }) => {
         </div>
 
         <div className="right w-full md:w-3/12 bg-bg-main min-h-[10rem] md:h-full">
-          <CircularProgress value={contractData.paymentProgress.frequency} />
+          <CircularProgress value={paymentProgress.frequency} />
         </div>
       </div>
     </div>

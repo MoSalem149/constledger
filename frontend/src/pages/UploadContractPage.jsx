@@ -23,7 +23,7 @@
  *
  * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import UploadDropzone from "../components/contracts/UploadDropzone";
@@ -33,6 +33,7 @@ import { contractService } from "../services/contractService";
 import { isValidFile } from "../utils/fileValidation";
 import { startSimulation } from "../utils/fakeProgress";
 import { putFileToS3 } from "../utils/s3Upload";
+import { UContractContext } from "../context/UploadedContractContext";
 
 /* ------------------------------------------------------------------ */
 // Helpers
@@ -55,6 +56,7 @@ const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
 /* ------------------------------------------------------------------ */
 
 export default function UploadContractPage() {
+  const { saveContractData } = useContext(UContractContext);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isDemo = searchParams.get("demo") === "1";
@@ -171,6 +173,10 @@ export default function UploadContractPage() {
           uploadId,
         );
 
+        // send uploded contract to context
+
+        saveContractData(contract);
+
         // Success — stop simulation and navigate to review form
         cleanup();
         cleanupRef.current = null;
@@ -196,6 +202,7 @@ export default function UploadContractPage() {
           const contract = data?.contract;
           if (contract?._id || contract?.id) {
             // Navigate to edit page so user can see partial data
+            saveContractData(contract);
             const id = contract.id || contract._id;
             navigate(`/contracts/${id}/edit`, {
               state: {
