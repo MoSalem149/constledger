@@ -1,17 +1,41 @@
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useState } from "react";
 import { userService } from "../services/userService";
+import AdminHeader from "../components/admin/AdminHeader";
+import UserTable from "../components/admin/UserTable";
 
 export default function AdminPage() {
-  const { user } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  function loadUsers() {
+    setLoading(true);
+    setError(null);
+    userService
+      .getUsers()
+      .then((data) => {
+        setUsers(data.users);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err);
+        setLoading(false);
+      });
+  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-text-primary">
-        Admin — User Management
-      </h1>
-      <p className="text-text-secondary mt-2">
-        Welcome, {user?.name || "Admin"}. User management features coming soon.
-      </p>
+    <div className="bg-bg-main min-h-[calc(100vh-116px)]">
+      <AdminHeader />
+      <UserTable
+        users={users}
+        loading={loading}
+        error={error}
+        onRetry={loadUsers}
+      />
     </div>
   );
 }

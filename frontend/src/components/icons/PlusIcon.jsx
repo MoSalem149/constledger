@@ -1,7 +1,7 @@
 export const PlusIcon = () => (
   <svg
-    width="13"
-    height="13"
+    width="20"
+    height="20"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
