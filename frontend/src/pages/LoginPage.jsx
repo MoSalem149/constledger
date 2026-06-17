@@ -37,8 +37,12 @@ export default function LoginPage() {
 
     setSubmitting(true);
     try {
-      await login(email, password);
-      navigate("/dashboard", { replace: true });
+      const user = await login(email, password);
+      if (user.role === "pmo") {
+        navigate("/admin", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       const status = err.response?.status;
       if (status === 401) {

@@ -4,12 +4,13 @@ import DashboardIcon from "../icons/DashboardIcon";
 import FileDocIcon from "../icons/FileDocIcon";
 import ReportsIcon from "../icons/ReportsIcon";
 import PersonIcon from "../icons/PersonIcon";
+import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
   { label: "Dashboard", to: "/dashboard", Icon: DashboardIcon },
   { label: "Projects", to: "/contracts", Icon: FileDocIcon },
   { label: "Reports", to: "/reports", Icon: ReportsIcon },
-  { label: "Admin", to: "/admin", Icon: PersonIcon },
+  { label: "Admin", to: "/admin", Icon: PersonIcon, requiredRole: "pmo" },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -18,6 +19,11 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const { user } = useAuth();
+  const isPmo = user?.role === "pmo";
+  const visibleItems = navItems.filter(
+    (item) => isPmo ? item.requiredRole === "pmo" : !item.requiredRole
+  );
 
   return (
     <aside
@@ -47,7 +53,7 @@ export default function Sidebar() {
 
       {/* Nav links */}
       <nav className="flex flex-col gap-3">
-        {navItems.map(({ label, to, Icon }) => {
+        {visibleItems.map(({ label, to, Icon }) => {
           const isActive =
             location.pathname === to || location.pathname.startsWith(to + "/");
 

@@ -114,3 +114,9 @@ Config at `frontend/tailwind.config.js` uses **nested** color keys. Write `bg-bg
 - `.opencode/plans/routing-skeleton.md` — full route spec
 - `Octagram_final_sprints.html` — original sprint plan
 - `README.md` — deployment guide (Vercel, Cloud Run)
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/001-admin-user-setup/plan.md
+<!-- SPECKIT END -->

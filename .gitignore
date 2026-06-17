@@ -1,0 +1,16 @@
+.opencode
+.specify
+specs
+
+# Node.js
+node_modules/
+dist/
+*.log
+
+# Environment 
+.env
+!.env.example
+
+# IDE
+.vscode/
+.idea/

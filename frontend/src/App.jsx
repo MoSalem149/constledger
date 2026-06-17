@@ -118,8 +118,15 @@ function App() {
                 />
                 {/* Reports (tabs) */}
                 <Route path="/reports" element={<ReportsPage />} />
-                {/* Admin */}
-                <Route path="/admin" element={<AdminPage />} />
+                {/* Admin — PMO only */}
+                <Route
+                  path="/admin"
+                  element={
+                    <RoleGuard roles={["pmo"]}>
+                      <AdminPage />
+                    </RoleGuard>
+                  }
+                />
                 {/* 404 catch-all */}
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
