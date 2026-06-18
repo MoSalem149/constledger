@@ -69,7 +69,7 @@ export const contractService = {
    * @param {string} id
    * @param {{ intervalMs?: number, maxWaitMs?: number }} options
    */
-  pollContractReady: (id, { intervalMs = 4000, maxWaitMs = 300000 } = {}) => {
+  pollContractReady: (id, { intervalMs = 4000, maxWaitMs = 600000 } = {}) => {
     return new Promise((resolve, reject) => {
       const deadline = Date.now() + maxWaitMs;
 
