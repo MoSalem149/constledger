@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { userService } from "../services/userService";
 import AdminHeader from "../components/admin/AdminHeader";
 import UserTable from "../components/admin/UserTable";
+import UserModal from "../components/admin/UserModal";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -29,13 +31,22 @@ export default function AdminPage() {
 
   return (
     <div className="bg-bg-main min-h-[calc(100vh-116px)]">
-      <AdminHeader />
+      <AdminHeader onAddUser={() => setModalOpen(true)} />
       <UserTable
         users={users}
         loading={loading}
         error={error}
         onRetry={loadUsers}
       />
+      {modalOpen && (
+        <UserModal
+          onClose={() => setModalOpen(false)}
+          onCreated={() => {
+            setModalOpen(false);
+            loadUsers();
+          }}
+        />
+      )}
     </div>
   );
 }

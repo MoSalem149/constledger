@@ -118,5 +118,5 @@ Config at `frontend/tailwind.config.js` uses **nested** color keys. Write `bg-bg
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/003-admin-user-list/plan.md
+at specs/005-admin-user-edit/plan.md
 <!-- SPECKIT END -->
