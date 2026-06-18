@@ -8,6 +8,7 @@ import ContractStepper from "../contracts/ContractStepper";
 import { contractService } from "../../services/contractService";
 import { ContractContext } from "../../context/EditContaractContext";
 import { useNavigate } from "react-router-dom";
+import ArrowLeftIcon from "../icons/ArrowLeftIcon";
 
 const steps = [
   { key: "upload", label: "Upload" },
@@ -22,21 +23,6 @@ const currentStepIndex = stepStatus.findIndex(
 );
 const currentStep =
   currentStepIndex >= 0 ? currentStepIndex : stepStatus.length - 1;
-
-// =================== ICONS ===================
-const ArrowIcon = () => (
-  <svg
-    width="13"
-    height="13"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.2"
-  >
-    <line x1="19" y1="12" x2="5" y2="12" />
-    <polyline points="12 19 5 12 12 5" />
-  </svg>
-);
 
 // =================== CONTRACT HEADER ===================
 const ContractHeader = ({ contractData, readOnly }) => {
@@ -69,7 +55,7 @@ const ContractHeader = ({ contractData, readOnly }) => {
       {!readOnly && (
         <div className="flex gap-2.5 flex-wrap">
           <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
-            <ArrowIcon /> Re-upload
+            <ArrowLeftIcon /> Re-upload
           </button>
           <button
             onClick={confirmContract}
@@ -137,7 +123,7 @@ const ContractSection = ({ contractData, readOnly }) => {
           progress={null}
         />
       )}
-      <div className="pt-4 pb-8">
+      <div className="pt-4 ">
         <ContractInnerTabs
           tabs={innerTabs}
           active={activeTab}

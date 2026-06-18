@@ -1,5 +1,6 @@
 import ProjectImage from "../../assets/projectImage.png";
 import { formatDate } from "../../utils/formatDate";
+import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 
 export const ContarctCard = ({ contractData }) => {
   const paymentProgress = contractData.paymentProgress ?? {
@@ -39,19 +40,32 @@ export const ContarctCard = ({ contractData }) => {
     {
       title: "Total Budget",
       data: contractData.contract_value,
+      format: (v) => formatBudget(v),
     },
     {
       title: "Progress",
       data: paymentProgress.frequency,
+      format: (v) => `${v}%`,
       footerData: "Earned 0 EGP",
     },
     {
       title: "Timeline",
-      data: `${formatDate(contractData.start_date)} -> ${formatDate(contractData.end_date)}`,
+      data: (
+        <span className="flex items-center gap-1">
+          {formatDate(contractData.start_date)}
+          <ArrowRightIcon />
+          {formatDate(contractData.end_date)}
+        </span>
+      ),
     },
     {
       title: "Next Milestone",
-      data: nextMilestone.length == 0 ? "null" : nextMilestone[0].name,
+      data:
+        nextMilestone.length === 0 ? (
+          <span style={{ letterSpacing: "-2px" }}>__</span>
+        ) : (
+          nextMilestone[0].name
+        ),
     },
   ];
 
@@ -93,13 +107,13 @@ export const ContarctCard = ({ contractData }) => {
               <div key={index} className="item text-text-secondary text-sm">
                 <p>{d.title}</p>
                 <p className="text-text-primary">
-                  {d.title === "Total Budget"
-                    ? formatBudget(d.data)
-                    : d.title === "Progress"
-                      ? d.data + "%"
-                      : d.data}
+                  {d.format ? d.format(d.data) : d.data}{" "}
                 </p>
-                <p>{d.footerData ? d.footerData : "__"}</p>
+                <p>
+                  {d.footerData ?? (
+                    <span style={{ letterSpacing: "-2px" }}>__</span>
+                  )}
+                </p>
               </div>
             ))}
           </div>

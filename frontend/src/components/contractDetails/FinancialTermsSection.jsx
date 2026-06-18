@@ -7,7 +7,7 @@ import { formatDate } from "../../utils/formatDate";
 const AddBtn = ({ label, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-200 rounded-lg
+    className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
       text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
       self-start whitespace-nowrap"
   >
@@ -313,7 +313,6 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 const FinancialTermsSection = ({ data, readOnly }) => (
   <div className="bg-bg-main">
     <UnitPricesSection data={data} readOnly={readOnly} />
-    <PaymentScheduleSection data={data} readOnly={readOnly} />
   </div>
 );
 

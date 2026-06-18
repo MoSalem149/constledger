@@ -54,7 +54,20 @@ function App() {
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   {/* Dashboard */}
-                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "contract_manager",
+                          "finance_team",
+                          "top_management",
+                        ]}
+                      >
+                        <DashboardPage />
+                      </RoleGuard>
+                    }
+                  />
                   {/* Contracts */}
                   {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
                   {/* button on dashboard navigates directly to /contracts/upload. */}
@@ -122,9 +135,29 @@ function App() {
                     }
                   />
                   {/* Reports (tabs) */}
-                  <Route path="/reports" element={<ReportsPage />} />
-                  {/* Admin */}
-                  <Route path="/admin" element={<AdminPage />} />
+                  <Route
+                    path="/reports"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "top_management",
+                          "contract_manager",
+                          "finance_team",
+                        ]}
+                      >
+                        <ReportsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Admin — PMO only */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <RoleGuard roles={["pmo"]}>
+                        <AdminPage />
+                      </RoleGuard>
+                    }
+                  />
                   {/* 404 catch-all */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
