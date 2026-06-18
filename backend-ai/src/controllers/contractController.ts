@@ -5,10 +5,8 @@ import { Types } from 'mongoose';
 import { connectDatabase } from '../config/database';
 import { AuthenticatedRequest } from '../middleware/jwtAuth';
 import { ContractModel } from '../models/Contract.model';
-import { PlannedBudgetModel } from '../models/PlannedBudget.model';
 import { UploadJobModel, IUploadJob } from '../models/UploadJob.model';
 import { runContractAnalysis } from '../services/contract-analysis/runContractAnalysis';
-import { generateBudgetPlan } from '../services/finance-ai/generateBudgetPlan';
 import { downloadS3Object, getPresignedDownloadUrl } from '../utils/s3Storage';
 
 const markAnalysisFailed = async (
@@ -220,38 +218,6 @@ export const updateContract = async (
       res.status(404).json({ message: 'Contract not found' });
       return;
     }
-
-    if (req.body?.status === 'active') {
-      const contractValue = contract.contract_value ?? 0;
-      if (
-        contractValue &&
-        contract.start_date &&
-        contract.end_date &&
-        contract.reporting_period
-      ) {
-        const forecast = generateBudgetPlan({
-          contract_value: contractValue,
-          start_date: contract.start_date,
-          end_date: contract.end_date,
-          reporting_period: contract.reporting_period,
-          milestones: contract.milestones ?? [],
-        });
-
-        await PlannedBudgetModel.findOneAndUpdate(
-          { contract: contract._id },
-          {
-            periods: forecast.periods.map((p) => ({
-              periodLabel: p.label,
-              startDate: new Date(p.startDate),
-              endDate: new Date(p.endDate),
-              plannedAmount: p.plannedAmount,
-            })),
-          },
-          { upsert: true, new: true },
-        );
-      }
-    }
-
     res.json({
       message: 'Successfully updated contract',
       id: contract._id,

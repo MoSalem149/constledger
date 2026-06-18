@@ -11,7 +11,7 @@
  * All extracted string values are stored in English only.
  */
 
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 // ── Sub-document interfaces ───────────────────────────────────────────
 
@@ -24,6 +24,8 @@ export interface IUnitPrice {
   item: string;
   unit: string;
   unit_price: number;
+  quantity: number;
+  total_cost: number;
 }
 
 export interface IPaymentScheduleEntry {
@@ -34,6 +36,7 @@ export interface IPaymentScheduleEntry {
 export interface IMilestone {
   name: string;
   due_date: string | null;
+  value?: number | null;
 }
 
 export interface IPenalty {
@@ -70,14 +73,14 @@ export interface IContractExtractionDocument extends Document {
   start_date: string | null;
   end_date: string | null;
   duration_days: number | null;
-  reporting_period: 'weekly' | 'monthly' | null;
+  reporting_period: "weekly" | "biweekly" | "monthly" | null;
   milestones: IMilestone[];
   penalties: IPenalty[];
 
   // ── Meta ──────────────────────────────────────────────────────────
   isScanned: boolean;
   validationNotes: string[];
-  status: 'active' | 'needs_review' | 'approved' | 'analysis_failed';
+  status: "active" | "needs_review" | "approved" | "analysis_failed";
 
   // ── Timestamps (added by Mongoose) ───────────────────────────────
   createdAt: Date;
@@ -99,6 +102,8 @@ const UnitPriceSchema = new Schema<IUnitPrice>(
     item: { type: String, required: true, trim: true },
     unit: { type: String, required: true, trim: true },
     unit_price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 0 },
+    total_cost: { type: Number, required: true, min: 0 },
   },
   { _id: false },
 );
@@ -115,6 +120,7 @@ const MilestoneSchema = new Schema<IMilestone>(
   {
     name: { type: String, required: true, trim: true },
     due_date: { type: String, default: null },
+    value: { type: Number, default: null, min: 0 },
   },
   { _id: false },
 );
@@ -168,7 +174,7 @@ const ContractExtractionSchema = new Schema<IContractExtractionDocument>(
     duration_days: { type: Number, default: null },
     reporting_period: {
       type: String,
-      enum: ['weekly', 'monthly', null],
+      enum: ["weekly", "biweekly", "monthly", null],
       default: null,
     },
     milestones: { type: [MilestoneSchema], default: [] },
@@ -178,13 +184,13 @@ const ContractExtractionSchema = new Schema<IContractExtractionDocument>(
     validationNotes: { type: [String], default: [] },
     status: {
       type: String,
-      enum: ['active', 'needs_review', 'approved', 'analysis_failed'],
-      default: 'active',
+      enum: ["active", "needs_review", "approved", "analysis_failed"],
+      default: "active",
     },
   },
   {
-    timestamps: true,      // adds createdAt + updatedAt automatically
-    collection: 'contract_extractions',
+    timestamps: true, // adds createdAt + updatedAt automatically
+    collection: "contract_extractions",
   },
 );
 
@@ -193,7 +199,8 @@ ContractExtractionSchema.index({ contractId: 1, createdAt: -1 });
 
 // ── Model ─────────────────────────────────────────────────────────────
 
-export const ContractExtractionModel = mongoose.model<IContractExtractionDocument>(
-  'ContractExtraction',
-  ContractExtractionSchema,
-);
+export const ContractExtractionModel =
+  mongoose.model<IContractExtractionDocument>(
+    "ContractExtraction",
+    ContractExtractionSchema,
+  );

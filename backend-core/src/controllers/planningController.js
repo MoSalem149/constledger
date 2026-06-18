@@ -1,15 +1,9 @@
-import { Response, NextFunction } from 'express';
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 
-import { AuthenticatedRequest } from '../middleware/jwtAuth';
-import { ContractModel } from '../models/Contract.model';
-import {
-  FinancePlanModel,
-  FinancePlanStrategy,
-  IFinancePlanDocument,
-} from '../models/FinancePlan.model';
-import { FinancePlannedModel, IFinancePlannedDocument } from '../models/FinancePlanned.model';
-import { FinancePlanVersionModel } from '../models/FinancePlanVersion.model';
+import Contract from '../models/Contract.js';
+import FinancePlan from '../models/FinancePlan.js';
+import FinancePlanned from '../models/FinancePlanned.js';
+import FinancePlanVersion from '../models/FinancePlanVersion.js';
 import {
   computeKPIs,
   decimalToNumber,
@@ -19,17 +13,25 @@ import {
   serializePeriod,
   toDecimal,
   validateBalance,
-} from '../services/finance-ai/planningService';
+} from '../services/planningService.js';
 
-const allowedStrategies = new Set<FinancePlanStrategy>([
-  'straight_line',
-  's_curve',
-  'milestone_weighted',
-]);
+const allowedStrategies = new Set(['straight_line', 's_curve', 'milestone_weighted']);
 
-function sendPlanningError(res: Response, err: unknown): boolean {
+const serializePlan = (plan) => ({
+  id: plan._id,
+  contractId: plan.contractId,
+  strategy: plan.strategy,
+  strategyParams: plan.strategyParams,
+  totalAmount: roundMoney(decimalToNumber(plan.totalAmount)),
+  generatedAt: plan.generatedAt,
+  generatedBy: plan.generatedBy,
+  status: plan.status,
+  warnings: plan.warnings,
+});
+
+const sendPlanningError = (res, err) => {
   const message = err instanceof Error ? err.message : 'planning_error';
-  const errorMap: Record<string, number> = {
+  const errorMap = {
     invalid_strategy: 400,
     milestone_overweight: 400,
     balance_violation: 400,
@@ -45,96 +47,58 @@ function sendPlanningError(res: Response, err: unknown): boolean {
 
   res.status(statusCode).json({ code: message, message });
   return true;
-}
+};
 
-async function snapshotExistingPlan(
-  plan: IFinancePlanDocument,
-  periods: IFinancePlannedDocument[],
-  userId: string,
-) {
-  const latestVersion = await FinancePlanVersionModel.findOne({ planId: plan._id })
+const getPlanWithPeriods = async (contractId) => {
+  const plan = await FinancePlan.findOne({ contractId });
+  if (!plan) return null;
+
+  const periods = await FinancePlanned.find({ planId: plan._id }).sort({ sortOrder: 1 });
+  return { plan, periods };
+};
+
+const snapshotExistingPlan = async (plan, periods, userId) => {
+  const latestVersion = await FinancePlanVersion.findOne({ planId: plan._id })
     .sort({ versionNumber: -1 })
     .select('versionNumber');
 
-  await FinancePlanVersionModel.create({
+  await FinancePlanVersion.create({
     planId: plan._id,
     contractId: plan.contractId,
     versionNumber: (latestVersion?.versionNumber || 0) + 1,
     snapshot: {
-      plan: {
-        id: plan._id,
-        contractId: plan.contractId,
-        strategy: plan.strategy,
-        strategyParams: plan.strategyParams,
-        totalAmount: decimalToNumber(plan.totalAmount),
-        generatedAt: plan.generatedAt,
-        generatedBy: plan.generatedBy,
-        status: plan.status,
-        warnings: plan.warnings,
-      },
+      plan: serializePlan(plan),
       periods: periods.map(serializePeriod),
     },
     replacedAt: new Date(),
     replacedBy: userId,
   });
-}
+};
 
-async function getPlanWithPeriods(contractId: string) {
-  const plan = await FinancePlanModel.findOne({ contractId });
-  if (!plan) return null;
-
-  const periods = await FinancePlannedModel.find({ planId: plan._id }).sort({ sortOrder: 1 });
-  return { plan, periods };
-}
-
-function serializePlan(plan: IFinancePlanDocument) {
-  return {
-    id: plan._id,
-    contractId: plan.contractId,
-    strategy: plan.strategy,
-    strategyParams: plan.strategyParams,
-    totalAmount: roundMoney(decimalToNumber(plan.totalAmount)),
-    generatedAt: plan.generatedAt,
-    generatedBy: plan.generatedBy,
-    status: plan.status,
-    warnings: plan.warnings,
-  };
-}
-
-export const generateFinancePlan = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const generateFinancePlan = async (req, res, next) => {
   try {
     const { contractId } = req.params;
-    const { strategy, params = {} } = req.body as {
-      strategy?: FinancePlanStrategy;
-      params?: { kSteepness?: number };
-    };
+    const { strategy, params = {} } = req.body;
 
     if (!strategy || !allowedStrategies.has(strategy)) {
-      res.status(400).json({ code: 'invalid_strategy', message: 'invalid_strategy' });
-      return;
+      return res.status(400).json({ code: 'invalid_strategy', message: 'invalid_strategy' });
     }
 
-    const contract = await ContractModel.findById(contractId);
+    const contract = await Contract.findById(contractId);
     if (!contract) {
-      res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
-      return;
+      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
     }
     if (contract.status !== 'active') {
-      res.status(422).json({ code: 'contract_not_active', message: 'Contract is not active' });
-      return;
+      return res.status(422).json({ code: 'contract_not_active', message: 'Contract is not active' });
     }
 
     const generated = generatePlan(contract, strategy, params);
     const existing = await getPlanWithPeriods(contractId);
     if (existing) {
-      await snapshotExistingPlan(existing.plan, existing.periods, req.user!.id);
+      await snapshotExistingPlan(existing.plan, existing.periods, req.user._id);
     }
 
-    const plan = await FinancePlanModel.findOneAndUpdate(
+    const plan = await FinancePlan.findOneAndUpdate(
       { contractId },
       {
         contractId,
@@ -142,15 +106,15 @@ export const generateFinancePlan = async (
         strategyParams: generated.strategyParams,
         totalAmount: toDecimal(generated.totalAmount),
         generatedAt: new Date(),
-        generatedBy: req.user!.id,
+        generatedBy: req.user._id,
         status: 'draft',
         warnings: generated.warnings,
       },
       { new: true, upsert: true, runValidators: true },
     );
 
-    await FinancePlannedModel.deleteMany({ planId: plan._id });
-    const periods = await FinancePlannedModel.insertMany(
+    await FinancePlanned.deleteMany({ planId: plan._id });
+    const periods = await FinancePlanned.insertMany(
       generated.periods.map((period) => ({
         planId: plan._id,
         contractId,
@@ -163,7 +127,7 @@ export const generateFinancePlan = async (
       })),
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       plan: serializePlan(plan),
       periods: periods.map(serializePeriod),
       kpis: computeKPIs(generated.periods, contract),
@@ -175,26 +139,20 @@ export const generateFinancePlan = async (
   }
 };
 
-export const getFinancePlan = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const getFinancePlan = async (req, res, next) => {
   try {
-    const contract = await ContractModel.findById(req.params.contractId);
+    const contract = await Contract.findById(req.params.contractId);
     if (!contract) {
-      res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
-      return;
+      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
     }
 
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
-      return;
+      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
     }
 
     const periods = result.periods.map(serializePeriod);
-    res.json({
+    return res.json({
       plan: serializePlan(result.plan),
       periods,
       kpis: computeKPIs(periods, contract),
@@ -206,38 +164,23 @@ export const getFinancePlan = async (
   }
 };
 
-export const updateFinancePlan = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const updateFinancePlan = async (req, res, next) => {
   try {
     const { contractId } = req.params;
-    const { periods: inputPeriods } = req.body as {
-      periods?: {
-        periodLabel?: string;
-        periodStart?: string;
-        periodEnd?: string;
-        plannedAmount?: number;
-        sortOrder?: number;
-      }[];
-    };
+    const { periods: inputPeriods } = req.body;
 
     if (!Array.isArray(inputPeriods) || inputPeriods.length === 0) {
-      res.status(400).json({ code: 'invalid_periods', message: 'periods array is required' });
-      return;
+      return res.status(400).json({ code: 'invalid_periods', message: 'periods array is required' });
     }
 
-    const contract = await ContractModel.findById(contractId);
+    const contract = await Contract.findById(contractId);
     if (!contract) {
-      res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
-      return;
+      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
     }
 
     const result = await getPlanWithPeriods(contractId);
     if (!result) {
-      res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
-      return;
+      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
     }
 
     const normalized = inputPeriods
@@ -270,15 +213,14 @@ export const updateFinancePlan = async (
       contract.contract_value || 0,
     );
     if (!validation.isValid) {
-      res.status(400).json({
+      return res.status(400).json({
         code: 'balance_violation',
         message: validation.message,
         delta: validation.delta,
       });
-      return;
     }
 
-    await snapshotExistingPlan(result.plan, result.periods, req.user!.id);
+    await snapshotExistingPlan(result.plan, result.periods, req.user._id);
 
     let running = 0;
     const periodsToSave = normalized.map((period, index) => {
@@ -297,15 +239,15 @@ export const updateFinancePlan = async (
 
     result.plan.status = 'draft';
     result.plan.generatedAt = new Date();
-    result.plan.generatedBy = new Types.ObjectId(req.user!.id);
+    result.plan.generatedBy = new mongoose.Types.ObjectId(req.user._id);
     result.plan.warnings = [];
     await result.plan.save();
 
-    await FinancePlannedModel.deleteMany({ planId: result.plan._id });
-    const savedPeriods = await FinancePlannedModel.insertMany(periodsToSave);
+    await FinancePlanned.deleteMany({ planId: result.plan._id });
+    const savedPeriods = await FinancePlanned.insertMany(periodsToSave);
     const serializedPeriods = savedPeriods.map(serializePeriod);
 
-    res.json({
+    return res.json({
       plan: serializePlan(result.plan),
       periods: serializedPeriods,
       kpis: computeKPIs(serializedPeriods, contract),
@@ -313,53 +255,41 @@ export const updateFinancePlan = async (
     });
   } catch (err) {
     if (err instanceof Error && err.message === 'invalid_periods') {
-      res.status(400).json({ code: 'invalid_periods', message: 'Invalid periods payload' });
-      return;
+      return res.status(400).json({ code: 'invalid_periods', message: 'Invalid periods payload' });
     }
     if (sendPlanningError(res, err)) return;
     next(err);
   }
 };
 
-export const confirmFinancePlan = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const confirmFinancePlan = async (req, res, next) => {
   try {
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
-      return;
+      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
     }
 
     result.plan.status = 'confirmed';
     await result.plan.save();
-    res.json({ plan: serializePlan(result.plan) });
+    return res.json({ plan: serializePlan(result.plan) });
   } catch (err) {
     next(err);
   }
 };
 
-export const getPaymentSchedule = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
+export const getPaymentSchedule = async (req, res, next) => {
   try {
-    const contract = await ContractModel.findById(req.params.contractId);
+    const contract = await Contract.findById(req.params.contractId);
     if (!contract) {
-      res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
-      return;
+      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
     }
 
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
-      return;
+      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
     }
 
-    res.json(generatePaymentSchedule(contract, result.plan, result.periods));
+    return res.json(generatePaymentSchedule(contract, result.plan, result.periods));
   } catch (err) {
     next(err);
   }

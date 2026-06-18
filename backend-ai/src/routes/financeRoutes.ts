@@ -2,26 +2,10 @@ import { Router } from 'express';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { authorize } from '../middleware/authorize';
 import * as c from '../controllers/financeController';
-import * as planning from '../controllers/planningController';
 
 const router = Router();
 
 router.use(jwtAuth);
-
-router.post(
-  '/:contractId/plans/generate',
-  authorize('contract_manager', 'pmo'),
-  planning.generateFinancePlan,
-);
-router.route('/:contractId/plan')
-  .get(planning.getFinancePlan)
-  .put(authorize('contract_manager', 'pmo'), planning.updateFinancePlan);
-router.post(
-  '/:contractId/plan/confirm',
-  authorize('contract_manager', 'pmo'),
-  planning.confirmFinancePlan,
-);
-router.get('/:contractId/payment-schedule', planning.getPaymentSchedule);
 
 router.route('/:contractId/planned')
   .get(c.getPlannedBudget)

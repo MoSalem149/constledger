@@ -1,6 +1,6 @@
 // ── Shared types for the AI service ──────────────────────────────────
 
-export type ReportingPeriod = 'weekly' | 'monthly';
+export type ReportingPeriod = 'weekly' | 'biweekly' | 'monthly';
 
 export interface PaymentProgress {
   basis: string | null;
@@ -46,11 +46,11 @@ export interface ContractExtraction {
   /** Total duration in days */
   duration_days: number | null;
 
-  /** Is progress reported weekly or monthly? */
+  /** Is progress reported weekly, biweekly, or monthly? */
   reporting_period: ReportingPeriod | null;
 
   /** Key deliverables and their deadlines */
-  milestones: { name: string; due_date: string }[];
+  milestones: { name: string; due_date: string; value?: number | null }[];
 
   /** Delay penalties: condition and amount/formula */
   penalties: { condition: string; penalty: string }[];
