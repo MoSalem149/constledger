@@ -78,22 +78,23 @@ export const uploadContract = async (
     await UploadJobModel.findByIdAndUpdate(uploadJob._id, { status: 'linked' });
 
     const contractId = contract._id.toString();
-    try {
-      const fileBuffer = await downloadS3Object(uploadJob.s3Key);
-      await runContractAnalysis(contractId, fileBuffer);
-    } catch (analysisErr) {
-      await markAnalysisFailed(contractId, analysisErr);
-      const failed = await ContractModel.findById(contractId).populate('contractDocId');
-      res.status(422).json({
-        message: 'AI contract analysis failed',
-        error: (analysisErr as Error).message,
-        contract: failed,
-      });
-      return;
-    }
 
-    const updated = await ContractModel.findById(contractId).populate('contractDocId');
-    res.status(201).json(updated);
+    // ── Fire and forget ──────────────────────────────────────────────
+    // Run AI analysis in the background so we can respond immediately.
+    // Vercel (and any other proxy) has a hard 60s timeout — awaiting the
+    // full OCR + LLM pipeline here would always cause a 502.
+    // The frontend polls GET /api/contracts/:id until status is no longer
+    // 'processing' to know when analysis is done.
+    downloadS3Object(uploadJob.s3Key)
+      .then((buffer) => runContractAnalysis(contractId, buffer))
+      .catch((err) => markAnalysisFailed(contractId, err));
+
+    // Respond immediately with the contract in 'processing' status
+    res.status(202).json({
+      id: contractId,
+      name: contract.name,
+      status: 'processing',
+    });
   } catch (err) {
     next(err);
   }
