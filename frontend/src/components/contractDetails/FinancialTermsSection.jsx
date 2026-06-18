@@ -7,15 +7,16 @@ import { formatDate } from "../../utils/formatDate";
 const AddBtn = ({ label, onClick }) => (
   <button
     onClick={onClick}
-    className="flex items-center gap-1.5 px-3.5 py-2 border border-gray-200 rounded-lg
+    className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
       text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
       self-start whitespace-nowrap"
   >
     <PlusIcon /> {label}
   </button>
 );
+
 // =================== UNIT PRICES ===================
-const UnitPriceRow = ({ row, onRemove, onChange }) => {
+const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
     name: row.item ?? row.name,
     unit: row.unit,
@@ -26,36 +27,60 @@ const UnitPriceRow = ({ row, onRemove, onChange }) => {
     <div className="grid grid-cols-[1fr_80px_160px_44px] px-4 py-4 items-center border-t border-gray-100">
       <input
         value={local.name}
-        onChange={(e) => setLocal((p) => ({ ...p, name: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors truncate"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
+          outline-none w-full transition-colors truncate ${
+            readOnly ? "cursor-default" : "focus:border-gray-300"
+          }`}
       />
       <input
         value={local.unit}
-        onChange={(e) => setLocal((p) => ({ ...p, unit: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, unit: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${
+            readOnly ? "cursor-default" : "focus:border-gray-300"
+          }`}
       />
       <input
         value={local.price}
-        onChange={(e) => setLocal((p) => ({ ...p, price: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-primary font-medium text-right pr-4 bg-transparent
-          border-b border-transparent focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, price: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary font-medium text-right pr-4 bg-transparent
+          border-b border-transparent outline-none w-full transition-colors ${
+            readOnly ? "cursor-default" : "focus:border-gray-300"
+          }`}
       />
-      <button
-        onClick={onRemove}
-        className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
-      >
-        <TrashIcon />
-      </button>
+      {!readOnly && (
+        <button
+          onClick={onRemove}
+          className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
+        >
+          <TrashIcon />
+        </button>
+      )}
+      {readOnly && <span />}
     </div>
   );
 };
 
-const UnitPricesSection = ({ data }) => {
+const UnitPricesSection = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
 
   const [rows, setRows] = useState(
@@ -107,12 +132,14 @@ const UnitPricesSection = ({ data }) => {
             in the project
           </p>
         </div>
-        <AddBtn label="Add Item" onClick={handleAdd} />
+        {!readOnly && <AddBtn label="Add Item" onClick={handleAdd} />}
       </div>
 
       <div className="overflow-x-auto">
         <div className="min-w-[460px] overflow-hidden">
-          <div className="grid grid-cols-[1fr_80px_160px_44px] bg-bg-grey px-4 py-4">
+          <div
+            className={`grid ${readOnly ? "grid-cols-[1fr_80px_160px_44px]" : "grid-cols-[1fr_80px_160px_44px]"} bg-bg-grey px-4 py-4`}
+          >
             <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
               Item
             </span>
@@ -130,6 +157,7 @@ const UnitPricesSection = ({ data }) => {
               row={row}
               onRemove={() => handleRemove(row.id)}
               onChange={(fields) => handleChange(row.id, fields)}
+              readOnly={readOnly}
             />
           ))}
         </div>
@@ -139,7 +167,7 @@ const UnitPricesSection = ({ data }) => {
 };
 
 // =================== PAYMENT SCHEDULE ===================
-const PaymentRow = ({ payment, onRemove, onChange }) => {
+const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
     date: payment.date,
     amount: payment.amount,
@@ -150,36 +178,54 @@ const PaymentRow = ({ payment, onRemove, onChange }) => {
     <div className="grid grid-cols-[1fr_170px_170px_44px] px-4 py-4 items-center border-t border-gray-100">
       <input
         value={local.date}
-        onChange={(e) => setLocal((p) => ({ ...p, date: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, date: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
       <input
         value={local.amount}
-        onChange={(e) => setLocal((p) => ({ ...p, amount: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, amount: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
       <input
         value={local.type}
-        onChange={(e) => setLocal((p) => ({ ...p, type: e.target.value }))}
-        onBlur={() => onChange(local)}
-        className="text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
-          focus:border-gray-300 outline-none w-full transition-colors"
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, type: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={`text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
+          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
-      <button
-        onClick={onRemove}
-        className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
-      >
-        <TrashIcon />
-      </button>
+      {!readOnly && (
+        <button
+          onClick={onRemove}
+          className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
+        >
+          <TrashIcon />
+        </button>
+      )}
+      {readOnly && <span />}
     </div>
   );
 };
 
-const PaymentScheduleSection = ({ data }) => {
+const PaymentScheduleSection = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
 
   const [payments, setPayments] = useState(
@@ -231,7 +277,7 @@ const PaymentScheduleSection = ({ data }) => {
             {payments.length} installments · Total {total.toLocaleString()} EGP
           </p>
         </div>
-        <AddBtn label="Add Installment" onClick={handleAdd} />
+        {!readOnly && <AddBtn label="Add Installment" onClick={handleAdd} />}
       </div>
 
       <div className="overflow-x-auto">
@@ -254,6 +300,7 @@ const PaymentScheduleSection = ({ data }) => {
               payment={p}
               onRemove={() => handleRemove(p.id)}
               onChange={(fields) => handleChange(p.id, fields)}
+              readOnly={readOnly}
             />
           ))}
         </div>
@@ -263,10 +310,9 @@ const PaymentScheduleSection = ({ data }) => {
 };
 
 // =================== EXPORT ===================
-const FinancialTermsSection = ({ data }) => (
+const FinancialTermsSection = ({ data, readOnly }) => (
   <div className="bg-bg-main">
-    <UnitPricesSection data={data} />
-    <PaymentScheduleSection data={data} />
+    <UnitPricesSection data={data} readOnly={readOnly} />
   </div>
 );
 

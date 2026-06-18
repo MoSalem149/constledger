@@ -23,6 +23,7 @@ import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./components/common/NotFoundPage";
 import ContractsPage from "./pages/ContractsPage";
 import EditContractContext from "./context/EditContaractContext";
+import UploadedContractContext from "./context/UploadedContractContext";
 
 function App() {
   return (
@@ -34,20 +35,21 @@ function App() {
 
     <AuthProvider>
       <BrowserRouter>
-        <EditContractContext>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            {/* ---------------------------------------------------------- */}
-            {/* Protected routes — all require authentication                */}
-            {/*                                                            */}
-            {/* Nesting: PrivateRoute → DashboardLayout → page routes       */}
-            {/*   1. PrivateRoute checks auth (loading→spinner, !auth→login) */}
-            {/*   2. DashboardLayout renders sidebar + topbar + <Outlet /> */}
-            {/*   3. Matched page route renders inside the outlet            */}
-            {/*                                                            */}
-            {/* This means every new page automatically gets auth + chrome.  */}
-            {/* ---------------------------------------------------------- */}
+        <UploadedContractContext>
+          <EditContractContext>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* ---------------------------------------------------------- */}
+              {/* Protected routes — all require authentication                */}
+              {/*                                                            */}
+              {/* Nesting: PrivateRoute → DashboardLayout → page routes       */}
+              {/*   1. PrivateRoute checks auth (loading→spinner, !auth→login) */}
+              {/*   2. DashboardLayout renders sidebar + topbar + <Outlet /> */}
+              {/*   3. Matched page route renders inside the outlet            */}
+              {/*                                                            */}
+              {/* This means every new page automatically gets auth + chrome.  */}
+              {/* ---------------------------------------------------------- */}
 
             <Route element={<PrivateRoute />}>
               <Route element={<DashboardLayout />}>

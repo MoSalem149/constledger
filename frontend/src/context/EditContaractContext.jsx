@@ -5,8 +5,6 @@ export const ContractContext = createContext(null);
 export default function EditContractContext({ children }) {
   const [data, setData] = useState({});
 
-  console.log(data);
-
   const changeData = (newData) => {
     setData((prev) => ({ ...prev, ...newData }));
   };

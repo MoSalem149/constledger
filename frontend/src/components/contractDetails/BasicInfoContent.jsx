@@ -5,13 +5,9 @@ import { ClockIcon } from "../icons/ClockIcon";
 import { DollarIcon } from "../icons/DollarIcon.jsx";
 import { TrendIcon } from "../icons/TrendIcon";
 import { ContractContext } from "../../context/EditContaractContext.jsx";
+import { addSpace } from "../../utils/textFormater.js";
 
 // =================== STATUS DOT ===================
-const statusClass = {
-  green: "bg-green-500",
-  orange: "bg-orange-500",
-  red: "bg-red-500",
-};
 const Dot = () => (
   <div className={`w-2 h-2 rounded-full flex-shrink-0 bg-green-500`} />
 );
@@ -25,113 +21,90 @@ const PartyField = ({
   onChangeRole,
   onDelete,
   onBlur,
+  readOnly,
 }) => {
   return (
     <div className="flex items-center gap-3">
       <input
-        value={role ? role : "null"}
-        onChange={(e) => onChangeRole(index, e.target.value)}
-        onBlur={onBlur}
-        className="w-[140px] px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1"
+        value={role ? addSpace(role) : ""}
+        onChange={
+          readOnly ? undefined : (e) => onChangeRole(index, e.target.value)
+        }
+        onBlur={readOnly ? undefined : onBlur}
+        readOnly={readOnly}
+        className={`w-[140px] px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1 ${
+          readOnly ? "cursor-default select-text" : ""
+        }`}
       />
-
       <input
-        value={name}
-        onChange={(e) => onChangeName(index, e.target.value)}
-        onBlur={onBlur}
-        placeholder="Party name"
-        className="flex-1 min-w-0 px-3 py-2.5 border border-border rounded-lg text-[13px]"
+        value={name || ""}
+        onChange={
+          readOnly ? undefined : (e) => onChangeName(index, e.target.value)
+        }
+        onBlur={readOnly ? undefined : onBlur}
+        readOnly={readOnly}
+        placeholder={readOnly ? "" : "Party name"}
+        className={`flex-1 min-w-0 px-3 py-2.5 border border-border rounded-lg text-[13px] ${
+          readOnly ? "cursor-default select-text bg-bg-cards1" : ""
+        }`}
       />
-
-      <button
-        onClick={() => onDelete(index)}
-        className="text-text-secondary p-1 flex-shrink-0"
-      >
-        <TrashIcon />
-      </button>
+      {!readOnly && (
+        <button
+          onClick={() => onDelete(index)}
+          className="text-text-secondary p-1 flex-shrink-0"
+        >
+          <TrashIcon />
+        </button>
+      )}
     </div>
   );
 };
 
 // =================== CONTRACT PARTIES ===================
-const ContractPartiesSection = ({ parties = [] }) => {
-  const { changeData, data } = useContext(ContractContext);
-
+const ContractPartiesSection = ({ parties = [], readOnly }) => {
+  const { changeData } = useContext(ContractContext);
   const [localParties, setLocalParties] = useState(parties);
 
   useEffect(() => {
     setLocalParties(parties);
   }, [parties]);
 
-  // ================= EDIT =================
   function handleChangeName(index, value) {
     setLocalParties((prev) =>
-      prev.map((party, i) =>
-        i === index
-          ? {
-              ...party,
-              name: value,
-            }
-          : party,
-      ),
+      prev.map((party, i) => (i === index ? { ...party, name: value } : party)),
     );
   }
 
   function handleChangeRole(index, value) {
     setLocalParties((prev) =>
-      prev.map((party, i) =>
-        i === index
-          ? {
-              ...party,
-              role: value,
-            }
-          : party,
-      ),
+      prev.map((party, i) => (i === index ? { ...party, role: value } : party)),
     );
   }
 
-  // ================= DELETE =================
   function handleDelete(index) {
     const updated = localParties.filter((_, i) => i !== index);
-
     setLocalParties(updated);
-
-    changeData({
-      parties: updated,
-    });
+    changeData({ parties: updated });
   }
 
-  // ================= ADD =================
   function handleAddParty() {
-    const updated = [
-      ...localParties,
-      {
-        role: "new_party",
-        name: "",
-      },
-    ];
-
+    const updated = [...localParties, { role: "new_party", name: "" }];
     setLocalParties(updated);
-
-    changeData({
-      parties: updated,
-    });
+    changeData({ parties: updated });
   }
 
-  // ================= SAVE TO CONTEXT =================
   function saveToContext() {
-    changeData({
-      parties: localParties,
-    });
+    changeData({ parties: localParties });
   }
 
   return (
     <div className="mb-5">
       <p className="text-[15px] font-medium mb-1">Contract parties</p>
-
-      <p className="text-xs text-text-secondary mb-3.5">
-        Review, edit, or remove any optional data before saving
-      </p>
+      {!readOnly && (
+        <p className="text-xs text-text-secondary mb-3.5">
+          Review, edit, or remove any optional data before saving
+        </p>
+      )}
 
       <div className="flex flex-col gap-2.5 mb-3">
         {localParties.map((p, i) => (
@@ -144,28 +117,36 @@ const ContractPartiesSection = ({ parties = [] }) => {
             onChangeRole={handleChangeRole}
             onDelete={handleDelete}
             onBlur={saveToContext}
+            readOnly={readOnly}
           />
         ))}
       </div>
 
-      <button
-        onClick={handleAddParty}
-        className="w-full py-2.5 border-2 border-dashed border-primary rounded-lg text-primary text-[13px] font-medium"
-      >
-        + Add party
-      </button>
+      {!readOnly && (
+        <button
+          onClick={handleAddParty}
+          className="w-full text-left p-2.5 border-2 border-dashed border-primary rounded-full text-primary text-[13px] font-medium"
+        >
+          + Add party
+        </button>
+      )}
     </div>
   );
 };
 
 // =================== FIELD BOX ===================
-const FieldBox = ({ label, value, field }) => {
-  const { changeData, data } = useContext(ContractContext);
-  const [val, setVal] = useState(value);
+const FieldBox = ({ label, value, field, readOnly }) => {
+  const { changeData } = useContext(ContractContext);
+  const [val, setVal] = useState(value ?? "");
+
+  useEffect(() => {
+    setVal(value ?? "");
+  }, [value]);
 
   function saveData() {
     changeData({ [field]: val });
   }
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-2">
@@ -174,44 +155,61 @@ const FieldBox = ({ label, value, field }) => {
       </div>
       <input
         value={val}
-        onChange={(e) => setVal(e.target.value)}
-        onBlur={saveData}
-        className="px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary w-full"
+        onChange={readOnly ? undefined : (e) => setVal(e.target.value)}
+        onBlur={readOnly ? undefined : saveData}
+        readOnly={readOnly}
+        className={`px-3 py-2.5 border border-border rounded-lg text-[13px] text-text-primary w-full ${
+          readOnly ? "cursor-default select-text bg-bg-cards1" : ""
+        }`}
       />
     </div>
   );
 };
 
 // =================== CONTRACT FIELDS GRID ===================
-const ContractFieldsGrid = ({ fields }) => (
+const ContractFieldsGrid = ({ fields, readOnly }) => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
     {fields.map((f, i) => (
-      <FieldBox key={i} {...f} />
+      <FieldBox key={i} {...f} readOnly={readOnly} />
     ))}
   </div>
 );
 
-// =================== PAYMENT CARDS ===================
-const NoteBox = ({ bgClass, textClass, children, onBlur, onChange }) => (
+// =================== NOTE BOX ===================
+const NoteBox = ({ bgClass, textClass, value, onBlur, onChange, readOnly }) => (
   <div className={`${bgClass} p-2 flex gap-2 items-start rounded`}>
     <div className={`${textClass} mt-0.5 flex-shrink-0`}>
       <InfoIcon />
     </div>
     <textarea
-      defaultValue={children}
-      onChange={onChange}
-      onBlur={onBlur}
-      className={`text-[11.5px] ${textClass} leading-relaxed bg-transparent border-none outline-none w-full`}
+      value={value ?? ""}
+      onChange={readOnly ? undefined : onChange}
+      onBlur={readOnly ? undefined : onBlur}
+      readOnly={readOnly}
+      className={`text-[11.5px] ${textClass} leading-relaxed bg-transparent border-none outline-none w-full ${
+        readOnly ? "cursor-default resize-none" : ""
+      }`}
     />
   </div>
 );
 
-const AdvancePaymentCard = ({ data }) => {
+const AdvancePaymentCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
+
+  const term0 = data?.[0] ?? {};
+
   const [localData, setLocalData] = useState({
-    percentage: data[0].percentage,
-    description: data[0].description,
+    percentage: term0.percentage ?? "",
+    description: term0.description ?? "",
   });
+
+  useEffect(() => {
+    const t = data?.[0] ?? {};
+    setLocalData({
+      percentage: t.percentage ?? "",
+      description: t.description ?? "",
+    });
+  }, [data]);
 
   const handleBlur = (field) => {
     changeData({
@@ -228,7 +226,7 @@ const AdvancePaymentCard = ({ data }) => {
           <div className="w-[30px] h-[30px] rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
             <DollarIcon />
           </div>
-          <span className="text-[13.5px] font-medium">{data[0].name}</span>
+          <span className="text-[13.5px] font-medium">{term0.name ?? ""}</span>
         </div>
         <div className="mb-2.5">
           <div className="flex items-center gap-1.5 mb-1.5">
@@ -237,35 +235,58 @@ const AdvancePaymentCard = ({ data }) => {
           </div>
           <input
             value={localData.percentage}
-            onChange={(e) =>
-              setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) =>
+                    setLocalData((prev) => ({
+                      ...prev,
+                      percentage: e.target.value,
+                    }))
             }
-            onBlur={() => handleBlur("percentage")}
-            className="px-3 py-2 w-full border border-border rounded-lg text-[13px]"
+            onBlur={readOnly ? undefined : () => handleBlur("percentage")}
+            readOnly={readOnly}
+            className={`px-3 py-2 w-full border border-border rounded-lg text-[13px] ${
+              readOnly ? "cursor-default select-text bg-bg-cards1" : ""
+            }`}
           />
         </div>
       </div>
       <NoteBox
         bgClass="bg-bg-onTrak"
         textClass="text-green-700"
-        onChange={(e) =>
-          setLocalData((prev) => ({ ...prev, description: e.target.value }))
+        value={localData.description}
+        onChange={
+          readOnly
+            ? undefined
+            : (e) =>
+                setLocalData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
         }
-        onBlur={() => handleBlur("description")}
-      >
-        {localData.description}
-      </NoteBox>
+        onBlur={readOnly ? undefined : () => handleBlur("description")}
+        readOnly={readOnly}
+      />
     </div>
   );
 };
 
-const ProgressPaymentCard = ({ data }) => {
+const ProgressPaymentCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
   const [localData, setLocalData] = useState({
-    basis: data.basis,
-    frequency: data.frequency,
-    dueTo: data.dueTo,
+    basis: data?.basis ?? "",
+    frequency: data?.frequency ?? "",
+    dueTo: data?.dueTo ?? "",
   });
+
+  useEffect(() => {
+    setLocalData({
+      basis: data?.basis ?? "",
+      frequency: data?.frequency ?? "",
+      dueTo: data?.dueTo ?? "",
+    });
+  }, [data]);
 
   const fields = [
     { field: "basis", label: "Basis" },
@@ -289,15 +310,27 @@ const ProgressPaymentCard = ({ data }) => {
           </div>
           <input
             value={localData[field]}
-            onChange={(e) =>
-              setLocalData((prev) => ({ ...prev, [field]: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) =>
+                    setLocalData((prev) => ({
+                      ...prev,
+                      [field]: e.target.value,
+                    }))
             }
-            onBlur={() =>
-              changeData({
-                paymentProgress: { ...data, [field]: localData[field] },
-              })
+            onBlur={
+              readOnly
+                ? undefined
+                : () =>
+                    changeData({
+                      paymentProgress: { ...data, ...localData },
+                    })
             }
-            className="px-3 py-2 border border-border rounded-lg text-[13px]"
+            readOnly={readOnly}
+            className={`w-full px-3 py-2 border border-border rounded-lg text-[13px] ${
+              readOnly ? "cursor-default select-text bg-bg-cards1" : ""
+            }`}
           />
         </div>
       ))}
@@ -305,12 +338,35 @@ const ProgressPaymentCard = ({ data }) => {
   );
 };
 
-const RetentionCard = ({ data }) => {
+const RetentionCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
+
+  const term2 = data?.[2] ?? {};
+
+  const retentionTotal = (data ?? []).reduce((sum, term) => {
+    const isRetention = term.name?.toLowerCase().includes("retention");
+    const val = parseFloat(term.percentage);
+    return isRetention && !isNaN(val) ? sum + val : sum;
+  }, 0);
+
   const [localData, setLocalData] = useState({
-    percentage: data[2].percentage,
-    description: data[2].description,
+    percentage:
+      retentionTotal !== 0 ? retentionTotal : (term2.percentage ?? ""),
+    description: term2.description ?? "",
   });
+
+  useEffect(() => {
+    const t = data?.[2] ?? {};
+    const total = (data ?? []).reduce((sum, term) => {
+      const isRetention = term.name?.toLowerCase().includes("retention");
+      const val = parseFloat(term.percentage);
+      return isRetention && !isNaN(val) ? sum + val : sum;
+    }, 0);
+    setLocalData({
+      percentage: total !== 0 ? total : (t.percentage ?? ""),
+      description: t.description ?? "",
+    });
+  }, [data]);
 
   const handleBlur = (field) => {
     changeData({
@@ -327,7 +383,7 @@ const RetentionCard = ({ data }) => {
           <div className="min-w-[30px] min-h-[30px] rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
             <ClockIcon />
           </div>
-          <span className="text-[13.5px] font-medium">{data[2].name}</span>
+          <span className="text-[13.5px] font-medium">Retentions</span>
         </div>
         <div className="mb-2.5">
           <div className="flex items-center gap-1.5 mb-1.5">
@@ -336,41 +392,60 @@ const RetentionCard = ({ data }) => {
           </div>
           <input
             value={localData.percentage}
-            onChange={(e) =>
-              setLocalData((prev) => ({ ...prev, percentage: e.target.value }))
+            onChange={
+              readOnly
+                ? undefined
+                : (e) =>
+                    setLocalData((prev) => ({
+                      ...prev,
+                      percentage: e.target.value,
+                    }))
             }
-            onBlur={() => handleBlur("percentage")}
-            className="px-3 py-2 w-full border border-border rounded-lg text-[13px]"
+            onBlur={readOnly ? undefined : () => handleBlur("percentage")}
+            readOnly={readOnly}
+            className={`px-3 py-2 w-full border border-border rounded-lg text-[13px] ${
+              readOnly ? "cursor-default select-text bg-bg-cards1" : ""
+            }`}
           />
         </div>
       </div>
       <NoteBox
         bgClass="bg-bg-atRisk100"
         textClass="text-orange-700"
-        onChange={(e) =>
-          setLocalData((prev) => ({ ...prev, description: e.target.value }))
+        value={localData.description}
+        onChange={
+          readOnly
+            ? undefined
+            : (e) =>
+                setLocalData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
         }
-        onBlur={() => handleBlur("description")}
-      >
-        {localData.description}
-      </NoteBox>
+        onBlur={readOnly ? undefined : () => handleBlur("description")}
+        readOnly={readOnly}
+      />
     </div>
   );
 };
 
-const PaymentTermsSection = ({ payment }) => (
-  <div>
-    <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
-    <div className="flex flex-col md:flex-row gap-3">
-      <AdvancePaymentCard data={payment.payment_terms} />
-      <ProgressPaymentCard data={payment.paymentProgress} />
-      <RetentionCard data={payment.payment_terms} />
+const PaymentTermsSection = ({ payment, readOnly }) => {
+  const terms = payment.payment_terms ?? [];
+  const progress = payment.paymentProgress ?? null;
+  return (
+    <div>
+      <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
+      <div className="flex flex-col md:flex-row gap-3">
+        <AdvancePaymentCard data={terms} readOnly={readOnly} />
+        <ProgressPaymentCard data={progress} readOnly={readOnly} />
+        <RetentionCard data={terms} readOnly={readOnly} />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // =================== BASIC INFO CONTENT ===================
-export const BasicInfoContent = ({ data }) => {
+export const BasicInfoContent = ({ data, readOnly }) => {
   const contractFields = [
     {
       value: data.contract_value,
@@ -378,11 +453,7 @@ export const BasicInfoContent = ({ data }) => {
       field: "contract_value",
     },
     { value: data.currency, label: "Currency", field: "currency" },
-    {
-      value: data.duration_days,
-      label: "Duration",
-      field: "duration_days",
-    },
+    { value: data.duration_days, label: "Duration", field: "duration_days" },
     {
       value: data.reporting_period,
       label: "Reporting Period",
@@ -392,9 +463,9 @@ export const BasicInfoContent = ({ data }) => {
 
   return (
     <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
-      <ContractPartiesSection parties={data.parties} />
-      <ContractFieldsGrid fields={contractFields} />
-      <PaymentTermsSection payment={data} />
+      <ContractPartiesSection parties={data.parties} readOnly={readOnly} />
+      <ContractFieldsGrid fields={contractFields} readOnly={readOnly} />
+      <PaymentTermsSection payment={data} readOnly={readOnly} />
     </div>
   );
 };
