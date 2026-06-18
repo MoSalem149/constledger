@@ -222,7 +222,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
           className={`grid ${readOnly ? "grid-cols-[1fr_160px_100px]" : "grid-cols-[1fr_160px_100px_44px]"} bg-gray-100 px-4 py-4`}
         >
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-            Name
+            REPORTING PERIOD
           </span>
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             Due Time
