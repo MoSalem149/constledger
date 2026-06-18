@@ -16,11 +16,26 @@ const ROLES = [
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function UserModal({ onClose, onCreated }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+function isDuplicateEmailError(err) {
+  const status = err.response?.status;
+  const data = err.response?.data || {};
+  if (status === 409) return true;
+  if (status === 500 && data.code === 11000) return true;
+  const msg = typeof data.message === "string" ? data.message : "";
+  return /duplicate key|E11000/i.test(msg);
+}
+
+export default function UserModal({
+  onClose,
+  onCreated,
+  editingUser = null,
+  onUpdated,
+}) {
+  const isEditMode = Boolean(editingUser);
+  const [name, setName] = useState(editingUser?.name ?? "");
+  const [email, setEmail] = useState(editingUser?.email ?? "");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState(null);
+  const [role, setRole] = useState(editingUser?.role ?? null);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
@@ -32,7 +47,7 @@ export default function UserModal({ onClose, onCreated }) {
     if (!email.trim()) next.email = "Email is required";
     else if (!EMAIL_REGEX.test(email.trim()))
       next.email = "Enter a valid email address";
-    if (!password) next.password = "Password is required";
+    if (!isEditMode && !password) next.password = "Password is required";
     if (!role) next.role = "Select a role";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -43,19 +58,39 @@ export default function UserModal({ onClose, onCreated }) {
     setSubmitError(null);
     if (!validate()) return;
     setSubmitting(true);
-    userService
-      .createUser({ name: name.trim(), email: email.trim(), password, role })
-      .then(() => {
-        onCreated();
-      })
-      .catch((err) => {
-        if (err.response?.status === 409) {
-          setSubmitError("This email is already in use");
-        } else {
-          setSubmitError("Something went wrong. Please try again.");
-        }
-        setSubmitting(false);
-      });
+    if (isEditMode) {
+      const userId = editingUser.id || editingUser._id;
+      const payload = { name: name.trim(), email: email.trim(), role };
+      if (password) payload.password = password;
+      userService
+        .updateUser(userId, payload)
+        .then((res) => onUpdated(res.user))
+        .catch((err) => {
+          const status = err.response?.status;
+          if (isDuplicateEmailError(err)) {
+            setSubmitError("This email is already in use");
+          } else if (status === 404) {
+            setSubmitError("This user no longer exists");
+          } else {
+            setSubmitError("Something went wrong. Please try again.");
+          }
+          setSubmitting(false);
+        });
+    } else {
+      userService
+        .createUser({ name: name.trim(), email: email.trim(), password, role })
+        .then(() => {
+          onCreated();
+        })
+        .catch((err) => {
+          if (isDuplicateEmailError(err)) {
+            setSubmitError("This email is already in use");
+          } else {
+            setSubmitError("Something went wrong. Please try again.");
+          }
+          setSubmitting(false);
+        });
+    }
   }
 
   function handleClose() {
@@ -72,7 +107,7 @@ export default function UserModal({ onClose, onCreated }) {
       name.trim() &&
       email.trim() &&
       EMAIL_REGEX.test(email.trim()) &&
-      password &&
+      (isEditMode || password) &&
       role
     );
   }
@@ -86,7 +121,7 @@ export default function UserModal({ onClose, onCreated }) {
         className="bg-bg-main rounded-xl w-full max-w-[460px] "
         role="dialog"
         aria-modal="true"
-        aria-labelledby="add-user-title"
+        aria-labelledby={isEditMode ? "edit-user-title" : "add-user-title"}
       >
         <div className="flex items-start justify-between mb-6 gap-4 p-6 bg-bg-cards1 rounded-t-xl">
           <div className="flex items-start gap-3">
@@ -95,10 +130,10 @@ export default function UserModal({ onClose, onCreated }) {
             </div>
             <div className="">
               <h2
-                id="add-user-title"
+                id={isEditMode ? "edit-user-title" : "add-user-title"}
                 className="text-lg font-medium  text-text-primary"
               >
-                Add User
+                {isEditMode ? "Edit User" : "Add User"}
               </h2>
               <p className="text-text-placeholder font-normal text-xs ">
                 Create a new team member account
@@ -159,6 +194,11 @@ export default function UserModal({ onClose, onCreated }) {
             <label className="block text-text-primary  font-medium mb-2">
               Password
             </label>
+            {isEditMode && (
+              <p className="text-text-placeholder text-xs mb-2">
+                Leave blank to keep the current password
+              </p>
+            )}
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
@@ -230,17 +270,17 @@ export default function UserModal({ onClose, onCreated }) {
             <button
               type="submit"
               disabled={submitting || !isFormValid()}
-              className="flex-1 bg-primary text-white rounded-3xl px-11 py-3.5 text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-evenly "
+              className="flex-1 bg-primary text-white rounded-3xl px-7 py-3.5 text-sm font-medium hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-evenly "
             >
               {submitting ? (
                 <>
                   <SpinnerIcon className="animate-spin" />
-                  Creating…
+                  {isEditMode ? "Saving…" : "Creating…"}
                 </>
               ) : (
                 <>
                   <PlusIcon />
-                  Add User
+                  {isEditMode ? "Save Changes" : "Add User"}
                 </>
               )}
             </button>

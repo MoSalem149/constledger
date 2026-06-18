@@ -9,6 +9,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
     loadUsers();
@@ -37,12 +38,23 @@ export default function AdminPage() {
         loading={loading}
         error={error}
         onRetry={loadUsers}
+        onEdit={(user) => setEditingUser(user)}
       />
       {modalOpen && (
         <UserModal
           onClose={() => setModalOpen(false)}
           onCreated={() => {
             setModalOpen(false);
+            loadUsers();
+          }}
+        />
+      )}
+      {editingUser && (
+        <UserModal
+          editingUser={editingUser}
+          onClose={() => setEditingUser(null)}
+          onUpdated={() => {
+            setEditingUser(null);
             loadUsers();
           }}
         />
