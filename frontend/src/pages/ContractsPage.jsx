@@ -215,7 +215,6 @@ const ContractsPage = () => {
       c.status !== "analysis_failed" &&
       c.status !== "processing",
   );
-  console.log(contracts);
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-116px)]">

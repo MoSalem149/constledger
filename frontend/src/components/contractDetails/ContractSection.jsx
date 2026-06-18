@@ -137,7 +137,7 @@ const ContractSection = ({ contractData, readOnly }) => {
           progress={null}
         />
       )}
-      <div className="pt-4 pb-8">
+      <div className="pt-4 ">
         <ContractInnerTabs
           tabs={innerTabs}
           active={activeTab}
