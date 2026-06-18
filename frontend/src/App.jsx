@@ -51,116 +51,120 @@ function App() {
               {/* This means every new page automatically gets auth + chrome.  */}
               {/* ---------------------------------------------------------- */}
 
-            <Route element={<PrivateRoute />}>
-              <Route element={<DashboardLayout />}>
-                {/* Dashboard */}
-                <Route
-                  path="/dashboard"
-                  element={
-                    <RoleGuard
-                      roles={[
-                        "contract_manager",
-                        "finance_team",
-                        "top_management",
-                      ]}
-                    >
-                      <DashboardPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* Contracts */}
-                {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
-                {/* button on dashboard navigates directly to /contracts/upload. */}
-                //* Make sure you make the role gard of this route
-                <Route
-                  path="/contracts"
-                  element={
-                    <RoleGuard roles={["contract_manager"]}>
-                      <ContractsPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/contracts/upload"
-                  element={
-                    <RoleGuard roles={["contract_manager"]}>
-                      <UploadContractPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route path="/contracts/:id" element={<ContractDetailPage />} />
-                <Route
-                  path="/contracts/:id/edit"
-                  element={
-                    <RoleGuard roles={["contract_manager"]}>
-                      <ReviewEditFormPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* Finance */}
-                <Route path="/finance" element={<FinancePage />} />
-                <Route
-                  path="/finance/:contractId/variance"
-                  element={<BudgetVariancePage />}
-                />
-                <Route
-                  path="/finance/:contractId/progress"
-                  element={<ProgressListPage />}
-                />
-                <Route
-                  path="/finance/:contractId/progress/new"
-                  element={
-                    <RoleGuard roles={["finance_team"]}>
-                      <ProgressFormPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/finance/:contractId/progress/:entryId/edit"
-                  element={
-                    <RoleGuard roles={["finance_team"]}>
-                      <ProgressFormPage />
-                    </RoleGuard>
-                  }
-                />
-                <Route
-                  path="/finance/:contractId/progress/:entryId/review"
-                  element={
-                    <RoleGuard roles={["contract_manager"]}>
-                      <ReviewProgressPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* Reports (tabs) */}
-                <Route
-                  path="/reports"
-                  element={
-                    <RoleGuard
-                      roles={[
-                        "top_management",
-                        "contract_manager",
-                        "finance_team",
-                      ]}
-                    >
-                      <ReportsPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* Admin — PMO only */}
-                <Route
-                  path="/admin"
-                  element={
-                    <RoleGuard roles={["pmo"]}>
-                      <AdminPage />
-                    </RoleGuard>
-                  }
-                />
-                {/* 404 catch-all */}
-                <Route path="*" element={<NotFoundPage />} />
+              <Route element={<PrivateRoute />}>
+                <Route element={<DashboardLayout />}>
+                  {/* Dashboard */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "contract_manager",
+                          "finance_team",
+                          "top_management",
+                        ]}
+                      >
+                        <DashboardPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Contracts */}
+                  {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
+                  {/* button on dashboard navigates directly to /contracts/upload. */}
+                  //* Make sure you make the role gard of this route
+                  <Route
+                    path="/contracts"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <ContractsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/contracts/upload"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <UploadContractPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/contracts/:id"
+                    element={<ContractDetailPage />}
+                  />
+                  <Route
+                    path="/contracts/:id/edit"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <ReviewEditFormPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Finance */}
+                  <Route path="/finance" element={<FinancePage />} />
+                  <Route
+                    path="/finance/:contractId/variance"
+                    element={<BudgetVariancePage />}
+                  />
+                  <Route
+                    path="/finance/:contractId/progress"
+                    element={<ProgressListPage />}
+                  />
+                  <Route
+                    path="/finance/:contractId/progress/new"
+                    element={
+                      <RoleGuard roles={["finance_team"]}>
+                        <ProgressFormPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/finance/:contractId/progress/:entryId/edit"
+                    element={
+                      <RoleGuard roles={["finance_team"]}>
+                        <ProgressFormPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/finance/:contractId/progress/:entryId/review"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <ReviewProgressPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Reports (tabs) */}
+                  <Route
+                    path="/reports"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "top_management",
+                          "contract_manager",
+                          "finance_team",
+                        ]}
+                      >
+                        <ReportsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Admin — PMO only */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <RoleGuard roles={["pmo"]}>
+                        <AdminPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* 404 catch-all */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Route>
               </Route>
-            </Route>
-          </Routes>
-        </EditContractContext>
+            </Routes>
+          </EditContractContext>
+        </UploadedContractContext>
       </BrowserRouter>
     </AuthProvider>
   );
