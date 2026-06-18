@@ -1,15 +1,4 @@
-const CheckIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-  >
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
+import { CheckIcon } from "../icons/CheckIcon";
 
 export const ApprovalsSection = () => (
   <div className="bg-bg-cards1 rounded-xl border border-gray-100 flex items-center justify-center py-20">
