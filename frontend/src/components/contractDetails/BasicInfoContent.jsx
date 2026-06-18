@@ -26,7 +26,7 @@ const PartyField = ({
   return (
     <div className="flex items-center gap-3">
       <input
-        value={role ? addSpace(role) : "—"}
+        value={role ? addSpace(role) : ""}
         onChange={
           readOnly ? undefined : (e) => onChangeRole(index, e.target.value)
         }
@@ -43,7 +43,7 @@ const PartyField = ({
         }
         onBlur={readOnly ? undefined : onBlur}
         readOnly={readOnly}
-        placeholder={readOnly ? "—" : "Party name"}
+        placeholder={readOnly ? "" : "Party name"}
         className={`flex-1 min-w-0 px-3 py-2.5 border border-border rounded-lg text-[13px] ${
           readOnly ? "cursor-default select-text bg-bg-cards1" : ""
         }`}
@@ -125,7 +125,7 @@ const ContractPartiesSection = ({ parties = [], readOnly }) => {
       {!readOnly && (
         <button
           onClick={handleAddParty}
-          className="w-full py-2.5 border-2 border-dashed border-primary rounded-lg text-primary text-[13px] font-medium"
+          className="w-full text-left p-2.5 border-2 border-dashed border-primary rounded-full text-primary text-[13px] font-medium"
         >
           + Add party
         </button>
@@ -137,7 +137,11 @@ const ContractPartiesSection = ({ parties = [], readOnly }) => {
 // =================== FIELD BOX ===================
 const FieldBox = ({ label, value, field, readOnly }) => {
   const { changeData } = useContext(ContractContext);
-  const [val, setVal] = useState(value);
+  const [val, setVal] = useState(value ?? "");
+
+  useEffect(() => {
+    setVal(value ?? "");
+  }, [value]);
 
   function saveData() {
     changeData({ [field]: val });
@@ -150,7 +154,7 @@ const FieldBox = ({ label, value, field, readOnly }) => {
         <span className="text-xs text-text-secondary">{label}</span>
       </div>
       <input
-        value={val || ""}
+        value={val}
         onChange={readOnly ? undefined : (e) => setVal(e.target.value)}
         onBlur={readOnly ? undefined : saveData}
         readOnly={readOnly}
@@ -172,20 +176,13 @@ const ContractFieldsGrid = ({ fields, readOnly }) => (
 );
 
 // =================== NOTE BOX ===================
-const NoteBox = ({
-  bgClass,
-  textClass,
-  children,
-  onBlur,
-  onChange,
-  readOnly,
-}) => (
+const NoteBox = ({ bgClass, textClass, value, onBlur, onChange, readOnly }) => (
   <div className={`${bgClass} p-2 flex gap-2 items-start rounded`}>
     <div className={`${textClass} mt-0.5 flex-shrink-0`}>
       <InfoIcon />
     </div>
     <textarea
-      defaultValue={children}
+      value={value ?? ""}
       onChange={readOnly ? undefined : onChange}
       onBlur={readOnly ? undefined : onBlur}
       readOnly={readOnly}
@@ -198,10 +195,21 @@ const NoteBox = ({
 
 const AdvancePaymentCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
+
+  const term0 = data?.[0] ?? {};
+
   const [localData, setLocalData] = useState({
-    percentage: data[0].percentage,
-    description: data[0].description,
+    percentage: term0.percentage ?? "",
+    description: term0.description ?? "",
   });
+
+  useEffect(() => {
+    const t = data?.[0] ?? {};
+    setLocalData({
+      percentage: t.percentage ?? "",
+      description: t.description ?? "",
+    });
+  }, [data]);
 
   const handleBlur = (field) => {
     changeData({
@@ -218,7 +226,7 @@ const AdvancePaymentCard = ({ data, readOnly }) => {
           <div className="w-[30px] h-[30px] rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
             <DollarIcon />
           </div>
-          <span className="text-[13.5px] font-medium">{data[0].name}</span>
+          <span className="text-[13.5px] font-medium">{term0.name ?? ""}</span>
         </div>
         <div className="mb-2.5">
           <div className="flex items-center gap-1.5 mb-1.5">
@@ -226,7 +234,7 @@ const AdvancePaymentCard = ({ data, readOnly }) => {
             <span className="text-xs text-text-secondary">Percentage</span>
           </div>
           <input
-            value={localData.percentage || ""}
+            value={localData.percentage}
             onChange={
               readOnly
                 ? undefined
@@ -247,6 +255,7 @@ const AdvancePaymentCard = ({ data, readOnly }) => {
       <NoteBox
         bgClass="bg-bg-onTrak"
         textClass="text-green-700"
+        value={localData.description}
         onChange={
           readOnly
             ? undefined
@@ -258,9 +267,7 @@ const AdvancePaymentCard = ({ data, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => handleBlur("description")}
         readOnly={readOnly}
-      >
-        {localData.description}
-      </NoteBox>
+      />
     </div>
   );
 };
@@ -268,10 +275,18 @@ const AdvancePaymentCard = ({ data, readOnly }) => {
 const ProgressPaymentCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
   const [localData, setLocalData] = useState({
-    basis: data.basis,
-    frequency: data.frequency,
-    dueTo: data.dueTo,
+    basis: data?.basis ?? "",
+    frequency: data?.frequency ?? "",
+    dueTo: data?.dueTo ?? "",
   });
+
+  useEffect(() => {
+    setLocalData({
+      basis: data?.basis ?? "",
+      frequency: data?.frequency ?? "",
+      dueTo: data?.dueTo ?? "",
+    });
+  }, [data]);
 
   const fields = [
     { field: "basis", label: "Basis" },
@@ -294,7 +309,7 @@ const ProgressPaymentCard = ({ data, readOnly }) => {
             <span className="text-xs text-text-secondary">{label}</span>
           </div>
           <input
-            value={localData[field] || ""}
+            value={localData[field]}
             onChange={
               readOnly
                 ? undefined
@@ -309,7 +324,7 @@ const ProgressPaymentCard = ({ data, readOnly }) => {
                 ? undefined
                 : () =>
                     changeData({
-                      paymentProgress: { ...data, [field]: localData[field] },
+                      paymentProgress: { ...data, ...localData },
                     })
             }
             readOnly={readOnly}
@@ -325,10 +340,33 @@ const ProgressPaymentCard = ({ data, readOnly }) => {
 
 const RetentionCard = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
+
+  const term2 = data?.[2] ?? {};
+
+  const retentionTotal = (data ?? []).reduce((sum, term) => {
+    const isRetention = term.name?.toLowerCase().includes("retention");
+    const val = parseFloat(term.percentage);
+    return isRetention && !isNaN(val) ? sum + val : sum;
+  }, 0);
+
   const [localData, setLocalData] = useState({
-    percentage: data[2].percentage,
-    description: data[2].description,
+    percentage:
+      retentionTotal !== 0 ? retentionTotal : (term2.percentage ?? ""),
+    description: term2.description ?? "",
   });
+
+  useEffect(() => {
+    const t = data?.[2] ?? {};
+    const total = (data ?? []).reduce((sum, term) => {
+      const isRetention = term.name?.toLowerCase().includes("retention");
+      const val = parseFloat(term.percentage);
+      return isRetention && !isNaN(val) ? sum + val : sum;
+    }, 0);
+    setLocalData({
+      percentage: total !== 0 ? total : (t.percentage ?? ""),
+      description: t.description ?? "",
+    });
+  }, [data]);
 
   const handleBlur = (field) => {
     changeData({
@@ -345,7 +383,7 @@ const RetentionCard = ({ data, readOnly }) => {
           <div className="min-w-[30px] min-h-[30px] rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
             <ClockIcon />
           </div>
-          <span className="text-[13.5px] font-medium">{data[2].name}</span>
+          <span className="text-[13.5px] font-medium">Retentions</span>
         </div>
         <div className="mb-2.5">
           <div className="flex items-center gap-1.5 mb-1.5">
@@ -353,7 +391,7 @@ const RetentionCard = ({ data, readOnly }) => {
             <span className="text-xs text-text-secondary">Percentage</span>
           </div>
           <input
-            value={localData.percentage || ""}
+            value={localData.percentage}
             onChange={
               readOnly
                 ? undefined
@@ -374,6 +412,7 @@ const RetentionCard = ({ data, readOnly }) => {
       <NoteBox
         bgClass="bg-bg-atRisk100"
         textClass="text-orange-700"
+        value={localData.description}
         onChange={
           readOnly
             ? undefined
@@ -385,43 +424,21 @@ const RetentionCard = ({ data, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => handleBlur("description")}
         readOnly={readOnly}
-      >
-        {localData.description}
-      </NoteBox>
+      />
     </div>
   );
 };
 
 const PaymentTermsSection = ({ payment, readOnly }) => {
   const terms = payment.payment_terms ?? [];
-  const progress = payment.paymentProgress;
-
-  const hasAdvance = terms.length > 0;
-  const hasRetention = terms.length > 2;
-  const hasProgress = !!progress;
-
-  if (!hasAdvance && !hasRetention && !hasProgress) {
-    return (
-      <div>
-        <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
-        <div className="border border-dashed border-gray-200 rounded-xl px-5 py-8 text-center">
-          <p className="text-sm text-text-secondary">
-            No payment terms extracted — fill in manually.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  const progress = payment.paymentProgress ?? null;
   return (
     <div>
       <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
       <div className="flex flex-col md:flex-row gap-3">
-        {hasAdvance && <AdvancePaymentCard data={terms} readOnly={readOnly} />}
-        {hasProgress && (
-          <ProgressPaymentCard data={progress} readOnly={readOnly} />
-        )}
-        {hasRetention && <RetentionCard data={terms} readOnly={readOnly} />}
+        <AdvancePaymentCard data={terms} readOnly={readOnly} />
+        <ProgressPaymentCard data={progress} readOnly={readOnly} />
+        <RetentionCard data={terms} readOnly={readOnly} />
       </div>
     </div>
   );

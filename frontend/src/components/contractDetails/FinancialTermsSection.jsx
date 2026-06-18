@@ -313,7 +313,6 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 const FinancialTermsSection = ({ data, readOnly }) => (
   <div className="bg-bg-main">
     <UnitPricesSection data={data} readOnly={readOnly} />
-    <PaymentScheduleSection data={data} readOnly={readOnly} />
   </div>
 );
 
