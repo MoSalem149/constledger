@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { userService } from "../../services/userService";
+import { classifyUserError, userModalMessage } from "../../utils/userErrors";
 import CloseModalIcon from "../icons/CloseModalIcon";
 import PersonIcon from "../icons/PersonIcon";
 import EyeIcon from "../icons/EyeIcon";
@@ -15,15 +16,6 @@ const ROLES = [
 ];
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function isDuplicateEmailError(err) {
-  const status = err.response?.status;
-  const data = err.response?.data || {};
-  if (status === 409) return true;
-  if (status === 500 && data.code === 11000) return true;
-  const msg = typeof data.message === "string" ? data.message : "";
-  return /duplicate key|E11000/i.test(msg);
-}
 
 export default function UserModal({
   onClose,
@@ -66,14 +58,8 @@ export default function UserModal({
         .updateUser(userId, payload)
         .then((res) => onUpdated(res.user))
         .catch((err) => {
-          const status = err.response?.status;
-          if (isDuplicateEmailError(err)) {
-            setSubmitError("This email is already in use");
-          } else if (status === 404) {
-            setSubmitError("This user no longer exists");
-          } else {
-            setSubmitError("Something went wrong. Please try again.");
-          }
+          const type = classifyUserError(err);
+          setSubmitError(userModalMessage(type, err));
           setSubmitting(false);
         });
     } else {
@@ -83,11 +69,8 @@ export default function UserModal({
           onCreated();
         })
         .catch((err) => {
-          if (isDuplicateEmailError(err)) {
-            setSubmitError("This email is already in use");
-          } else {
-            setSubmitError("Something went wrong. Please try again.");
-          }
+          const type = classifyUserError(err);
+          setSubmitError(userModalMessage(type, err));
           setSubmitting(false);
         });
     }

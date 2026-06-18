@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { userService } from "../../services/userService";
+import { classifyUserError, deleteModalMessage } from "../../utils/userErrors";
 import CloseModalIcon from "../icons/CloseModalIcon";
 import SpinnerIcon from "../icons/SpinnerIcon";
 
@@ -20,14 +21,8 @@ export default function DeleteConfirmModal({
       .deleteUser(userId)
       .then(() => onDeleted(user))
       .catch((err) => {
-        const status = err.response?.status;
-        if (status === 404) {
-          setSubmitError("This user no longer exists");
-        } else if (status === 403) {
-          setSubmitError("This user cannot be deleted");
-        } else {
-          setSubmitError("Something went wrong. Please try again.");
-        }
+        const type = classifyUserError(err);
+        setSubmitError(deleteModalMessage(type));
         setSubmitting(false);
       });
   }
