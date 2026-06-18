@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useContext, useMemo } from "react";
 import { Link } from "react-router-dom";
+import AuthContext from "../context/AuthContext";
 
 // =================== UTILS ===================
 const getGreeting = () => {
@@ -43,7 +44,9 @@ const DocIcon = () => (
 export default function DashboardPage() {
   const greeting = useMemo(getGreeting, []);
   const date = useMemo(getFormattedDate, []);
-  const userName = "Mohamed";
+  const { user } = useContext(AuthContext);
+
+  const userName = user.name;
 
   return (
     <div className="min-h-[calc(100vh-116px)] flex flex-col">

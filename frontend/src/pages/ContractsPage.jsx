@@ -210,10 +210,12 @@ const ContractsPage = () => {
 
   const filtered = contracts.filter(
     (c) =>
-      c.name.toLowerCase().includes(search.searchValue.toLowerCase()) ||
-      c.id.toLowerCase().includes(search.searchValue.toLowerCase()),
+      (c.name.toLowerCase().includes(search.searchValue.toLowerCase()) ||
+        c.id.toLowerCase().includes(search.searchValue.toLowerCase())) &&
+      c.status !== "analysis_failed" &&
+      c.status !== "processing",
   );
-
+  console.log(contracts);
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-116px)]">
