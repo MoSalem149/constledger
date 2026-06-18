@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 import { userService } from "../services/userService";
 import AdminHeader from "../components/admin/AdminHeader";
 import UserTable from "../components/admin/UserTable";
 import UserModal from "../components/admin/UserModal";
+import DeleteConfirmModal from "../components/admin/DeleteConfirmModal";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -10,6 +12,10 @@ export default function AdminPage() {
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [deletingUser, setDeletingUser] = useState(null);
+  const { user: authUser } = useAuth();
+  const isSelfDelete =
+    deletingUser && authUser && (deletingUser.id || deletingUser._id) === authUser.id;
 
   useEffect(() => {
     loadUsers();
@@ -39,6 +45,7 @@ export default function AdminPage() {
         error={error}
         onRetry={loadUsers}
         onEdit={(user) => setEditingUser(user)}
+        onDelete={(user) => setDeletingUser(user)}
       />
       {modalOpen && (
         <UserModal
@@ -55,6 +62,17 @@ export default function AdminPage() {
           onClose={() => setEditingUser(null)}
           onUpdated={() => {
             setEditingUser(null);
+            loadUsers();
+          }}
+        />
+      )}
+      {deletingUser && (
+        <DeleteConfirmModal
+          user={deletingUser}
+          blocked={isSelfDelete}
+          onClose={() => setDeletingUser(null)}
+          onDeleted={() => {
+            setDeletingUser(null);
             loadUsers();
           }}
         />
