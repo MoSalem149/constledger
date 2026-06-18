@@ -16,6 +16,9 @@ import "./models/Contract.model";
 import "./models/ContractExtraction.model";
 import "./models/ActualReport.model";
 import "./models/PlannedBudget.model";
+import "./models/FinancePlan.model";
+import "./models/FinancePlanned.model";
+import "./models/FinancePlanVersion.model";
 
 import contractRoutes from "./routes/contractRoutes";
 import financeRoutes from "./routes/financeRoutes";
