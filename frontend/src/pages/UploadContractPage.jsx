@@ -1,26 +1,26 @@
 /**
  * UploadContractPage — drag-and-drop contract upload with S3 presigned URL flow.
  *
- * Sprint 2 builds the full screen:
+ * Upload flow:
  *   idle      → file picker + "What AI Extracts" side panel
- *   uploading → stepper steps 1-3 (S3 sign, S3 PUT, complete upload)
- *   processing→ stepper step 4 active + progress bar + activity log (frontend simulation)
+ *   uploading → spinner (S3 sign, S3 PUT, complete upload)
+ *   processing→ stepper + progress bar + activity log (frontend simulation)
+ *               while backend runs OCR + AI analysis asynchronously
  *
- * The backend only returns terminal status after `createContract` completes.
- * `createContract` is synchronous (blocks 20-30s during AI analysis).
- * All intermediate progress (stepper, progress bar, activity log) is simulated
- * on the frontend via `fakeProgress.js` for a smooth UX.
+ * Why async polling instead of waiting on createContract?
+ *   Vercel has a hard 60s proxy timeout. The AI pipeline (OCR + 5 LLM calls)
+ *   takes 3–5 minutes. The backend now returns 202 immediately and runs
+ *   analysis in the background. We poll GET /api/contracts/:id every 4s
+ *   until status is no longer 'processing'.
  *
  * S3 flow:
  *   1. signUpload    → get presigned URL
  *   2. putFileToS3   → PUT file directly to S3
  *   3. completeUpload→ notify backend upload is done
- *   4. createContract→ POST JSON { name, uploadId } (blocks until AI finishes)
- *                      Backend downloads the file from S3 itself.
+ *   4. createContract→ POST { name, uploadId } → 202 { id, status: 'processing' }
+ *   5. pollContractReady(id) → polls GET /api/contracts/:id until done
  *
- * The "Back to Projects" button navigates to /dashboard.
  * Pass ?demo=1 in the URL to preview the processing state with mock data.
- *
  * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
@@ -82,6 +82,15 @@ export default function UploadContractPage() {
   // Refs for cleanup
   const cleanupRef = useRef(null);
   const demoTimerRef = useRef(null);
+  // Track whether the component is still mounted to avoid state updates after unmount
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   /* ---------------------------------------------------------------- */
   // Demo mode simulation
@@ -90,7 +99,6 @@ export default function UploadContractPage() {
   useEffect(() => {
     if (!isDemo || pageState !== "processing") return;
 
-    // Start simulation for visual preview
     const cleanup = startSimulation({
       onStepChange: setStepStatus,
       onProgress: setProgress,
@@ -116,7 +124,7 @@ export default function UploadContractPage() {
   }, [isDemo, pageState, navigate]);
 
   /* ---------------------------------------------------------------- */
-  // Handlers
+  // Main upload + poll handler
   /* ---------------------------------------------------------------- */
 
   const handleFileSelect = useCallback(
@@ -139,17 +147,17 @@ export default function UploadContractPage() {
       setStepStatus(["completed", "active", "pending", "pending"]);
 
       try {
-        // Step 1: Request presigned S3 URL
+        // ── Step 1: Request presigned S3 URL ──────────────────────────
         const { uploadUrl, key } = await contractService.signUpload({
           filename: file.name,
           mimeType: file.type,
           size: file.size,
         });
 
-        // Step 2: Upload file directly to S3
+        // ── Step 2: Upload file directly to S3 ───────────────────────
         await putFileToS3(uploadUrl, file);
 
-        // Step 3: Notify backend upload is complete
+        // ── Step 3: Notify backend upload is complete ─────────────────
         const { uploadId } = await contractService.completeUpload({
           s3Key: key,
           fileName: file.name,
@@ -157,10 +165,13 @@ export default function UploadContractPage() {
           size: file.size,
         });
 
-        // Step 4: Create contract (synchronous — blocks until AI analysis finishes)
+        // ── Step 4: Create contract record (returns 202 immediately) ──
+        // The backend kicks off AI analysis in the background and responds
+        // in <1s with { id, name, status: 'processing' }.
         setPageState("processing");
         setStepStatus(["completed", "completed", "active", "pending"]);
 
+        // Start the fake progress simulation while we wait for AI
         const cleanup = startSimulation({
           onStepChange: setStepStatus,
           onProgress: setProgress,
@@ -168,21 +179,39 @@ export default function UploadContractPage() {
         });
         cleanupRef.current = cleanup;
 
-        const contract = await contractService.createContract(
+        const { id: contractId } = await contractService.createContract(
           file.name,
           uploadId,
         );
 
-        // send uploded contract to context
+        // ── Step 5: Poll until analysis finishes ──────────────────────
+        // GET /api/contracts/:id every 4s until status !== 'processing'
+        const contract = await contractService.pollContractReady(contractId);
+
+        // Guard: don't update state if the user navigated away
+        if (!mountedRef.current) return;
+
+        // Stop the simulation
+        cleanup();
+        cleanupRef.current = null;
 
         saveContractData(contract);
 
-        // Success — stop simulation and navigate to review form
-        cleanup();
-        cleanupRef.current = null;
-        navigate(`/contracts/${contract.id}/edit`);
+        if (contract.status === "analysis_failed") {
+          // AI failed but contract record exists — let user see partial data
+          navigate(`/contracts/${contract.id}/edit`, {
+            state: {
+              analysisError: "AI analysis failed. Some fields may be missing.",
+              partialData: true,
+            },
+          });
+        } else {
+          navigate(`/contracts/${contract.id}/edit`);
+        }
       } catch (err) {
-        // Clean up any running simulation
+        if (!mountedRef.current) return;
+
+        // Stop any running simulation
         if (cleanupRef.current) {
           cleanupRef.current();
           cleanupRef.current = null;
@@ -192,30 +221,9 @@ export default function UploadContractPage() {
         const data = err?.response?.data;
 
         if (status === 409) {
-          // Upload already linked to a contract
           setError(
             data?.message ||
               "This file is already linked to a contract. Please upload a different file.",
-          );
-        } else if (status === 422) {
-          // AI analysis failed — contract may have partial data
-          const contract = data?.contract;
-          if (contract?._id || contract?.id) {
-            // Navigate to edit page so user can see partial data
-            saveContractData(contract);
-            const id = contract.id || contract._id;
-            navigate(`/contracts/${id}/edit`, {
-              state: {
-                analysisError: data?.error || "AI analysis failed",
-                partialData: true,
-              },
-            });
-            return;
-          }
-          setError(
-            data?.message ||
-              data?.error ||
-              "AI analysis failed. Please try again or contact support.",
           );
         } else {
           setError(
@@ -228,7 +236,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate],
+    [navigate, saveContractData],
   );
 
   const handleBack = useCallback(() => {

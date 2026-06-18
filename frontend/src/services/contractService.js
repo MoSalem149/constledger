@@ -11,8 +11,9 @@ import { normalizeId } from "../utils/normalizeId";
  *   3. completeUpload({ s3Key, fileName, mimeType, size }) → POST /api/uploads/complete
  *      Returns { uploadId, s3Key, status }
  *   4. createContract(name, uploadId) → POST /api/contracts/upload
- *      Sends JSON { name, uploadId }. Backend downloads the file from S3.
- *      Returns full contract record (normalized _id → id).
+ *      Sends JSON { name, uploadId }. Backend starts AI analysis in background.
+ *      Returns { id, name, status: 'processing' } immediately (202).
+ *      Frontend must then call pollContractReady(id) to wait for completion.
  *
  * All responses that may contain `_id` are normalized to `id` where needed.
  */
@@ -41,23 +42,58 @@ export const contractService = {
 
   /**
    * POST /api/contracts/upload
-   * Create the contract record with the uploaded file.
+   * Create the contract record and kick off AI analysis in the background.
    *
-   * The backend reads the file from S3 (no binary upload needed).
-   * Backend runs AI analysis synchronously (blocks 20-30s).
+   * Returns 202 immediately with { id, name, status: 'processing' }.
+   * The AI analysis runs asynchronously on the server — use pollContractReady()
+   * to wait for it to finish.
    *
-   * On success (201): returns the full contract record with normalized `id`.
-   * On failure (422): returns { message, error, contract } where contract has
-   *   status: "analysis_failed" and may contain partial data.
    * On conflict (409): returns { message } when upload is already linked.
    *
-   * @param {string} name — contract name (defaults to fileName on backend)
+   * @param {string} name     — contract name (defaults to fileName on backend)
    * @param {string} uploadId — the uploadId from completeUpload
    */
   createContract: (name, uploadId) =>
     api
       .post("/contracts/upload", { name, uploadId })
       .then((res) => normalizeId(res.data)),
+
+  /**
+   * Poll GET /api/contracts/:id every intervalMs until status is no longer
+   * 'processing', then resolve with the final contract object.
+   *
+   * Rejects with an Error if:
+   *   - maxWaitMs is exceeded (default 5 minutes)
+   *   - the GET request itself fails
+   *
+   * @param {string} id
+   * @param {{ intervalMs?: number, maxWaitMs?: number }} options
+   */
+  pollContractReady: (id, { intervalMs = 4000, maxWaitMs = 300000 } = {}) => {
+    return new Promise((resolve, reject) => {
+      const deadline = Date.now() + maxWaitMs;
+
+      const tick = async () => {
+        try {
+          const contract = await contractService.getContractById(id);
+
+          if (contract.status !== "processing") {
+            // Analysis finished (success, failed, or pending_review)
+            resolve(contract);
+          } else if (Date.now() > deadline) {
+            reject(new Error("Analysis timed out. Please try again."));
+          } else {
+            setTimeout(tick, intervalMs);
+          }
+        } catch (err) {
+          reject(err);
+        }
+      };
+
+      // First poll after one interval — give the server a moment to start
+      setTimeout(tick, intervalMs);
+    });
+  },
 
   /* ------------------------------------------------------------------ */
   // 2. Contract CRUD
@@ -66,10 +102,6 @@ export const contractService = {
   /**
    * GET /api/contracts/:id
    * Fetch a single contract by ID.
-   *
-   * The backend already normalizes _id → id, but we run it through
-   * normalizeId as a safety net for any edge cases (e.g., populated
-   * contractDocId with _id).
    */
   getContractById: (id) =>
     api.get(`/contracts/${id}`).then((res) => normalizeId(res.data)),
@@ -85,18 +117,13 @@ export const contractService = {
    *
    * Query params (all optional):
    *   status, year, name, search, limit, skip
-   *
-   * The backend already returns a normalized flat array:
-   *   { id, name, status, contractValue, currency, startDate, endDate }
-   * No additional normalization needed.
    */
   getContracts: (params = {}) =>
     api.get("/contracts", { params }).then((res) => res.data),
 
   /**
    * PUT /api/contracts/:id
-   * Update any contract fields. The backend uses findByIdAndUpdate
-   * with the full request body, so any field can be updated.
+   * Update any contract fields.
    *
    * Response: { message, id }
    */
