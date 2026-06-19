@@ -76,7 +76,7 @@ export default {
       },
 
       boxShadow: {
-        DEFAULT: "0 0px 10px rgba(36, 36, 36, 0.20)",
+        DEFAULT: "0 0px 10px rgba(136, 135, 135, 0.1)",
       },
     },
   },

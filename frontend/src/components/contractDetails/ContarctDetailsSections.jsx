@@ -2,12 +2,12 @@ import { useState } from "react";
 import { overviewData } from "../../data/projectData";
 
 import { ApprovalsSection } from "./ApprovalsSection";
-import { BudgetAndProgressSection } from "./BudgetAndProgressSection";
+import { BudgetAndProgressSection } from "../planning/BudgetAndProgressSection";
 import ContractSection from "./ContractSection";
 import { OverviewSection } from "./OverviewSection";
 
 // =================== TABS ===================
-const TABS = ["Overview", "Contract", "Budget and Progress", "Approvals"];
+const TABS = ["Overview", "Contract", "Planned Progress", "Approvals"];
 
 const TabNavigation = ({ active, onSelect }) => (
   <div className="border-b border-border mb-5 overflow-x-auto">
@@ -72,12 +72,14 @@ export const ContarctDetailsSections = ({ contractData, readOnly }) => {
     Contract: (
       <ContractSection contractData={contractData} readOnly={readOnly} />
     ),
-    "Budget and Progress": <BudgetAndProgressSection />,
+    "Planned Progress": (
+      <BudgetAndProgressSection contractData={contractData} />
+    ),
     Approvals: <ApprovalsSection />,
   };
 
   return (
-    <div className="min-h-screen py-6 sm:py-10">
+    <div className="min-h-calc(100vh-685px) py-6 sm:py-10">
       {isFailed && <AnalysisFailedBanner contractData={contractData} />}
       <TabNavigation active={activeTab} onSelect={setActiveTab} />
       {sections[activeTab]}

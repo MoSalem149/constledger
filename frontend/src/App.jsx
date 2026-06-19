@@ -13,11 +13,6 @@ import DashboardPage from "./pages/DashboardPage";
 import UploadContractPage from "./pages/UploadContractPage";
 import ContractDetailPage from "./pages/ContractDetailPage";
 import ReviewEditFormPage from "./pages/ReviewEditFormPage";
-import FinancePage from "./pages/FinancePage";
-import BudgetVariancePage from "./pages/BudgetVariancePage";
-import ProgressListPage from "./pages/ProgressListPage";
-import ProgressFormPage from "./pages/ProgressFormPage";
-import ReviewProgressPage from "./pages/ReviewProgressPage";
 import ReportsPage from "./pages/ReportsPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./components/common/NotFoundPage";
@@ -97,40 +92,6 @@ function App() {
                     element={
                       <RoleGuard roles={["contract_manager"]}>
                         <ReviewEditFormPage />
-                      </RoleGuard>
-                    }
-                  />
-                  {/* Finance */}
-                  <Route path="/finance" element={<FinancePage />} />
-                  <Route
-                    path="/finance/:contractId/variance"
-                    element={<BudgetVariancePage />}
-                  />
-                  <Route
-                    path="/finance/:contractId/progress"
-                    element={<ProgressListPage />}
-                  />
-                  <Route
-                    path="/finance/:contractId/progress/new"
-                    element={
-                      <RoleGuard roles={["finance_team"]}>
-                        <ProgressFormPage />
-                      </RoleGuard>
-                    }
-                  />
-                  <Route
-                    path="/finance/:contractId/progress/:entryId/edit"
-                    element={
-                      <RoleGuard roles={["finance_team"]}>
-                        <ProgressFormPage />
-                      </RoleGuard>
-                    }
-                  />
-                  <Route
-                    path="/finance/:contractId/progress/:entryId/review"
-                    element={
-                      <RoleGuard roles={["contract_manager"]}>
-                        <ReviewProgressPage />
                       </RoleGuard>
                     }
                   />

@@ -36,7 +36,6 @@ function getPageTitle(path) {
   if (path === "/dashboard") return "Dashboard";
   if (path.startsWith("/contracts/upload")) return "New Project";
   if (path.startsWith("/contracts")) return "Projects";
-  if (path.startsWith("/finance")) return "Finance";
   if (path === "/reports") return "Reports";
   if (path === "/admin") return "Admin";
   return "";

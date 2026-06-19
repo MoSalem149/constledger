@@ -1,6 +1,5 @@
 import api from "./api";
 import { normalizeId } from "../utils/normalizeId";
-import { normalizeId } from "../utils/normalizeId";
 
 /**
  * Contract API calls — thin wrappers around the backend contract endpoints.
@@ -121,8 +120,6 @@ export const contractService = {
    */
   getContracts: (params = {}) =>
     api.get("/contracts", { params }).then((res) => res.data),
-  getContracts: (params = {}) =>
-    api.get("/contracts", { params }).then((res) => res.data),
 
   /**
    * PUT /api/contracts/:id
@@ -148,7 +145,7 @@ export const contractService = {
    */
   getContractTimeline: (id) =>
     api.get(`/contracts/${id}/timeline`).then((res) => res.data),
-   * Response: { message, id }
+  /* Response: { message, id }
    */
   updateContract: (id, data) =>
     api.put(`/contracts/${id}`, data).then((res) => res.data),
@@ -169,4 +166,3 @@ export const contractService = {
   getContractTimeline: (id) =>
     api.get(`/contracts/${id}/timeline`).then((res) => res.data),
 };
-

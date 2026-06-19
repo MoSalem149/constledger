@@ -1,5 +1,6 @@
-export const InfoIcon = () => (
+export const InfoIcon = ({ className }) => (
   <svg
+    className={className}
     width="12"
     height="12"
     viewBox="0 0 24 24"
