@@ -22,6 +22,18 @@ export function formatShortEGP(n) {
   return num.toFixed(0);
 }
 
+export function formatCompact(n) {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  const num = Number(n);
+  if (Math.abs(num) >= 1_000_000) {
+    return `${(num / 1_000_000).toFixed(3).replace(/\.?0+$/, "")}M`;
+  }
+  if (Math.abs(num) >= 1_000) {
+    return `${(num / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  }
+  return num.toFixed(0);
+}
+
 export function formatPct(n) {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";
   return `${Math.round(Number(n) * 100)}%`;

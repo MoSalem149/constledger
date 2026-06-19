@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import RegenerateIcon from "../icons/RegenerateIcon";
-import { formatEGP } from "../../utils/format";
 import PlanChart from "./PlanChart";
 import PlanTable from "./PlanTable";
 import PlanKpis from "./PlanKpis";
@@ -142,40 +141,16 @@ export default function PlanningPlanView({
 
       {/* Table */}
       <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-sm font-medium text-text-primary">
-              Allocation Strategy:{" "}
-              <span className="capitalize">
-                {plan?.strategy?.replace(/_/g, " ")}
-              </span>
-            </h3>
-            <p className="text-xs text-text-secondary">
-              How the contract value is forecast across the reporting periods.
-              Current plan
-            </p>
-          </div>
-          {!isConfirmed && canPlan && (
-            <div
-              className={`text-xs font-medium px-3 py-1.5 rounded-full self-start ${
-                isBalanced
-                  ? "bg-status-track/10 text-status-track"
-                  : "bg-status-risk/10 text-status-risk"
-              }`}
-            >
-              {isBalanced
-                ? `Balanced — total equals ${formatEGP(contractValue)} ${currency}`
-                : `Remaining: ${formatEGP(remaining)} ${currency}`}
-            </div>
-          )}
-        </div>
-
         <PlanTable
           periods={localPeriods}
           contractValue={contractValue}
-          currency={currency}
           readOnly={isConfirmed || !canPlan}
           onChange={handlePeriodChange}
+          isConfirmed={isConfirmed}
+          canPlan={canPlan}
+          onExport={onExport}
+          isBalanced={isBalanced}
+          remaining={remaining}
         />
       </div>
     </div>
