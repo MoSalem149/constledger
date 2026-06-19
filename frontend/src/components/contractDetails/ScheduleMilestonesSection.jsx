@@ -50,46 +50,85 @@ const toPct = (dateStr, startStr, endStr) => {
   if (!d || !s || !e || e - s === 0) return null;
   return Math.min(96, Math.max(4, ((d - s) / (e - s)) * 100));
 };
-
 // =================== TIMELINE PREVIEW ===================
 const TimelinePreview = ({ milestones, startDate, endDate }) => {
-  const validMilestones = milestones.filter((m) => parseDate(m.dueDate));
-  const formattedStart = formatDate(startDate);
-  const formattedEnd = formatDate(endDate);
+  const toDate = (str) => {
+    if (!str || str === "null") return null;
+    const d = new Date(str);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const scaleStart = toDate(startDate);
+  const scaleEnd = toDate(endDate);
+
+  const validMilestones = (milestones ?? []).filter(
+    (m) => toDate(m.dueDate) !== null,
+  );
+
+  const formatLabel = (d) =>
+    d?.toLocaleDateString("ar-EG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }) ?? "";
+
+  const toPct = (dateStr) => {
+    const d = toDate(dateStr);
+    if (!d || !scaleStart || !scaleEnd || scaleStart >= scaleEnd) return null;
+    const pct = ((d - scaleStart) / (scaleEnd - scaleStart)) * 94 + 3;
+    return Math.max(3, Math.min(97, pct));
+  };
+
+  if (!scaleStart || !scaleEnd) {
+    return (
+      <div>
+        <h2 className="text-[17px] font-medium text-text-primary mb-3">
+          Timeline Preview
+        </h2>
+        <p className="text-xs text-text-secondary text-center">
+          No date range available
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div>
       <h2 className="text-[17px] font-medium text-text-primary mb-3">
         Timeline Preview
       </h2>
+
       <div className="flex justify-between text-xs text-text-secondary mb-1 px-1">
-        <span>{formattedStart}</span>
-        <span>{formattedEnd}</span>
+        <span>{formatLabel(scaleStart)}</span>
+        <span>{formatLabel(scaleEnd)}</span>
       </div>
+
       <div
         className="relative bg-bg-main border border-gray-100 rounded-lg"
-        style={{ height: 80 }}
+        style={{ height: 96 }}
       >
         <div
           className="absolute h-0.5 bg-gray-300 rounded-full"
-          style={{ top: 26, left: "3%", right: "3%" }}
+          style={{ top: 28, left: "3%", right: "3%" }}
         />
+
         {validMilestones.length === 0 && (
-          <p className="text-xs text-text-secondary text-center leading-[80px]">
-            No milestones with valid dates
+          <p className="text-xs text-text-secondary text-center leading-[96px]">
+            No milestones available
           </p>
         )}
+
         {validMilestones.map((m, i) => {
-          const pct = toPct(m.dueDate, formattedStart, formattedEnd);
+          const pct = toPct(m.dueDate);
           if (pct === null) return null;
           return (
             <div
-              key={m.id}
+              key={m.id ?? i}
               className="absolute flex flex-col items-center"
               style={{ left: `${pct}%`, transform: "translateX(-50%)", top: 0 }}
             >
-              <div className="w-3.5 h-3.5 bg-primary rotate-45 mt-[19px] flex-shrink-0" />
-              <span className="text-[10px] font-medium text-text-secondary mt-[10px] whitespace-nowrap max-w-[90px] overflow-hidden text-ellipsis">
+              <div className="w-3.5 h-3.5 bg-primary rotate-45 mt-[21px] flex-shrink-0" />
+              <span className="text-[10px] font-medium text-text-secondary mt-[8px] whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis text-center">
                 {m.name || `M${i + 1}`}
               </span>
             </div>
@@ -104,18 +143,16 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
 const DateFields = ({
   startDate,
   endDate,
-  onStartBlur,
-  onEndBlur,
+  onStartChange,
+  onEndChange,
   readOnly,
 }) => {
-  const [local, setLocal] = useState({ start: startDate, end: endDate });
-
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
       {[
-        { label: "Start Date", field: "start", onBlur: onStartBlur },
-        { label: "End Date", field: "end", onBlur: onEndBlur },
-      ].map(({ label, field, onBlur }) => (
+        { label: "Start Date", value: startDate, onChange: onStartChange },
+        { label: "End Date", value: endDate, onChange: onEndChange },
+      ].map(({ label, value, onChange }) => (
         <div key={label}>
           <div className="flex items-center gap-2 mb-2">
             <Dot status="green" />
@@ -123,13 +160,8 @@ const DateFields = ({
           </div>
           <input
             type="text"
-            value={formatDate(local[field])}
-            onChange={
-              readOnly
-                ? undefined
-                : (e) => setLocal((p) => ({ ...p, [field]: e.target.value }))
-            }
-            onBlur={readOnly ? undefined : () => onBlur(local[field])}
+            value={formatDate(value)}
+            onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
             readOnly={readOnly}
             className={`w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
               text-text-primary bg-bg-cards1 outline-none transition-colors ${
@@ -250,8 +282,9 @@ const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
 const ScheduleMilestonesSection = ({ data, readOnly }) => {
   const { changeData } = useContext(ContractContext);
 
-  const [startDate, setStartDate] = useState(data.start_date ?? "10 May 2026");
-  const [endDate, setEndDate] = useState(data.end_date ?? "15 Oct 2026");
+  const [startDate, setStartDate] = useState(data.start_date ?? "");
+  const [endDate, setEndDate] = useState(data.end_date ?? "");
+
   const [milestones, setMilestones] = useState(
     (data.milestones ?? []).map((m, i) => ({
       id: i + 1,
@@ -277,6 +310,8 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
       ];
     } else if (action === "update") {
       updated = milestones.map((m) => (m.id === id ? { ...m, ...fields } : m));
+    } else {
+      return;
     }
     setMilestones(updated);
     syncMilestones(updated);
@@ -293,11 +328,11 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
       <DateFields
         startDate={startDate}
         endDate={endDate}
-        onStartBlur={(val) => {
+        onStartChange={(val) => {
           setStartDate(val);
           changeData({ start_date: val });
         }}
-        onEndBlur={(val) => {
+        onEndChange={(val) => {
           setEndDate(val);
           changeData({ end_date: val });
         }}
@@ -317,5 +352,4 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
     </div>
   );
 };
-
 export default ScheduleMilestonesSection;
