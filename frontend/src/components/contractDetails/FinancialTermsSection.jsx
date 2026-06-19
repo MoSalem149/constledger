@@ -16,7 +16,7 @@ const AddBtn = ({ label, onClick }) => (
 );
 
 // =================== UNIT PRICES ===================
-const UNIT_COLS = "grid-cols-[2fr_80px_100px_130px_130px_44px]";
+const UNIT_COLS = "grid-cols-[2fr_100px_100px_150px_130px_44px]";
 
 const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
@@ -58,7 +58,7 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={inputCls("text-text-secondary")}
+        className={inputCls("text-text-secondary text-left")}
       />
       <input
         value={local.quantity}
@@ -69,7 +69,7 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={inputCls("text-right pr-2")}
+        className={inputCls("text-left pr-2")}
       />
       <input
         value={local.unit_price}
@@ -80,9 +80,9 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={inputCls("text-right pr-2")}
+        className={inputCls("text-left pr-2")}
       />
-      <span className="text-[13.5px] text-text-primary font-medium text-right pr-2">
+      <span className="text-[13.5px] text-text-primary font-medium text-left pr-2">
         {total.toLocaleString()}
       </span>
       {!readOnly ? (
@@ -166,7 +166,7 @@ const UnitPricesSection = ({ data, readOnly }) => {
 
       <div className="overflow-x-auto">
         <div className="min-w-[600px] overflow-hidden">
-          <div className={`grid ${UNIT_COLS} bg-bg-grey px-4 py-3`}>
+          <div className={`grid ${UNIT_COLS} gap-2 bg-bg-grey px-4 py-3`}>
             {[
               "Item",
               "Unit",
@@ -177,7 +177,7 @@ const UnitPricesSection = ({ data, readOnly }) => {
             ].map((h) => (
               <span
                 key={h}
-                className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase text-right first:text-left last:text-left"
+                className="text-[11px] font-semibold text-text-secondary tracking-widest text-left uppercase first:text-left last:text-left"
               >
                 {h}
               </span>

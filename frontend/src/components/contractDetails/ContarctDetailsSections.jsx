@@ -10,7 +10,7 @@ import { OverviewSection } from "./OverviewSection";
 const TABS = ["Overview", "Contract", "Budget and Progress", "Approvals"];
 
 const TabNavigation = ({ active, onSelect }) => (
-  <div className="border-b border-border mb-5 overflow-x-auto">
+  <div className=" mb-5 overflow-x-auto">
     <div className="flex gap-4 sm:gap-6 min-w-max sm:min-w-0">
       {TABS.map((tab) => (
         <button
@@ -24,7 +24,7 @@ const TabNavigation = ({ active, onSelect }) => (
         >
           {tab}
           {active === tab && (
-            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 rounded-full" />
+            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-bg-cards2 rounded-full" />
           )}
         </button>
       ))}
