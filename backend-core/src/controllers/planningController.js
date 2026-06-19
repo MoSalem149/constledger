@@ -1,9 +1,10 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-import Contract from '../models/Contract.js';
-import FinancePlan from '../models/FinancePlan.js';
-import FinancePlanned from '../models/FinancePlanned.js';
-import FinancePlanVersion from '../models/FinancePlanVersion.js';
+import Contract from "../models/Contract.js";
+import FinancePlan from "../models/FinancePlan.js";
+import FinancePlanned from "../models/FinancePlanned.js";
+import FinancePlanVersion from "../models/FinancePlanVersion.js";
+import { createFinancePlanWorkbook } from "../services/exportService.js";
 import {
   computeKPIs,
   decimalToNumber,
@@ -13,9 +14,13 @@ import {
   serializePeriod,
   toDecimal,
   validateBalance,
-} from '../services/planningService.js';
+} from "../services/planningService.js";
 
-const allowedStrategies = new Set(['straight_line', 's_curve', 'milestone_weighted']);
+const allowedStrategies = new Set([
+  "straight_line",
+  "s_curve",
+  "milestone_weighted",
+]);
 
 const serializePlan = (plan) => ({
   id: plan._id,
@@ -30,7 +35,7 @@ const serializePlan = (plan) => ({
 });
 
 const sendPlanningError = (res, err) => {
-  const message = err instanceof Error ? err.message : 'planning_error';
+  const message = err instanceof Error ? err.message : "planning_error";
   const errorMap = {
     invalid_strategy: 400,
     milestone_overweight: 400,
@@ -53,14 +58,16 @@ const getPlanWithPeriods = async (contractId) => {
   const plan = await FinancePlan.findOne({ contractId });
   if (!plan) return null;
 
-  const periods = await FinancePlanned.find({ planId: plan._id }).sort({ sortOrder: 1 });
+  const periods = await FinancePlanned.find({ planId: plan._id }).sort({
+    sortOrder: 1,
+  });
   return { plan, periods };
 };
 
 const snapshotExistingPlan = async (plan, periods, userId) => {
   const latestVersion = await FinancePlanVersion.findOne({ planId: plan._id })
     .sort({ versionNumber: -1 })
-    .select('versionNumber');
+    .select("versionNumber");
 
   await FinancePlanVersion.create({
     planId: plan._id,
@@ -81,15 +88,22 @@ export const generateFinancePlan = async (req, res, next) => {
     const { strategy, params = {} } = req.body;
 
     if (!strategy || !allowedStrategies.has(strategy)) {
-      return res.status(400).json({ code: 'invalid_strategy', message: 'invalid_strategy' });
+      return res
+        .status(400)
+        .json({ code: "invalid_strategy", message: "invalid_strategy" });
     }
 
     const contract = await Contract.findById(contractId);
     if (!contract) {
-      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
+      return res
+        .status(404)
+        .json({ code: "contract_not_found", message: "Contract not found" });
     }
-    if (contract.status !== 'active') {
-      return res.status(422).json({ code: 'contract_not_active', message: 'Contract is not active' });
+    if (contract.status !== "active") {
+      return res.status(422).json({
+        code: "contract_not_active",
+        message: "Contract is not active",
+      });
     }
 
     const generated = generatePlan(contract, strategy, params);
@@ -107,7 +121,7 @@ export const generateFinancePlan = async (req, res, next) => {
         totalAmount: toDecimal(generated.totalAmount),
         generatedAt: new Date(),
         generatedBy: req.user._id,
-        status: 'draft',
+        status: "draft",
         warnings: generated.warnings,
       },
       { new: true, upsert: true, runValidators: true },
@@ -143,12 +157,16 @@ export const getFinancePlan = async (req, res, next) => {
   try {
     const contract = await Contract.findById(req.params.contractId);
     if (!contract) {
-      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
+      return res
+        .status(404)
+        .json({ code: "contract_not_found", message: "Contract not found" });
     }
 
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
+      return res
+        .status(404)
+        .json({ code: "plan_not_found", message: "Plan not found" });
     }
 
     const periods = result.periods.map(serializePeriod);
@@ -170,23 +188,30 @@ export const updateFinancePlan = async (req, res, next) => {
     const { periods: inputPeriods } = req.body;
 
     if (!Array.isArray(inputPeriods) || inputPeriods.length === 0) {
-      return res.status(400).json({ code: 'invalid_periods', message: 'periods array is required' });
+      return res.status(400).json({
+        code: "invalid_periods",
+        message: "periods array is required",
+      });
     }
 
     const contract = await Contract.findById(contractId);
     if (!contract) {
-      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
+      return res
+        .status(404)
+        .json({ code: "contract_not_found", message: "Contract not found" });
     }
 
     const result = await getPlanWithPeriods(contractId);
     if (!result) {
-      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
+      return res
+        .status(404)
+        .json({ code: "plan_not_found", message: "Plan not found" });
     }
 
     const normalized = inputPeriods
       .map((period, index) => {
-        const periodStart = new Date(period.periodStart || '');
-        const periodEnd = new Date(period.periodEnd || '');
+        const periodStart = new Date(period.periodStart || "");
+        const periodEnd = new Date(period.periodEnd || "");
         const plannedAmount = Number(period.plannedAmount);
         if (
           !period.periodLabel ||
@@ -196,7 +221,7 @@ export const updateFinancePlan = async (req, res, next) => {
           Number.isNaN(plannedAmount) ||
           plannedAmount < 0
         ) {
-          throw new Error('invalid_periods');
+          throw new Error("invalid_periods");
         }
         return {
           periodLabel: period.periodLabel,
@@ -214,7 +239,7 @@ export const updateFinancePlan = async (req, res, next) => {
     );
     if (!validation.isValid) {
       return res.status(400).json({
-        code: 'balance_violation',
+        code: "balance_violation",
         message: validation.message,
         delta: validation.delta,
       });
@@ -237,7 +262,7 @@ export const updateFinancePlan = async (req, res, next) => {
       };
     });
 
-    result.plan.status = 'draft';
+    result.plan.status = "draft";
     result.plan.generatedAt = new Date();
     result.plan.generatedBy = new mongoose.Types.ObjectId(req.user._id);
     result.plan.warnings = [];
@@ -254,8 +279,10 @@ export const updateFinancePlan = async (req, res, next) => {
       warnings: [],
     });
   } catch (err) {
-    if (err instanceof Error && err.message === 'invalid_periods') {
-      return res.status(400).json({ code: 'invalid_periods', message: 'Invalid periods payload' });
+    if (err instanceof Error && err.message === "invalid_periods") {
+      return res
+        .status(400)
+        .json({ code: "invalid_periods", message: "Invalid periods payload" });
     }
     if (sendPlanningError(res, err)) return;
     next(err);
@@ -266,12 +293,47 @@ export const confirmFinancePlan = async (req, res, next) => {
   try {
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
+      return res
+        .status(404)
+        .json({ code: "plan_not_found", message: "Plan not found" });
     }
 
-    result.plan.status = 'confirmed';
+    result.plan.status = "confirmed";
     await result.plan.save();
     return res.json({ plan: serializePlan(result.plan) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const exportFinancePlan = async (req, res, next) => {
+  try {
+    const contract = await Contract.findById(req.params.contractId);
+    if (!contract) {
+      return res
+        .status(404)
+        .json({ code: "contract_not_found", message: "Contract not found" });
+    }
+
+    const result = await getPlanWithPeriods(req.params.contractId);
+    if (!result) {
+      return res
+        .status(404)
+        .json({ code: "plan_not_found", message: "Plan not found" });
+    }
+
+    const workbook = createFinancePlanWorkbook(contract, result);
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="finance-plan-${req.params.contractId}.xlsx"`,
+    );
+    return res.send(buffer);
   } catch (err) {
     next(err);
   }
@@ -281,15 +343,21 @@ export const getPaymentSchedule = async (req, res, next) => {
   try {
     const contract = await Contract.findById(req.params.contractId);
     if (!contract) {
-      return res.status(404).json({ code: 'contract_not_found', message: 'Contract not found' });
+      return res
+        .status(404)
+        .json({ code: "contract_not_found", message: "Contract not found" });
     }
 
     const result = await getPlanWithPeriods(req.params.contractId);
     if (!result) {
-      return res.status(404).json({ code: 'plan_not_found', message: 'Plan not found' });
+      return res
+        .status(404)
+        .json({ code: "plan_not_found", message: "Plan not found" });
     }
 
-    return res.json(generatePaymentSchedule(contract, result.plan, result.periods));
+    return res.json(
+      generatePaymentSchedule(contract, result.plan, result.periods),
+    );
   } catch (err) {
     next(err);
   }

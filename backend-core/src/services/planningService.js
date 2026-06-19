@@ -106,7 +106,7 @@ export const computeNumPeriods = (startDate, endDate, reportingPeriod) => {
   return Math.ceil(days / 30.44);
 };
 
-export const generateDateRanges = (startDate, periodCount, reportingPeriod) => {
+export const generateDateRanges = (startDate, periodCount, reportingPeriod, contractEndDate) => {
   const periodMs =
     reportingPeriod === "weekly"
       ? 7 * MS_PER_DAY
@@ -115,7 +115,9 @@ export const generateDateRanges = (startDate, periodCount, reportingPeriod) => {
         : 30.44 * MS_PER_DAY;
   return Array.from({ length: periodCount }, (_unused, index) => {
     const start = new Date(startDate.getTime() + index * periodMs);
-    const end = new Date(start.getTime() + periodMs - MS_PER_DAY);
+    const computedEnd = new Date(start.getTime() + periodMs - MS_PER_DAY);
+    const isLast = index === periodCount - 1;
+    const end = isLast && contractEndDate ? contractEndDate : computedEnd;
     return { start, end };
   });
 };
@@ -174,8 +176,15 @@ const dedupeWarnings = (warnings) => {
   });
 };
 
-const milestoneWeighted = (contractValue, periodRanges, milestones) => {
-  const ignoredWarnings = milestones
+const milestoneWeighted = (contractValue, periodRanges, milestones, contractStart, contractEnd) => {
+  // Only consider milestones within the execution window
+  const executionMilestones = milestones.filter(
+    (milestone) =>
+      !milestone.dueDate ||
+      (milestone.dueDate >= contractStart && milestone.dueDate <= contractEnd),
+  );
+
+  const ignoredWarnings = executionMilestones
     .filter(
       (milestone) =>
         milestone.hasRawValue && (!milestone.value || !milestone.dueDate),
@@ -185,15 +194,17 @@ const milestoneWeighted = (contractValue, periodRanges, milestones) => {
       message: `Milestone "${milestone.name || "Unnamed"}" has a value but no valid due date or positive amount.`,
     }));
 
-  const pricedMilestones = milestones.filter(
+  const pricedMilestones = executionMilestones.filter(
     (milestone) => milestone.value && milestone.dueDate,
   );
+
   const inRangePricedMilestones = pricedMilestones.filter((milestone) => {
     const dueDate = milestone.dueDate;
     return periodRanges.some(
       (range) => dueDate >= range.start && dueDate <= range.end,
     );
   });
+
   const outOfRangeWarnings = pricedMilestones
     .filter((milestone) => !inRangePricedMilestones.includes(milestone))
     .map((milestone) => ({
@@ -224,16 +235,36 @@ const milestoneWeighted = (contractValue, periodRanges, milestones) => {
     throw new Error("milestone_overweight");
   }
 
+  // Identify which period indices have a milestone landing in them
+  const milestonePeriodIndices = new Set(
+    periodRanges
+      .map((range, i) => {
+        const hasMilestone = inRangePricedMilestones.some(
+          (m) => m.dueDate >= range.start && m.dueDate <= range.end,
+        );
+        return hasMilestone ? i : null;
+      })
+      .filter((i) => i !== null),
+  );
+
+  // Distribute residual only across non-milestone periods
   const residual = contractValue - totalMilestoneValue;
-  const basePeriodShare = residual / periodRanges.length;
-  const amounts = periodRanges.map((range) => {
+  const nonMilestonePeriodCount = periodRanges.length - milestonePeriodIndices.size;
+  const basePeriodShare = nonMilestonePeriodCount > 0
+    ? residual / nonMilestonePeriodCount
+    : 0;
+
+  const amounts = periodRanges.map((range, i) => {
     const milestoneShare = inRangePricedMilestones
       .filter((milestone) => {
         const dueDate = milestone.dueDate;
         return dueDate >= range.start && dueDate <= range.end;
       })
       .reduce((sum, milestone) => sum + (milestone.value || 0), 0);
-    return milestoneShare + basePeriodShare;
+
+    // Milestone periods: only their milestone value
+    // Non-milestone periods: even share of the residual
+    return milestonePeriodIndices.has(i) ? milestoneShare : basePeriodShare;
   });
 
   const total = amounts.reduce((sum, amount) => sum + amount, 0);
@@ -295,6 +326,7 @@ export const generatePlan = (contract, strategy, params = {}) => {
     normalized.startDate,
     periodCount,
     normalized.reportingPeriod,
+    normalized.endDate,
   );
 
   let amounts;
@@ -318,6 +350,8 @@ export const generatePlan = (contract, strategy, params = {}) => {
       normalized.contractValue,
       ranges,
       normalized.milestones,
+      normalized.startDate,
+      normalized.endDate,
     );
     amounts = result.amounts;
     warnings = result.warnings;
