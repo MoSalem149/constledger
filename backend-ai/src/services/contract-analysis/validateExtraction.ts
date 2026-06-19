@@ -68,10 +68,11 @@ export function validateExtraction(raw: ContractExtraction): ValidationResult {
     }
   }
 
-  // V5 — reporting_period must be weekly | monthly | null
+  // V5 — reporting_period must be weekly | biweekly | monthly | null
   if (
     raw.reporting_period !== null &&
     raw.reporting_period !== 'weekly' &&
+    raw.reporting_period !== 'biweekly' &&
     raw.reporting_period !== 'monthly'
   ) {
     throw new Error(`V5: reporting_period has invalid value: ${raw.reporting_period}`);
