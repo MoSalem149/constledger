@@ -1,0 +1,649 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ConstLedger API Collection",
+    "description": "# ConstLedger API Collection\n\nTwo backends working together:\n\n| Backend | Variable | Responsibility |\n|---------|----------|----------------|\n| Core Backend (port 3000) | `{{coreUrl}}` | Auth, User Management |\n| AI Backend (port 5000) | `{{baseUrl}}` / `{{aiUrl}}` | Contracts, Finance, Reports |\n\n---\n\n## 🔀 Switching Environments\n\nEdit the `env` collection variable to `dev` or `prod` — all URLs update automatically on every request.\n\n| Variable | `dev` | `prod` |\n|----------|-------|--------|\n| `coreUrl` | `http://localhost:3000` | `https://cpms-core--test.mosalem149.deno.net` |\n| `baseUrl` | `http://localhost:5000` | `https://cpms-ai-420306063918.europe-west1.run.app` |\n| `aiUrl` | `http://localhost:5000` | `https://cpms-ai-420306063918.europe-west1.run.app` |\n\n> ⚠️ Never edit `coreUrl`, `baseUrl`, or `aiUrl` directly — they are overwritten automatically. Edit `dev_*` or `prod_*` variables instead.\n\n---\n\n## 👤 User Roles\n\n| Role | Description |\n|------|-------------|\n| `contract_manager` | Default role |\n| `pmo` | Project Management Office — can create users |\n| `finance_team` | Finance operations |\n| `top_management` | Read-only executive access |\n\n---\n\n## 🚀 Quick Start\n\n1. Set `env` to `dev` or `prod` in the **Variables** tab.\n2. Run **POST /api/auth/login** — the test script auto-captures the JWT into `authToken`.\n3. All AI-backend requests automatically attach the cookie via the folder pre-request script.\n\n---\n\n## 🗂 Auto-populated Variables\n\nThese are set automatically by test scripts — no manual input needed:\n\n| Variable | Set by |\n|----------|--------|\n| `authToken` | POST /api/auth/login |\n| `user_id` | POST /api/auth/login · POST /api/users |\n| `contract_id` | POST /api/contracts/upload |\n| `report_id` | POST /api/finance/:contractId/actual |\n| `s3SignedUrl` | POST /api/uploads/sign |\n",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {
+    "/api/finance/{contractId}/plans/generate": {
+      "post": {
+        "summary": "Generate Plan - Milestone Weighted",
+        "deprecated": false,
+        "description": "Current extraction does not store milestone values, so this will usually return a milestone_fallback warning and use s_curve amounts.",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "6a34663e90ed39590754f699",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "strategy": {
+                    "type": "string"
+                  },
+                  "params": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "strategy",
+                  "params"
+                ]
+              },
+              "example": {
+                "strategy": "milestone_weighted",
+                "params": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "1": {
+                    "summary": "Example 1",
+                    "value": {
+                      "plan": {
+                        "id": "6a3434e12f802d3acd8e4fd2",
+                        "contractId": "6a2c6beebd1ac75698e9e4aa",
+                        "strategy": "milestone_weighted",
+                        "strategyParams": {},
+                        "totalAmount": 8750000,
+                        "generatedAt": "2026-06-18T21:28:05.911Z",
+                        "generatedBy": "6a23632b7be65daa24981fc4",
+                        "status": "draft",
+                        "warnings": [
+                          {
+                            "code": "milestone_fallback",
+                            "message": "No valid priced milestones were found, so milestone_weighted used s_curve instead."
+                          }
+                        ]
+                      },
+                      "periods": [
+                        {
+                          "id": "6a3462e62fd29dae0695c73f",
+                          "periodLabel": "Biweekly 1",
+                          "periodStart": "2022-10-26T00:00:00.000Z",
+                          "periodEnd": "2022-11-09T00:00:00.000Z",
+                          "plannedAmount": 1305031.46,
+                          "cumulativePlanned": 1305031.46,
+                          "sortOrder": 0
+                        },
+                        {
+                          "id": "6a3462e62fd29dae0695c740",
+                          "periodLabel": "Biweekly 2",
+                          "periodStart": "2022-11-10T00:00:00.000Z",
+                          "periodEnd": "2022-11-24T00:00:00.000Z",
+                          "plannedAmount": 3069968.54,
+                          "cumulativePlanned": 4375000,
+                          "sortOrder": 1
+                        },
+                        {
+                          "id": "6a3462e62fd29dae0695c741",
+                          "periodLabel": "Biweekly 3",
+                          "periodStart": "2022-11-25T00:00:00.000Z",
+                          "periodEnd": "2022-12-09T00:00:00.000Z",
+                          "plannedAmount": 3069968.54,
+                          "cumulativePlanned": 7444968.54,
+                          "sortOrder": 2
+                        },
+                        {
+                          "id": "6a3462e62fd29dae0695c742",
+                          "periodLabel": "Biweekly 4",
+                          "periodStart": "2022-12-10T00:00:00.000Z",
+                          "periodEnd": "2022-12-24T00:00:00.000Z",
+                          "plannedAmount": 1305031.46,
+                          "cumulativePlanned": 8750000,
+                          "sortOrder": 3
+                        }
+                      ],
+                      "kpis": {
+                        "peakCash": 8750000,
+                        "burnRate": 4439166.67
+                      },
+                      "warnings": [
+                        {
+                          "code": "milestone_fallback",
+                          "message": "No valid priced milestones were found, so milestone_weighted used s_curve instead."
+                        }
+                      ]
+                    }
+                  },
+                  "2": {
+                    "summary": "Example 2",
+                    "value": {
+                      "plan": {
+                        "id": "6a346ba32f802d3acd8e5055",
+                        "contractId": "6a34663e90ed39590754f699",
+                        "strategy": "milestone_weighted",
+                        "strategyParams": {},
+                        "totalAmount": 8750000,
+                        "generatedAt": "2026-06-18T22:28:27.324Z",
+                        "generatedBy": "6a23632b7be65daa24981fc4",
+                        "status": "draft",
+                        "warnings": []
+                      },
+                      "periods": [
+                        {
+                          "id": "6a34710b7b8cb983c6434f59",
+                          "periodLabel": "Biweekly 1",
+                          "periodStart": "2022-10-26T00:00:00.000Z",
+                          "periodEnd": "2022-11-09T00:00:00.000Z",
+                          "plannedAmount": 1620000,
+                          "cumulativePlanned": 1620000,
+                          "sortOrder": 0
+                        },
+                        {
+                          "id": "6a34710b7b8cb983c6434f5a",
+                          "periodLabel": "Biweekly 2",
+                          "periodStart": "2022-11-10T00:00:00.000Z",
+                          "periodEnd": "2022-11-24T00:00:00.000Z",
+                          "plannedAmount": 1400000,
+                          "cumulativePlanned": 3020000,
+                          "sortOrder": 1
+                        },
+                        {
+                          "id": "6a34710b7b8cb983c6434f5b",
+                          "periodLabel": "Biweekly 3",
+                          "periodStart": "2022-11-25T00:00:00.000Z",
+                          "periodEnd": "2022-12-09T00:00:00.000Z",
+                          "plannedAmount": 4500000,
+                          "cumulativePlanned": 7520000,
+                          "sortOrder": 2
+                        },
+                        {
+                          "id": "6a34710b7b8cb983c6434f5c",
+                          "periodLabel": "Biweekly 4",
+                          "periodStart": "2022-12-10T00:00:00.000Z",
+                          "periodEnd": "2022-12-25T00:00:00.000Z",
+                          "plannedAmount": 1230000,
+                          "cumulativePlanned": 8750000,
+                          "sortOrder": 3
+                        }
+                      ],
+                      "kpis": {
+                        "peakCash": 8750000,
+                        "burnRate": 4439166.67
+                      },
+                      "warnings": []
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/finance/{contractId}/plan": {
+      "get": {
+        "summary": "Get Current Plan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "plan": {
+                    "id": "6a3434e12f802d3acd8e4fd2",
+                    "contractId": "6a2c6beebd1ac75698e9e4aa",
+                    "strategy": "s_curve",
+                    "strategyParams": {
+                      "kSteepness": 6
+                    },
+                    "totalAmount": 8750000,
+                    "generatedAt": "2026-06-18T21:28:47.177Z",
+                    "generatedBy": "6a23632b7be65daa24981fc4",
+                    "status": "draft",
+                    "warnings": []
+                  },
+                  "periods": [
+                    {
+                      "id": "6a34630f2fd29dae0695c74d",
+                      "periodLabel": "Biweekly 1",
+                      "periodStart": "2022-10-26T00:00:00.000Z",
+                      "periodEnd": "2022-11-09T00:00:00.000Z",
+                      "plannedAmount": 1305031.46,
+                      "cumulativePlanned": 1305031.46,
+                      "sortOrder": 0
+                    },
+                    {
+                      "id": "6a34630f2fd29dae0695c74e",
+                      "periodLabel": "Biweekly 2",
+                      "periodStart": "2022-11-10T00:00:00.000Z",
+                      "periodEnd": "2022-11-24T00:00:00.000Z",
+                      "plannedAmount": 3069968.54,
+                      "cumulativePlanned": 4375000,
+                      "sortOrder": 1
+                    },
+                    {
+                      "id": "6a34630f2fd29dae0695c74f",
+                      "periodLabel": "Biweekly 3",
+                      "periodStart": "2022-11-25T00:00:00.000Z",
+                      "periodEnd": "2022-12-09T00:00:00.000Z",
+                      "plannedAmount": 3069968.54,
+                      "cumulativePlanned": 7444968.54,
+                      "sortOrder": 2
+                    },
+                    {
+                      "id": "6a34630f2fd29dae0695c750",
+                      "periodLabel": "Biweekly 4",
+                      "periodStart": "2022-12-10T00:00:00.000Z",
+                      "periodEnd": "2022-12-24T00:00:00.000Z",
+                      "plannedAmount": 1305031.46,
+                      "cumulativePlanned": 8750000,
+                      "sortOrder": 3
+                    }
+                  ],
+                  "kpis": {
+                    "peakCash": 8750000,
+                    "burnRate": 4439166.67
+                  },
+                  "warnings": []
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      },
+      "put": {
+        "summary": "Update Plan Periods Manually",
+        "deprecated": false,
+        "description": "Replace the sample periods with the real period list from Get Current Plan. The sum of plannedAmount must equal the contract value within 0.01.",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "periods": [
+                  {
+                    "periodLabel": "Week 1",
+                    "periodStart": "2026-01-01",
+                    "periodEnd": "2026-01-07",
+                    "plannedAmount": 8000000,
+                    "sortOrder": 0
+                  },
+                  {
+                    "periodLabel": "Week 2",
+                    "periodStart": "2026-01-08",
+                    "periodEnd": "2026-01-14",
+                    "plannedAmount": 750000,
+                    "sortOrder": 1
+                  }
+                ],
+                "type": "string"
+              },
+              "example": {
+                "periods": [
+                  {
+                    "periodLabel": "Week 1",
+                    "periodStart": "2026-01-01",
+                    "periodEnd": "2026-01-07",
+                    "plannedAmount": 8000000,
+                    "sortOrder": 0
+                  },
+                  {
+                    "periodLabel": "Week 2",
+                    "periodStart": "2026-01-08",
+                    "periodEnd": "2026-01-14",
+                    "plannedAmount": 750000,
+                    "sortOrder": 1
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "plan": {
+                    "id": "6a335e5f893bb40e2f5ada41",
+                    "contractId": "6a2c6beebd1ac75698e9e4aa",
+                    "strategy": "s_curve",
+                    "strategyParams": {
+                      "kSteepness": 6
+                    },
+                    "totalAmount": 8750000,
+                    "generatedAt": "2026-06-18T03:06:15.849Z",
+                    "generatedBy": "6a23632b7be65daa24981fc4",
+                    "status": "draft",
+                    "warnings": []
+                  },
+                  "periods": [
+                    {
+                      "id": "6a3360a7df3103b29a54b1d6",
+                      "periodLabel": "Week 1",
+                      "periodStart": "2026-01-01T00:00:00.000Z",
+                      "periodEnd": "2026-01-07T00:00:00.000Z",
+                      "plannedAmount": 8000000,
+                      "cumulativePlanned": 8000000,
+                      "sortOrder": 0
+                    },
+                    {
+                      "id": "6a3360a7df3103b29a54b1d7",
+                      "periodLabel": "Week 2",
+                      "periodStart": "2026-01-08T00:00:00.000Z",
+                      "periodEnd": "2026-01-14T00:00:00.000Z",
+                      "plannedAmount": 750000,
+                      "cumulativePlanned": 8750000,
+                      "sortOrder": 1
+                    }
+                  ],
+                  "kpis": {
+                    "peakCash": 8750000,
+                    "burnRate": 4439166.67
+                  },
+                  "warnings": []
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/finance/{contractId}/plan/confirm": {
+      "post": {
+        "summary": "Confirm Plan",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "plan": {
+                    "id": "6a335e5f893bb40e2f5ada41",
+                    "contractId": "6a2c6beebd1ac75698e9e4aa",
+                    "strategy": "s_curve",
+                    "strategyParams": {
+                      "kSteepness": 6
+                    },
+                    "totalAmount": 8750000,
+                    "generatedAt": "2026-06-18T03:06:15.849Z",
+                    "generatedBy": "6a23632b7be65daa24981fc4",
+                    "status": "confirmed",
+                    "warnings": []
+                  }
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/finance/{contractId}/payment-schedule": {
+      "get": {
+        "summary": "Get Payment Schedule",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "example": {
+                  "contractId": "6a2c6beebd1ac75698e9e4aa",
+                  "planId": "6a335e5f893bb40e2f5ada41",
+                  "strategy": "s_curve",
+                  "generatedAt": "2026-06-18T03:06:15.849Z",
+                  "totalAmount": 8750000,
+                  "currency": "EGP",
+                  "paymentCount": 2,
+                  "payments": [
+                    {
+                      "paymentNumber": 1,
+                      "periodLabel": "Week 1",
+                      "periodStart": "2026-01-01T00:00:00.000Z",
+                      "dueDate": "2026-01-07T00:00:00.000Z",
+                      "amount": 8000000,
+                      "cumulativePayment": 8000000,
+                      "pctOfTotal": 0.9142857142857143,
+                      "description": "Payment 1: planned for Week 1"
+                    },
+                    {
+                      "paymentNumber": 2,
+                      "periodLabel": "Week 2",
+                      "periodStart": "2026-01-08T00:00:00.000Z",
+                      "dueDate": "2026-01-14T00:00:00.000Z",
+                      "amount": 750000,
+                      "cumulativePayment": 8750000,
+                      "pctOfTotal": 0.08571428571428572,
+                      "description": "Payment 2: planned for Week 2"
+                    }
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/finance/{contractId}/plan/export": {
+      "get": {
+        "summary": "Export Plan as Excell sheet",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "contractId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "example": "{{contract_id}}",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Cookie",
+            "in": "header",
+            "description": "",
+            "required": true,
+            "example": "token={{jwtToken}}",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {},
+    "responses": {},
+    "securitySchemes": {}
+  },
+  "servers": [],
+  "security": []
+}

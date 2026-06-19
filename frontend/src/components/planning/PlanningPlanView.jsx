@@ -114,7 +114,7 @@ export default function PlanningPlanView({
               <button
                 onClick={handleConfirm}
                 disabled={confirming || !isBalanced}
-                className="px-4 py-2.5 rounded-3xl bg-primary shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] text-white text-xs font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2.5 rounded-3xl bg-primary shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] text-white text-xs font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {confirming ? "Confirming..." : "Confirm"}
               </button>
@@ -136,12 +136,12 @@ export default function PlanningPlanView({
       />
 
       {/* Chart */}
-      <div className="bg-bg-cards1 rounded-xl shadow p-6">
+      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] px-6 pt-6 pb-14">
         <PlanChart periods={localPeriods} strategy={plan?.strategy} />
       </div>
 
       {/* Table */}
-      <div className="bg-bg-cards1 rounded-xl shadow p-6">
+      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h3 className="text-sm font-medium text-text-primary">

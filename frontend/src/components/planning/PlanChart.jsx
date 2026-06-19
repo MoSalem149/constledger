@@ -24,9 +24,8 @@ function CustomXTick({ x, y, payload }) {
       y={y}
       dy={14}
       textAnchor="middle"
-      fill="#6C6B6B"
-      fontSize={12}
-      fontFamily="sans-serif"
+      fill="currentColor"
+      className="text-text-secondary text-sm font-medium"
     >
       {payload.value}
     </text>
@@ -58,16 +57,16 @@ export default function PlanChart({ periods, strategy }) {
   return (
     <div className="w-full">
       {/* Header with title, subtitle, legend */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between ">
         <div>
-          <h3 className="text-base font-medium text-text-primary">
+          <h3 className="text-lg font-medium text-text-primary">
             Planned Spend Across The Contract
           </h3>
-          <p className="text-xs text-text-secondary mt-0.5">
+          <p className="text-xs text-text-placeholder font-normal mt-2">
             {strategyLabel} — {strategyDesc}
           </p>
         </div>
-        <div className="flex items-center gap-4 text-xs text-text-secondary">
+        <div className="flex items-center gap-4 font-normal text-[10px] text-text-secondary">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
             <span>Planned this period</span>
@@ -79,7 +78,7 @@ export default function PlanChart({ periods, strategy }) {
         </div>
       </div>
 
-      <div className="w-full h-72">
+      <div className="w-full h-72 mt-[86px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={data}

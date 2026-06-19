@@ -74,24 +74,27 @@ export default function PlanKpis({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 font-sans sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {items.map((item) => (
-        <div key={item.label} className="bg-bg-cards1 rounded-xl shadow p-5">
+        <div
+          key={item.label}
+          className="bg-bg-cards1 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] rounded-xl  px-8 py-6"
+        >
           {/* Top row: icon + label */}
-          <div className="flex items-center gap-3 mb-3">
+          <div className="flex items-center gap-4 mb-2">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
               <item.Icon className="w-5 h-5 text-primary" />
             </div>
-            <p className="text-xs text-text-secondary">{item.label}</p>
+            <p className="text-xs font-medium text-text-secondary">
+              {item.label}
+            </p>
           </div>
           {/* Bottom row: value + subtitle */}
           <div>
-            <p className="text-lg font-medium text-text-primary">
+            <p className="text-2xl mb-2 font-medium text-text-primary">
               {item.value}
             </p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              {item.subtitle}
-            </p>
+            <p className="text-xs text-text-placeholder ">{item.subtitle}</p>
           </div>
         </div>
       ))}
