@@ -1,4 +1,9 @@
-import { formatDate, formatCompact, formatPct } from "../../utils/format";
+import {
+  formatDate,
+  formatCompact,
+  formatPct,
+  formatShortEGP,
+} from "../../utils/format";
 
 export default function PlanTable({
   periods,
@@ -10,6 +15,7 @@ export default function PlanTable({
   onExport,
   isBalanced,
   remaining,
+  currency,
 }) {
   const totalPlanned = periods.reduce(
     (sum, p) => sum + (Number(p.plannedAmount) || 0),
@@ -30,7 +36,7 @@ export default function PlanTable({
             budget
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start">
+        <div className="flex flex-col items-end gap-2 self-start">
           {canPlan && (
             <button
               onClick={onExport}
@@ -39,11 +45,24 @@ export default function PlanTable({
               Export Schedule
             </button>
           )}
+          {!isConfirmed && canPlan && (
+            <div
+              className={`text-xs font-medium px-3 py-1.5 rounded-full ${
+                isBalanced
+                  ? "bg-status-track/10 text-status-track"
+                  : "bg-status-risk/10 text-status-risk"
+              }`}
+            >
+              {isBalanced
+                ? `Balanced — total equals ${formatShortEGP(contractValue)} ${currency}`
+                : `Remaining: ${formatShortEGP(remaining)} ${currency}`}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto p-6 bg-bg-cards1 rounded-lg mt-6">
+      <div className="overflow-x-auto bg-bg-cards1 mt-6">
         <table className="table-auto w-full">
           <colgroup>
             <col className="w-1/3" />
@@ -54,23 +73,23 @@ export default function PlanTable({
             <col />
           </colgroup>
           <thead>
-            <tr className="bg-bg-grey">
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7">
+            <tr className="bg-text-light">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
                 Period
               </th>
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
                 Period Start
               </th>
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
                 Period End
               </th>
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7 ">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
                 Planned
               </th>
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7 ">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
                 Cumulative
               </th>
-              <th className="text-left text-text-secondary text-xs font-medium uppercase px-6 py-7 ">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
                 % of Contract
               </th>
             </tr>
@@ -91,10 +110,10 @@ export default function PlanTable({
                       <div>{period.periodLabel}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-7 text-text-secondary text-sm">
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
                     {formatDate(period.periodStart)}
                   </td>
-                  <td className="px-6 py-7 text-text-secondary text-sm">
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
                     {formatDate(period.periodEnd)}
                   </td>
                   <td className="px-6 py-7 text-left">
@@ -113,7 +132,7 @@ export default function PlanTable({
                       />
                     )}
                   </td>
-                  <td className="px-6 py-7 text-left text-text-primary font-medium text-sm">
+                  <td className="px-6 py-7 text-left text-text-secondary font-medium text-sm">
                     {formatCompact(period.cumulativePlanned)}
                   </td>
                   <td className="px-6 py-7 text-left">
@@ -124,7 +143,7 @@ export default function PlanTable({
                           style={{ width: `${Math.min(pct * 100, 100)}%` }}
                         />
                       </div>
-                      <span className="text-text-secondary text-xs w-8 ">
+                      <span className="text-text-secondary font-bold text-xs w-8 ">
                         {formatPct(pct)}
                       </span>
                     </div>
@@ -134,20 +153,20 @@ export default function PlanTable({
             })}
           </tbody>
           <tfoot>
-            <tr className="bg-[#242424] text-white ">
+            <tr className="bg-text-primary text-text-light ">
               <td
-                className="px-6 py-6 font-semibold rounded-bl-lg text-sm"
+                className="px-6 py-6 font-medium rounded-bl-lg text-lg"
                 colSpan={3}
               >
                 Total planned
               </td>
-              <td className="px-6 py-6 text-left text-sm font-medium">
+              <td className="px-6 py-6 text-left  font-medium text-lg">
                 {formatCompact(totalPlanned)}
               </td>
-              <td className="px-6 py-6 text-left text-sm font-medium">
+              <td className="px-6 py-6 text-left  font-medium text-lg">
                 {formatCompact(totalPlanned)}
               </td>
-              <td className="px-6 py-6">
+              <td className="px-6 py-6 rounded-br-lg">
                 <div className="flex items-center justify-start gap-2">
                   <div className="w-28 h-1.5 bg-white/20 rounded-full overflow-hidden">
                     <div
@@ -155,7 +174,7 @@ export default function PlanTable({
                       style={{ width: `${Math.min(totalPct * 100, 100)}%` }}
                     />
                   </div>
-                  <span className="text-xs w-8 text-left">
+                  <span className="text-xs font-bold w-8 text-left">
                     {formatPct(totalPct)}
                   </span>
                 </div>

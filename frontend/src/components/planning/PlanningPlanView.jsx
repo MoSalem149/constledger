@@ -151,6 +151,7 @@ export default function PlanningPlanView({
           onExport={onExport}
           isBalanced={isBalanced}
           remaining={remaining}
+          currency={currency}
         />
       </div>
     </div>
