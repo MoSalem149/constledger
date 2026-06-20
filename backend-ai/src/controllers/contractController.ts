@@ -134,7 +134,13 @@ export const listContracts = async (
     if (nameToSearch) filter.name = { $regex: nameToSearch, $options: "i" };
 
     const rawContracts = await ContractModel.find(filter)
+<<<<<<< HEAD
       .select("name status contract_value currency start_date end_date")
+=======
+      .select(
+        "name status contract_value currency start_date end_date contractNumber parties milestones",
+      )
+>>>>>>> 560a763dff02092fb98a765ede52bf3d4dd68adc
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -149,6 +155,13 @@ export const listContracts = async (
       currency: c.currency,
       startDate: c.start_date,
       endDate: c.end_date,
+      contractNumber: c.contractNumber,
+      parties: c.parties,
+      milestones: c.milestones?.map((m) => ({
+        name: m.name,
+        dueDate: m.due_date,
+        value: m.value,
+      })),
     }));
 
     res.json(contracts);

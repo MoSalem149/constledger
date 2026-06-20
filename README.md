@@ -2,7 +2,7 @@
 
 # ConstLedger
 
-**AI-Powered Contract & Project Management System**
+**AI-assisted contract extraction, finance planning, and reporting**
 
 > Graduation Project — Information Technology Institute (ITI) · May 2026
 
@@ -18,7 +18,14 @@
 
 ## What is ConstLedger?
 
-ConstLedger replaces Excel-based construction project management with a unified web platform featuring AI-powered contract analysis, financial tracking, and real-time performance reporting.
+ConstLedger currently has two implemented backend services and a React frontend
+scaffold. Backend AI handles S3 uploads, PDF parsing, AI extraction, validation,
+and contract storage. Backend Core handles authentication, users, finance
+planning, reporting, and XLSX exports.
+
+The frontend currently contains routing, API clients, authentication state, and
+placeholder pages. Its service modules still include endpoints from an older
+API design and need alignment before the UI is fully functional.
 
 ---
 
@@ -50,27 +57,32 @@ constledger/
 
 ### Service Responsibilities
 
-| Service | Responsibility |
-| --- | --- |
-| `backend-core` | Authentication & user management only. Issues JWTs; deployed on Deno Deploy. |
-| `backend-ai` | All SRS business APIs (contracts, finance, performance, reports). Verifies JWTs; deployed on Google Cloud Run. |
-| `frontend` | React SPA; calls both backends directly from the browser. |
+| Service        | Responsibility                                                                                                 |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `backend-core` | Authentication & user management only. Issues JWTs; deployed on Deno Deploy.                                   |
+| `backend-ai`   | All SRS business APIs (contracts, finance, performance, reports). Verifies JWTs; deployed on Google Cloud Run. |
+| `frontend`     | React SPA; calls both backends directly from the browser.                                                      |
 
 ### Service Communication
 
+The browser talks to both backend services. Core owns `/api/auth`,
+`/api/users`, `/api/finance`, and `/api/reports`; AI owns `/api/uploads` and
+`/api/contracts`. Both services use the same MongoDB database and verify the
+same HTTP-only JWT cookie. There is no active `x-internal-secret` service call
+between them.
+
 ```
 Browser
-  │  HTTPS
-  ▼
-frontend :5173
-  │  REST /api/auth, /api/users
-  ├──────────────────────────────► backend-core :3000  ──── MongoDB :27017
-  │
-  │  REST /api/contracts, /api/finance, /api/reports, /api/uploads
-  └──────────────────────────────► backend-ai   :5000  ──── MongoDB :27017
-                                        │
-                                        ├── OpenAI GPT-4o-mini (contract AI)
-                                        └── AWS S3 (contract file storage)
+  ├── /api/auth, /api/users, /api/finance, /api/reports
+  │      └── backend-core :3000
+  └── /api/uploads, /api/contracts
+         └── backend-ai :5000
+
+backend-core ──┐
+              ├── shared MongoDB :27017
+backend-ai  ───┘
+      └── Amazon S3
+      └── Gemini, OpenRouter, or Groq
 ```
 
 > `backend-core` also calls `backend-ai` internally for AI-triggered actions,
@@ -80,22 +92,23 @@ frontend :5173
 
 ## Modules
 
-| Module                    | Description                                                                                  | AI?                      |
-| ------------------------- | -------------------------------------------------------------------------------------------- | ------------------------ |
-| **Contracts**             | Upload PDF/DOCX contracts — AI extracts key data as JSON, user reviews & confirms            | ✅ GPT-4o-mini           |
-| **Finance**               | Auto-generate planned budget from contract; site teams submit actual progress; PMO approves  | ✅ Budget generation     |
-| **Performance & Reports** | SPI / CPI KPIs, monthly/quarterly reports, PDF & Excel export                                | ❌ Aggregation only      |
+| Module        | Description                                                                                        | AI?                         |
+| ------------- | -------------------------------------------------------------------------------------------------- | --------------------------- |
+| **Contracts** | Direct-to-S3 upload, background PDF extraction, validation, human review, editing, and re-analysis | Gemini, OpenRouter, or Groq |
+| **Finance**   | Straight-line, S-curve, and milestone-weighted plans; manual edits; confirmation; payment schedule | Deterministic               |
+| **Reports**   | Contract, planned-budget, payment-schedule, and project-summary JSON/XLSX reports                  | Aggregation                 |
+| **Frontend**  | React/Vite routes and service scaffold; page implementations are placeholders                      | Not complete                |
 
 ---
 
 ## User Roles
 
-| Role               | Permissions                                                  |
-| ------------------ | ------------------------------------------------------------ |
-| `contract_manager` | Upload contracts, review AI extractions, edit contract data  |
-| `pmo`              | Everything above + approve/reject reports, manage users      |
-| `finance_team`     | Submit actual progress reports                               |
-| `top_management`   | Read-only dashboards and reports                             |
+| Role               | Permissions                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `contract_manager` | Upload contracts, review AI extractions, edit contract data |
+| `pmo`              | Everything above + manage users and all finance operations  |
+| `finance_team`     | Read finance plans and reports                              |
+| `top_management`   | Read finance plans and reports                              |
 
 ---
 
@@ -104,12 +117,13 @@ frontend :5173
 | Layer             | Technology                                    |
 | ----------------- | --------------------------------------------- |
 | Frontend          | React 18, Vite, Tailwind CSS, React Router v6 |
-| Core Backend      | Node.js 20, Express, Mongoose (JavaScript)    |
-| AI Backend        | Node.js 20, Express, Mongoose (TypeScript)    |
-| Database          | MongoDB 7 (shared between both backends)      |
-| File Storage      | AWS S3 (presigned URLs for upload/download)   |
-| LLM               | OpenAI GPT-4o-mini (contract & finance AI)    |
-| Auth              | JWT (httpOnly cookie) + RBAC                  |
+| Core Backend      | Node.js, Express, Mongoose                    |
+| AI Backend        | Node.js, Express, TypeScript                  |
+| Database          | MongoDB (Mongoose ODM)                        |
+| File Storage      | Amazon S3                                     |
+| LLM               | Gemini, OpenRouter, or Groq                   |
+| Auth              | JWT in HTTP-only cookie + RBAC                |
+| Testing           | Vitest                                        |
 | Dev Orchestration | Docker Compose                                |
 | AI Deployment     | Google Cloud Run                              |
 | Core Deployment   | Deno Deploy                                   |
@@ -121,7 +135,8 @@ frontend :5173
 
 ### Option A — Docker (recommended)
 
-**Prerequisites:** Docker Desktop, AWS S3 bucket, OpenAI API key.
+**Prerequisites:** Docker Desktop, an Amazon S3 bucket, and at least one
+Gemini, OpenRouter, or Groq API key.
 
 ```bash
 # 1. Clone
@@ -132,34 +147,22 @@ cp frontend/.env.example        frontend/.env.local
 cp backend-core/.env.example    backend-core/.env
 cp backend-ai/.env.example      backend-ai/.env
 
-# 3. Fill in secrets — minimum required values:
-#
-#   backend-core/.env
-#     JWT_SECRET=<long random string>          # openssl rand -hex 64
-#     JWT_EXPIRES_IN=8h
-#     FRONTEND_URL=http://localhost:5173
-#
-#   backend-ai/.env
-#     JWT_SECRET=<same value as backend-core>  # ⚠️  must match
-#     AI_SERVICE_SECRET=<shared secret>        # ⚠️  must match backend-core
-#     OPENAI_API_KEY=sk-...
-#     OPENAI_MODEL=gpt-4o-mini
-#     AWS_REGION=us-east-1
-#     AWS_ACCESS_KEY_ID=...
-#     AWS_SECRET_ACCESS_KEY=...
-#     S3_BUCKET=cpms-dev
-#     FRONTEND_URL=http://localhost:5173
+# 3. Fill in secrets
+#    use the same JWT_SECRET in both backend env files
+#    backend-core/.env  → MONGODB_URI, JWT_SECRET
+#    backend-ai/.env    → MONGODB_URI, JWT_SECRET, AWS_*, S3_BUCKET,
+#                         and at least one AI provider API key
 
 # 4. Start everything
 docker-compose up --build
 ```
 
-| Service      | URL                             |
-| ------------ | ------------------------------- |
-| Frontend     | http://localhost:5173           |
-| Backend Core | http://localhost:3000           |
-| Backend AI   | http://localhost:5000           |
-| MongoDB      | mongodb://localhost:27017/cpms  |
+| Service      | URL                            |
+| ------------ | ------------------------------ |
+| Frontend     | http://localhost:5173          |
+| Backend Core | http://localhost:3000          |
+| Backend AI   | http://localhost:5000          |
+| MongoDB      | mongodb://localhost:27017/cpms |
 
 ---
 
@@ -187,8 +190,8 @@ npm run dev
 
 ```bash
 cd backend-ai
-cp .env.example .env   # set MONGODB_URI, JWT_SECRET (same as core),
-                        # AI_SERVICE_SECRET, OPENAI_API_KEY, AWS_*, S3_*
+cp .env.example .env        # set MONGODB_URI=mongodb://localhost:27017/cpms
+                             # configure JWT_SECRET, S3, and an AI provider key
 npm install
 npm run dev
 ```
@@ -202,50 +205,7 @@ npm install
 npm run dev
 ```
 
-> **Start order:** MongoDB → backend-core → backend-ai → frontend
-
----
-
-## Environment Variables Reference
-
-### backend-core
-
-| Variable         | Required | Description |
-| ---------------- | -------- | ----------- |
-| `PORT`           | No       | Server port (default `3000`) |
-| `NODE_ENV`       | Yes      | `development` or `production` |
-| `MONGODB_URI`    | Yes      | Shared MongoDB URI — db name: `cpms` |
-| `JWT_SECRET`     | Yes      | Long random string — **must match backend-ai** |
-| `JWT_EXPIRES_IN` | No       | Token lifetime (default `8h`) |
-| `FRONTEND_URL`   | No       | CORS allowed origin (Vercel URL in prod) |
-
-### backend-ai
-
-| Variable               | Required | Description |
-| ---------------------- | -------- | ----------- |
-| `PORT`                 | No       | Auto-set by Cloud Run (8080); defaults to `5000` locally |
-| `NODE_ENV`             | Yes      | `development` or `production` |
-| `MONGODB_URI`          | Yes      | Same shared MongoDB URI as backend-core |
-| `JWT_SECRET`           | Yes      | **Must match backend-core** exactly |
-| `JWT_EXPIRES_IN`       | No       | Token lifetime (default `8h`) |
-| `OPENAI_API_KEY`       | Yes      | OpenAI secret key |
-| `OPENAI_MODEL`         | No       | Model name (default `gpt-4o-mini`) |
-| `FRONTEND_URL`         | Yes      | CORS allowed origin |
-| `AI_SERVICE_SECRET`    | Yes      | Shared secret for internal backend-core → backend-ai calls |
-| `AWS_REGION`           | Yes      | S3 bucket region |
-| `AWS_ACCESS_KEY_ID`    | Yes      | IAM key with S3 read/write |
-| `AWS_SECRET_ACCESS_KEY`| Yes      | IAM secret |
-| `S3_BUCKET`            | Yes      | Bucket name for contract file storage |
-| `S3_UPLOAD_URL_TTL`    | No       | Presigned upload URL TTL in seconds (default `300`) |
-| `S3_DOWNLOAD_URL_TTL`  | No       | Presigned download URL TTL in seconds (default `900`) |
-| `S3_MAX_FILE_SIZE`     | No       | Max upload size in bytes (default `52428800` = 50 MB) |
-
-### frontend
-
-| Variable          | Description |
-| ----------------- | ----------- |
-| `VITE_API_URL`    | Base URL of backend-core (no trailing `/api`) |
-| `VITE_AI_API_URL` | Base URL of backend-ai (no trailing `/api`) |
+> Start order: MongoDB → backend-core and backend-ai → frontend
 
 ---
 
@@ -258,6 +218,60 @@ curl http://localhost:5000/health   # {"status":"ok","service":"cpms-ai"}
 
 ---
 
+## Backend Tests
+
+Focused Vitest suites cover the main backend business logic without requiring
+MongoDB, AWS, OCR, or AI provider credentials.
+
+```bash
+cd backend-core && npm test
+cd ../backend-ai && npm test
+cd ../frontend && npm run build
+```
+
+Use `npm run test:watch` inside either backend while developing. Docker files
+do not need test-specific changes because Vitest is a development dependency
+and the runtime images continue to install production dependencies only.
+
+---
+
+## API Ownership
+
+| Service      | Mounted API prefixes                                      |
+| ------------ | --------------------------------------------------------- |
+| Backend Core | `/api/auth`, `/api/users`, `/api/finance`, `/api/reports` |
+| Backend AI   | `/api/uploads`, `/api/contracts`                          |
+
+See [backend-core/README.md](backend-core/README.md) and
+[backend-ai/README.md](backend-ai/README.md) for the current endpoints,
+authorization rules, request shapes, and environment variables.
+
+---
+
+## Current Limitations
+
+- All frontend page components are placeholders.
+- The frontend authentication client expects a response token and sends bearer
+  tokens, while the backends use only an HTTP-only cookie. Axios also needs
+  `withCredentials: true`.
+- Frontend contract calls currently use the Core API client, but contracts are
+  mounted on Backend AI.
+- Several frontend finance and report URLs belong to an older API and are not
+  mounted by the current backends.
+- Upload signing accepts PDF, DOC, and DOCX MIME types, but active analysis
+  supports PDF only. Word uploads currently end in `analysis_failed`.
+- AI extraction always finishes in `pending_review`; a manager must activate
+  the contract before finance-plan generation.
+- Backend Core still contains unused CommonJS legacy files:
+  `src/controllers/financeController.js` and
+  `src/models/PlannedBudget.js`.
+- There are no automated frontend tests yet.
+
+See [frontend/README.md](frontend/README.md) for the frontend integration work
+that remains.
+
+---
+
 ## Deployment
 
 ### Frontend → Vercel
@@ -266,8 +280,8 @@ curl http://localhost:5000/health   # {"status":"ok","service":"cpms-ai"}
 cd frontend && npm run build
 npx vercel --prod
 # Set in Vercel dashboard:
-#   VITE_API_URL    = https://your-core-service.example.com
-#   VITE_AI_API_URL = https://your-ai-service.run.app
+#   VITE_API_URL = https://your-core-service.run.app/api
+#   VITE_AI_API_URL = https://your-ai-service.run.app/api
 ```
 
 ### backend-core → Deno Deploy
@@ -278,37 +292,25 @@ npx vercel --prod
 #   NODE_ENV, MONGODB_URI, JWT_SECRET, JWT_EXPIRES_IN, FRONTEND_URL
 ```
 
-### backend-ai → Google Cloud Run
+# backend-ai
 
-```bash
 cd backend-ai
 gcloud builds submit --tag gcr.io/YOUR_PROJECT/constledger-backend-ai
 gcloud run deploy constledger-backend-ai \
-  --image gcr.io/YOUR_PROJECT/constledger-backend-ai \
-  --platform managed --region us-central1 \
-  --allow-unauthenticated \
-  --port 8080 \
-  --set-env-vars NODE_ENV=production \
-  --set-env-vars MONGODB_URI="mongodb+srv://..." \
-  --set-env-vars JWT_SECRET="..." \
-  --set-env-vars JWT_EXPIRES_IN="8h" \
-  --set-env-vars OPENAI_API_KEY="sk-..." \
-  --set-env-vars OPENAI_MODEL="gpt-4o-mini" \
-  --set-env-vars FRONTEND_URL="https://your-app.vercel.app" \
-  --set-env-vars AI_SERVICE_SECRET="..." \
-  --set-env-vars AWS_REGION="us-east-1" \
-  --set-env-vars AWS_ACCESS_KEY_ID="..." \
-  --set-env-vars AWS_SECRET_ACCESS_KEY="..." \
-  --set-env-vars S3_BUCKET="cpms-prod" \
-  --set-env-vars S3_UPLOAD_URL_TTL="300" \
-  --set-env-vars S3_DOWNLOAD_URL_TTL="900" \
-  --set-env-vars S3_MAX_FILE_SIZE="52428800"
+ --image gcr.io/YOUR_PROJECT/constledger-backend-ai \
+ --platform managed --region us-central1 \
+ --allow-unauthenticated \
+ --set-env-vars MONGODB_URI=...,JWT_SECRET=...,S3_BUCKET=...,AWS_REGION=...
+
 ```
 
-> Prefer **Secret Manager** for sensitive values (`OPENAI_API_KEY`, `JWT_SECRET`, etc.) over `--set-env-vars` in production.
+The browser currently calls Backend AI directly, so a private Cloud Run
+service would require an additional authenticated proxy architecture. Inject
+JWT, database, S3, and AI-provider secrets through Secret Manager in production.
 
 ---
 
 <div align="center">
 Made with ❤️ by <strong>Team Octagram</strong> · ITI Graduation Project 2026
 </div>
+```
