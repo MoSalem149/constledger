@@ -1,14 +1,14 @@
-/**
- * MongoDB connection manager.
- * Opens the Mongoose connection once and applies contract index maintenance after connect.
- */
 import mongoose from "mongoose";
 import "../models/User.model";
 import { ContractModel } from "../models/Contract.model";
 
 let isConnected = false;
 
-// Legacy contractNumber index maintenance
+// One-time migration: an older Contract schema used a NON-sparse unique index
+// on contractNumber, which fails for any contract created before that field
+// existed. This drops the bad index so Mongoose can recreate it sparse, and
+// backfills a placeholder contractNumber on legacy documents so the unique
+// constraint never collides going forward.
 async function syncContractIndexes(): Promise<void> {
   try {
     const coll = mongoose.connection.collection("contracts");
@@ -20,8 +20,11 @@ async function syncContractIndexes(): Promise<void> {
       console.log("[db:ai] Dropped legacy contractNumber_1 index (non-sparse)");
     }
 
+    // Recreates indexes per the current schema definition
     await ContractModel.syncIndexes();
 
+    // Backfill — every legacy contract without a contractNumber gets a
+    // deterministic placeholder so the unique-sparse constraint is safe.
     const missing = await ContractModel.find({
       $or: [{ contractNumber: null }, { contractNumber: { $exists: false } }],
     }).select("_id");
@@ -39,11 +42,15 @@ async function syncContractIndexes(): Promise<void> {
       );
     }
   } catch (err) {
-    console.warn("[db:ai] Contract index sync skipped:", (err as Error).message);
+    // Index sync is best-effort — log and continue if it fails (the app can
+    // still serve requests with the existing indexes).
+    console.warn(
+      "[db:ai] Contract index sync skipped:",
+      (err as Error).message,
+    );
   }
 }
 
-// Database connection
 export async function connectDatabase(): Promise<void> {
   if (isConnected) return;
 
@@ -63,6 +70,7 @@ export async function connectDatabase(): Promise<void> {
   await syncContractIndexes();
 }
 
+// Reset the flag on disconnect so the next connectDatabase() call actually reconnects
 mongoose.connection.on("disconnected", () => {
   isConnected = false;
   console.warn("[db:ai] MongoDB disconnected — will reconnect on next call.");

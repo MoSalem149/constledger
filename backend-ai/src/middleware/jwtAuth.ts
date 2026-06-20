@@ -1,10 +1,3 @@
-/**
- * jwtAuth.ts
- *
- * Validates the JWT stored in the httpOnly cookie.
- * The token is verified against the same JWT_SECRET used by the core backend.
- * Attaches the decoded payload to req.user so controllers can access userId/role.
- */
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 
@@ -12,6 +5,9 @@ export type AuthenticatedRequest = Request & {
   user?: { id: string; role: string };
 };
 
+// Verifies the JWT from the httpOnly auth cookie against JWT_SECRET.
+// This service NEVER issues tokens — JWT_SECRET must match backend-core
+// exactly, since backend-core is the only service that signs them.
 export const jwtAuth = (
   req: AuthenticatedRequest,
   res: Response,

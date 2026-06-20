@@ -1,37 +1,41 @@
 # ── Dependencies ──────────────────────────────────────────────────────
 node_modules/
+.pnpm-store/
 
 # ── TypeScript build output (never commit compiled JS) ────────────────
 dist/
 *.tsbuildinfo
 
-# ── Environment / secrets ─────────────────────────────────────────────
-# .env.example is committed — actual env files are NOT
+# ── Environment / secrets ────────────────────────────────────────────
+# .env.example is committed; actual env files are NOT.
 .env
-.env.production
-.env.staging
-.env.local
+.env.*
+!.env.example
 
 # ── Logs ──────────────────────────────────────────────────────────────
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# ── Temp / downloaded files ───────────────────────────────────────────
-# Contract PDFs are downloaded temporarily during analysis then discarded
+# ── Temp / downloaded files ──────────────────────────────────────────
+# Contract PDFs are downloaded temporarily during analysis then discarded.
 tmp/
 temp/
 downloads/
 
-# ── Tesseract language data ───────────────────────────────────────────
-# Downloaded automatically by tesseract.js on first run — never bundle in repo
+# ── Tesseract language data ──────────────────────────────────────────
+# Downloaded by tesseract.js on first run; never bundle into the repo.
 *.traineddata
 
-# ── OS / Editor ───────────────────────────────────────────────────────
+# ── Editor / OS metadata ─────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
 
-# ── Tests / coverage ──────────────────────────────────────────────────
+# ── Testing ──────────────────────────────────────────────────────────
 coverage/
+.nyc_output/

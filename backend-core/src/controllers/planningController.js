@@ -22,6 +22,7 @@ const allowedStrategies = new Set([
   "milestone_weighted",
 ]);
 
+// Convert a FinancePlan document into the API shape (Decimal128 -> Number).
 const serializePlan = (plan) => ({
   id: plan._id,
   contractId: plan.contractId,
@@ -34,6 +35,8 @@ const serializePlan = (plan) => ({
   warnings: plan.warnings,
 });
 
+// Map domain error codes thrown by planningService into HTTP status codes.
+// Returns true if it sent a response, false to let the caller delegate to next(err).
 const sendPlanningError = (res, err) => {
   const message = err instanceof Error ? err.message : "planning_error";
   const errorMap = {
@@ -64,6 +67,8 @@ const getPlanWithPeriods = async (contractId) => {
   return { plan, periods };
 };
 
+// Before mutating a plan, write the current state into FinancePlanVersion
+// for audit / rollback. Version numbers are monotonically increasing per plan.
 const snapshotExistingPlan = async (plan, periods, userId) => {
   const latestVersion = await FinancePlanVersion.findOne({ planId: plan._id })
     .sort({ versionNumber: -1 })
@@ -82,6 +87,9 @@ const snapshotExistingPlan = async (plan, periods, userId) => {
   });
 };
 
+// POST /api/finance/:contractId/plans/generate
+// Generates (or regenerates) a finance plan using a strategy. If a plan already
+// exists, the previous version is snapshotted before being replaced.
 export const generateFinancePlan = async (req, res, next) => {
   try {
     const { contractId } = req.params;
@@ -107,11 +115,14 @@ export const generateFinancePlan = async (req, res, next) => {
     }
 
     const generated = generatePlan(contract, strategy, params);
+
+    // Snapshot the existing plan (if any) before overwriting it
     const existing = await getPlanWithPeriods(contractId);
     if (existing) {
       await snapshotExistingPlan(existing.plan, existing.periods, req.user._id);
     }
 
+    // Upsert the plan header
     const plan = await FinancePlan.findOneAndUpdate(
       { contractId },
       {
@@ -127,6 +138,7 @@ export const generateFinancePlan = async (req, res, next) => {
       { new: true, upsert: true, runValidators: true },
     );
 
+    // Replace the period rows wholesale
     await FinancePlanned.deleteMany({ planId: plan._id });
     const periods = await FinancePlanned.insertMany(
       generated.periods.map((period) => ({
@@ -153,6 +165,7 @@ export const generateFinancePlan = async (req, res, next) => {
   }
 };
 
+// GET /api/finance/:contractId/plan
 export const getFinancePlan = async (req, res, next) => {
   try {
     const contract = await Contract.findById(req.params.contractId);
@@ -182,6 +195,9 @@ export const getFinancePlan = async (req, res, next) => {
   }
 };
 
+// PUT /api/finance/:contractId/plan
+// Manual edit of plan periods. Validates each period and enforces that the sum
+// of plannedAmount equals contract_value within tolerance before persisting.
 export const updateFinancePlan = async (req, res, next) => {
   try {
     const { contractId } = req.params;
@@ -208,6 +224,7 @@ export const updateFinancePlan = async (req, res, next) => {
         .json({ code: "plan_not_found", message: "Plan not found" });
     }
 
+    // Validate each period row, then sort by sortOrder so cumulative math is correct
     const normalized = inputPeriods
       .map((period, index) => {
         const periodStart = new Date(period.periodStart || "");
@@ -233,6 +250,7 @@ export const updateFinancePlan = async (req, res, next) => {
       })
       .sort((a, b) => a.sortOrder - b.sortOrder);
 
+    // The sum of all period amounts MUST equal the contract value (tolerance 0.01).
     const validation = validateBalance(
       normalized.map((period) => period.plannedAmount),
       contract.contract_value || 0,
@@ -245,6 +263,7 @@ export const updateFinancePlan = async (req, res, next) => {
       });
     }
 
+    // Snapshot the old plan, then rebuild period rows with running cumulatives
     await snapshotExistingPlan(result.plan, result.periods, req.user._id);
 
     let running = 0;
@@ -262,6 +281,7 @@ export const updateFinancePlan = async (req, res, next) => {
       };
     });
 
+    // Manual edits drop the plan back to draft and clear prior warnings
     result.plan.status = "draft";
     result.plan.generatedAt = new Date();
     result.plan.generatedBy = new mongoose.Types.ObjectId(req.user._id);
@@ -289,6 +309,8 @@ export const updateFinancePlan = async (req, res, next) => {
   }
 };
 
+// POST /api/finance/:contractId/plan/confirm — moves status draft -> confirmed.
+// Reports endpoints only operate on confirmed plans.
 export const confirmFinancePlan = async (req, res, next) => {
   try {
     const result = await getPlanWithPeriods(req.params.contractId);
@@ -306,6 +328,7 @@ export const confirmFinancePlan = async (req, res, next) => {
   }
 };
 
+// GET /api/finance/:contractId/plan/export — XLSX download
 export const exportFinancePlan = async (req, res, next) => {
   try {
     const contract = await Contract.findById(req.params.contractId);
@@ -339,6 +362,7 @@ export const exportFinancePlan = async (req, res, next) => {
   }
 };
 
+// GET /api/finance/:contractId/payment-schedule
 export const getPaymentSchedule = async (req, res, next) => {
   try {
     const contract = await Contract.findById(req.params.contractId);

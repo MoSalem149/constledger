@@ -38,7 +38,15 @@ Return JSON in exactly this shape:
   "duration_days": 0,
   "reporting_period": "weekly",
   "milestones": [{ "name": "string", "due_date": "YYYY-MM-DD" }],
-  "penalties": [{ "condition": "string", "penalty": "string" }]
+  "penalties": [
+    {
+      "condition": "string",
+      "penalty": "string or null",
+      "first_offense": "string or null",
+      "second_offense": "string or null",
+      "third_offense": "string or null"
+    }
+  ]
 }
 ```
 
@@ -79,11 +87,17 @@ Return JSON in exactly this shape:
 
 **`duration_days`** — Total duration in days. Use `null` if the contract only states a fixed end date.
 
-**`reporting_period`** — `"weekly"` or `"monthly"`, or `null`.
+**`reporting_period`** — `"weekly"`, `"biweekly"`, or `"monthly"`. A recurring 14–15 day progress statement/reporting cycle is `"biweekly"`.
 
 **`milestones`** — Key dates (signing, start, handover, phases). `name` in English; `due_date` as `YYYY-MM-DD` or `null`.
 
-**`penalties`** — Delay penalties and HSE violations. Each entry: what triggers it (`condition`) and the consequence (`penalty`).
+**`penalties`** — Delay penalties and HSE violations.
+
+- Return each HSE table row exactly once.
+- Put its three escalation columns in `first_offense`, `second_offense`, and `third_offense`.
+- Do not return three separate objects for the three offense levels.
+- For a non-tiered clause such as a delay formula, use `penalty` and set all three offense fields to `null`.
+- For a tiered HSE row, set `penalty` to `null`.
 
 ---
 

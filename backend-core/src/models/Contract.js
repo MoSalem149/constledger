@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// Sub-schemas — _id: false because they are pure value objects nested in Contract.
 const partySchema = new mongoose.Schema(
   { name: String, role: String },
   { _id: false },
@@ -21,7 +22,13 @@ const milestoneSchema = new mongoose.Schema(
   { _id: false },
 );
 const penaltySchema = new mongoose.Schema(
-  { condition: String, penalty: String },
+  {
+    condition: String,
+    penalty: { type: String, default: null },
+    first_offense: { type: String, default: null },
+    second_offense: { type: String, default: null },
+    third_offense: { type: String, default: null },
+  },
   { _id: false },
 );
 const paymentScheduleSchema = new mongoose.Schema(
@@ -29,6 +36,9 @@ const paymentScheduleSchema = new mongoose.Schema(
   { _id: false },
 );
 
+// Contract — the main domain document. Populated by backend-ai after upload
+// (status flows: processing -> pending_review -> active) and consumed by the
+// finance planning module to drive plan generation.
 const contractSchema = new mongoose.Schema(
   {
     contractNumber: { type: String, unique: true, sparse: true },
@@ -46,6 +56,8 @@ const contractSchema = new mongoose.Schema(
     reporting_period: { type: String, enum: ["weekly", "biweekly", "monthly"] },
     milestones: [milestoneSchema],
     penalties: [penaltySchema],
+    // Lifecycle: processing -> analysis_failed | pending_review -> active.
+    // Plans can only be generated once status === "active".
     status: {
       type: String,
       enum: ["processing", "analysis_failed", "pending_review", "active"],

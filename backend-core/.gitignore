@@ -1,8 +1,9 @@
 # ── Dependencies ─────────────────────────────────────────────────────
 node_modules/
+.pnpm-store/
 
 # ── Environment / secrets ────────────────────────────────────────────
-# .env.example is committed — actual env files are NOT
+# .env.example is committed; actual env files are NOT.
 .env
 .env.*
 !.env.example
@@ -11,22 +12,26 @@ node_modules/
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # ── Uploads / temp files ─────────────────────────────────────────────
 tmp/
 uploads/
 
-# ── OS / Editor ──────────────────────────────────────────────────────
+# ── Editor / OS metadata ─────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.swp
 
 # ── Testing ──────────────────────────────────────────────────────────
 coverage/
+.nyc_output/
 
 # ── Build / distribution ─────────────────────────────────────────────
 dist/
 
-# ── Deno Deploy ──────────────────────────────────────────────────────
+# ── Deno (legacy — kept ignored in case it ever appears locally) ────
 .deno/
