@@ -54,9 +54,6 @@ const ContractHeader = ({ contractData, readOnly }) => {
       {/* Only show action buttons in edit mode */}
       {!readOnly && (
         <div className="flex gap-2.5 flex-wrap">
-          <button className="flex items-center gap-1.5 px-3.5 py-2 border border-border rounded-full text-[13px] text-text-primary bg-bg-cards1 whitespace-nowrap">
-            <ArrowLeftIcon /> Re-upload
-          </button>
           <button
             onClick={confirmContract}
             className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap"
@@ -71,22 +68,20 @@ const ContractHeader = ({ contractData, readOnly }) => {
 
 // =================== INNER TABS ===================
 const ContractInnerTabs = ({ tabs, active, onSelect }) => (
-  <div className="bg-bg-cards1 shadow rounded mb-5 overflow-x-auto px-4 sm:px-6 py-2.5">
-    <div className="flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
-      {tabs.map((tab) => (
-        <button
-          key={tab}
-          onClick={() => onSelect(tab)}
-          className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
+  <div className="bg-bg-cards1 rounded mb-5 relative overflow-x-auto px-4 sm:px-6 py-2.5 flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
+    {tabs.map((tab) => (
+      <button
+        key={tab}
+        onClick={() => onSelect(tab)}
+        className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
             ${active === tab ? "font-medium text-text-primary" : "text-text-secondary"}`}
-        >
-          {tab}
-          {active === tab && (
-            <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-500 rounded-full" />
-          )}
-        </button>
-      ))}
-    </div>
+      >
+        {tab}
+        {active === tab && (
+          <span className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-bg-cards2 rounded-full" />
+        )}
+      </button>
+    ))}
   </div>
 );
 

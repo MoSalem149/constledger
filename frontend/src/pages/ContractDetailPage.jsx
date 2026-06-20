@@ -61,22 +61,20 @@ export default function ContractDetailPage() {
 
   return (
     <div>
-      <div className="project pt-6 sm:pt-10 bg-bg-main">
-        <div className="container px-4 sm:px-6 lg:px-8">
-          <Link
-            to="/contracts"
-            className="flex items-center gap-2 text-text-secondary"
-          >
-            <ArrowLeftIcon />
-            <div className="text-sm sm:text-base">All Projects</div>
-          </Link>
+      <div className="project bg-bg-main pr-10">
+        <Link
+          to="/contracts"
+          className="flex items-center gap-2 text-text-secondary"
+        >
+          <ArrowLeftIcon />
+          <div className="text-sm sm:text-base">All Projects</div>
+        </Link>
 
-          <ContarctCard contractData={contractData} />
-          <ContarctDetailsSections
-            contractData={contractData}
-            readOnly={read_only}
-          />
-        </div>
+        <ContarctCard contractData={contractData} />
+        <ContarctDetailsSections
+          contractData={contractData}
+          readOnly={read_only}
+        />
       </div>
     </div>
   );

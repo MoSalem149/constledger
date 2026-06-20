@@ -16,10 +16,13 @@ const formatValue = (val, currency) => {
   if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K ${currency}`;
   return `${val} ${currency}`;
 };
+const formatDate = (d) => {
+  if (!d) return "—";
 
-const formatDate = (str) => {
-  if (!str) return "—";
-  const [y, m, d] = str.split("-");
+  const date = new Date(d);
+
+  if (isNaN(date.getTime())) return "—";
+
   const months = [
     "Jan",
     "Feb",
@@ -29,12 +32,17 @@ const formatDate = (str) => {
     "Jun",
     "Jul",
     "Aug",
-    "Sep",
+    "Sept",
     "Oct",
     "Nov",
     "Dec",
   ];
-  return `${d} ${months[+m - 1]} ${y}`;
+
+  const day = date.getDate();
+  const month = months[date.getMonth()];
+  const year = date.getFullYear();
+
+  return `${day} ${month} ${year}`;
 };
 
 const STATUS_CONFIG = {

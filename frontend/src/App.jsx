@@ -19,6 +19,8 @@ import NotFoundPage from "./components/common/NotFoundPage";
 import ContractsPage from "./pages/ContractsPage";
 import EditContractContext from "./context/EditContaractContext";
 import UploadedContractContext from "./context/UploadedContractContext";
+import ContractsReport from "./pages/ContractsReport";
+import PlannedBudgetReport from "./pages/PlannedBudgetReport";
 
 function App() {
   return (
@@ -119,6 +121,18 @@ function App() {
                       </RoleGuard>
                     }
                   />
+                  {/* Reports (tabs) */}
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route
+                    path="/reports/contracts"
+                    element={<ContractsReport />}
+                  />
+                  <Route
+                    path="/reports/planned-budget"
+                    element={<PlannedBudgetReport />}
+                  />
+                  {/* Admin */}
+                  <Route path="/admin" element={<AdminPage />} />
                   {/* 404 catch-all */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

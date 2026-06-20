@@ -16,17 +16,30 @@ const AddBtn = ({ label, onClick }) => (
 );
 
 // =================== UNIT PRICES ===================
+const UNIT_COLS = "grid-cols-[2fr_100px_100px_150px_130px_44px]";
+
 const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
-    name: row.item ?? row.name,
-    unit: row.unit,
-    price: row.unit_price ?? row.price,
+    name: row.name ?? "",
+    unit: row.unit ?? "",
+    quantity: row.quantity ?? 0,
+    unit_price: row.unit_price ?? 0,
   });
 
+  const total = Number(local.quantity) * Number(local.unit_price);
+
+  const inputCls = (extra = "") =>
+    `text-[13.5px] text-text-primary bg-transparent border-b border-transparent
+     outline-none w-full transition-colors ${
+       readOnly ? "cursor-default" : "focus:border-gray-300"
+     } ${extra}`;
+
   return (
-    <div className="grid grid-cols-[1fr_80px_160px_44px] px-4 py-4 items-center border-t border-gray-100">
+    <div
+      className={`grid ${UNIT_COLS} gap-2 px-4 py-4 items-center border-t border-gray-100`}
+    >
       <input
-        value={local.name}
+        value={local.name.split(" ").slice(0, 4).join(" ")}
         onChange={
           readOnly
             ? undefined
@@ -34,10 +47,7 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          outline-none w-full transition-colors truncate ${
-            readOnly ? "cursor-default" : "focus:border-gray-300"
-          }`}
+        className={inputCls("truncate")}
       />
       <input
         value={local.unit}
@@ -48,34 +58,43 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${
-            readOnly ? "cursor-default" : "focus:border-gray-300"
-          }`}
+        className={inputCls("text-text-secondary text-left")}
       />
       <input
-        value={local.price}
+        value={local.quantity}
         onChange={
           readOnly
             ? undefined
-            : (e) => setLocal((p) => ({ ...p, price: e.target.value }))
+            : (e) => setLocal((p) => ({ ...p, quantity: e.target.value }))
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary font-medium text-right pr-4 bg-transparent
-          border-b border-transparent outline-none w-full transition-colors ${
-            readOnly ? "cursor-default" : "focus:border-gray-300"
-          }`}
+        className={inputCls("text-left pr-2")}
       />
-      {!readOnly && (
+      <input
+        value={local.unit_price}
+        onChange={
+          readOnly
+            ? undefined
+            : (e) => setLocal((p) => ({ ...p, unit_price: e.target.value }))
+        }
+        onBlur={readOnly ? undefined : () => onChange(local)}
+        readOnly={readOnly}
+        className={inputCls("text-left pr-2")}
+      />
+      <span className="text-[13.5px] text-text-primary font-medium text-left pr-2">
+        {total.toLocaleString()}
+      </span>
+      {!readOnly ? (
         <button
           onClick={onRemove}
           className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
         >
           <TrashIcon />
         </button>
+      ) : (
+        <span />
       )}
-      {readOnly && <span />}
     </div>
   );
 };
@@ -86,18 +105,21 @@ const UnitPricesSection = ({ data, readOnly }) => {
   const [rows, setRows] = useState(
     (data.unit_prices ?? []).map((p, i) => ({
       id: i + 1,
-      name: p.item,
-      unit: p.unit,
-      price: p.unit_price,
+      name: p.item ?? p.name ?? "",
+      unit: p.unit ?? "",
+      quantity: p.quantity ?? 0,
+      unit_price: p.unit_price ?? 0,
     })),
   );
 
   const syncToContext = (updated) => {
     changeData({
-      unit_prices: updated.map(({ id, name, unit, price }) => ({
-        item: name,
-        unit,
-        unit_price: price,
+      unit_prices: updated.map(({ id, ...rest }) => ({
+        item: rest.name,
+        unit: rest.unit,
+        quantity: rest.quantity,
+        unit_price: rest.unit_price,
+        total_cost: Number(rest.quantity) * Number(rest.unit_price),
       })),
     });
   };
@@ -115,10 +137,18 @@ const UnitPricesSection = ({ data, readOnly }) => {
   };
 
   const handleAdd = () => {
-    const updated = [...rows, { id: Date.now(), name: "", unit: "", price: 0 }];
+    const updated = [
+      ...rows,
+      { id: Date.now(), name: "", unit: "", quantity: 0, unit_price: 0 },
+    ];
     setRows(updated);
     syncToContext(updated);
   };
+
+  const grandTotal = rows.reduce(
+    (s, r) => s + Number(r.quantity) * Number(r.unit_price),
+    0,
+  );
 
   return (
     <div className="mb-8 bg-bg-cards1 p-4 rounded shadow">
@@ -128,28 +158,30 @@ const UnitPricesSection = ({ data, readOnly }) => {
             Unit Prices
           </h2>
           <p className="text-xs text-text-secondary mt-0.5">
-            Explore the pricing and measurement details for each unit included
-            in the project
+            {rows.length} items · Total {grandTotal.toLocaleString()} EGP
           </p>
         </div>
         {!readOnly && <AddBtn label="Add Item" onClick={handleAdd} />}
       </div>
 
       <div className="overflow-x-auto">
-        <div className="min-w-[460px] overflow-hidden">
-          <div
-            className={`grid ${readOnly ? "grid-cols-[1fr_80px_160px_44px]" : "grid-cols-[1fr_80px_160px_44px]"} bg-bg-grey px-4 py-4`}
-          >
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-              Item
-            </span>
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-              Unit
-            </span>
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase text-right pr-4">
-              Unit Price (EGP)
-            </span>
-            <span />
+        <div className="min-w-[600px] overflow-hidden">
+          <div className={`grid ${UNIT_COLS} gap-2 bg-bg-grey px-4 py-3`}>
+            {[
+              "Item",
+              "Unit",
+              "Quantity",
+              "Unit Price (EGP)",
+              "Total (EGP)",
+              "",
+            ].map((h) => (
+              <span
+                key={h}
+                className="text-[11px] font-semibold text-text-secondary tracking-widest text-left uppercase first:text-left last:text-left"
+              >
+                {h}
+              </span>
+            ))}
           </div>
           {rows.map((row) => (
             <UnitPriceRow
@@ -166,16 +198,69 @@ const UnitPricesSection = ({ data, readOnly }) => {
   );
 };
 
+// =================== PAYMENT TERMS ===================
+const PaymentTermsSection = ({ data }) => {
+  const terms = data.payment_terms ?? [];
+
+  return (
+    <div className="mb-8 bg-bg-cards1 p-4 rounded shadow">
+      <h2 className="text-[17px] font-medium text-text-primary mb-1">
+        Payment Terms
+      </h2>
+      <p className="text-xs text-text-secondary mb-4">{terms.length} terms</p>
+
+      <div className="overflow-x-auto">
+        <div className="min-w-[400px] overflow-hidden">
+          <div className="grid grid-cols-[2fr_80px_2fr] bg-bg-grey px-4 py-3">
+            {["Term", "%", "Description"].map((h) => (
+              <span
+                key={h}
+                className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase"
+              >
+                {h}
+              </span>
+            ))}
+          </div>
+          {terms.map((t, i) => (
+            <div
+              key={i}
+              className="grid grid-cols-[2fr_80px_2fr] px-4 py-3 items-center border-t border-gray-100"
+            >
+              <span className="text-[13.5px] text-text-primary">{t.name}</span>
+              <span className="text-[13.5px] text-text-primary font-medium">
+                {t.percentage != null ? `${t.percentage}%` : "—"}
+              </span>
+              <span className="text-[13px] text-text-secondary">
+                {t.description}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // =================== PAYMENT SCHEDULE ===================
+const SCHED_COLS = "grid-cols-[1fr_170px_170px_44px]";
+
 const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
-    date: payment.date,
-    amount: payment.amount,
+    date: payment.date ?? "",
+    amount: payment.amount ?? 0,
     type: payment.type ?? "",
   });
 
+  const inputCls = (extra = "") =>
+    `text-[13.5px] text-text-primary bg-transparent border-b border-transparent
+     outline-none w-full transition-colors ${
+       readOnly ? "cursor-default" : "focus:border-gray-300"
+     } ${extra}`;
+
   return (
-    <div className="grid grid-cols-[1fr_170px_170px_44px] px-4 py-4 items-center border-t border-gray-100">
+    <div
+      className={`grid ${SCHED_COLS} px-4 py-4 items-center border-t border-gray-100`}
+    >
       <input
         value={local.date}
         onChange={
@@ -185,8 +270,7 @@ const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
+        className={inputCls()}
       />
       <input
         value={local.amount}
@@ -197,8 +281,7 @@ const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
+        className={inputCls("font-medium")}
       />
       <input
         value={local.type}
@@ -209,18 +292,18 @@ const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
-        className={`text-[13.5px] text-text-secondary bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
+        className={inputCls("text-text-secondary")}
       />
-      {!readOnly && (
+      {!readOnly ? (
         <button
           onClick={onRemove}
           className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
         >
           <TrashIcon />
         </button>
+      ) : (
+        <span />
       )}
-      {readOnly && <span />}
     </div>
   );
 };
@@ -233,7 +316,7 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
       id: i + 1,
       date: formatDate(p.date),
       amount: p.amount,
-      type: "IPC",
+      type: p.type ?? "IPC",
     })),
   );
 
@@ -282,17 +365,15 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 
       <div className="overflow-x-auto">
         <div className="min-w-[460px] overflow-hidden">
-          <div className="grid grid-cols-[1fr_170px_170px_44px] bg-gray-100 px-4 py-4">
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-              Due Date
-            </span>
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-              Amount (EGP)
-            </span>
-            <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-              Type
-            </span>
-            <span />
+          <div className={`grid ${SCHED_COLS} bg-gray-100 px-4 py-3`}>
+            {["Due Date", "Amount (EGP)", "Type", ""].map((h) => (
+              <span
+                key={h}
+                className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase"
+              >
+                {h}
+              </span>
+            ))}
           </div>
           {payments.map((p) => (
             <PaymentRow
@@ -311,7 +392,7 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 
 // =================== EXPORT ===================
 const FinancialTermsSection = ({ data, readOnly }) => (
-  <div className="bg-bg-main">
+  <div className="bg-bg-main flex flex-col gap-4">
     <UnitPricesSection data={data} readOnly={readOnly} />
   </div>
 );
