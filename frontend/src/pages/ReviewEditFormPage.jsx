@@ -27,22 +27,6 @@ export default function ReviewEditFormPage() {
     ...editedData,
   };
 
-  // const [contractData, setContractData] = useState(null);
-  // useEffect(() => {
-  //   async function fetchContract() {
-  //     try {
-  //       const data = await contractService.getContractById(
-  //         "6a2b1a0c9734c8eae15c7841",
-  //       );
-  //       setContractData(data);
-  //     } catch (err) {
-  //       console.log(err);
-  //     }
-  //   }
-
-  //   fetchContract();
-  // }, []);
-
   return (
     <div>
       <div className="project bg-bg-main pr-10">

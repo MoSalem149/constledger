@@ -155,8 +155,8 @@ const UnitPricesSection = ({ data, readOnly }) => {
 
   const handleAdd = () => {
     const updated = [
-      ...rows,
       { id: Date.now(), name: "", unit: "", quantity: 0, unit_price: 0 },
+      ...rows,
     ];
     setRows(updated);
     syncToContext(updated);

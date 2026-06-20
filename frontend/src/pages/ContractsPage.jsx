@@ -225,7 +225,7 @@ const ContractsPage = () => {
   );
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-116px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
         <FadeLoader
           height={20}
           margin={2}
@@ -238,7 +238,7 @@ const ContractsPage = () => {
   }
 
   return (
-    <div className="bg-bg-main min-h-[calc(100vh-116px)] ">
+    <div className="bg-bg-main min-h-[calc(100vh-116px)]  pr-10">
       <div className="mb-6">
         <SearchBar value={search.searchValue} onChange={handleSearch} />
       </div>

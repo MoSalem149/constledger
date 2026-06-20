@@ -44,7 +44,7 @@ export const ContarctCard = ({ contractData }) => {
     },
     {
       title: "Progress",
-      data: paymentProgress.frequency,
+      data: 0,
       format: (v) => `${v}%`,
       footerData: "Earned 0 EGP",
     },
@@ -120,7 +120,7 @@ export const ContarctCard = ({ contractData }) => {
         </div>
 
         <div className="right w-full md:w-3/12 bg-bg-main min-h-[10rem] md:h-full">
-          <CircularProgress value={paymentProgress.frequency} />
+          <CircularProgress value={0} />
         </div>
       </div>
     </div>

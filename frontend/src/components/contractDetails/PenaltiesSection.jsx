@@ -98,9 +98,8 @@ const ClauseCard = ({
             }`}
           />
         </div>
-
         {/* PENALTY */}
-        {local.penalty &&
+        {(!readOnly || local.penalty) &&
           renderInput(
             "Penalty / Formula",
             "penalty",
@@ -109,16 +108,15 @@ const ClauseCard = ({
           )}
 
         {/* FIRST OFFENSE */}
-
-        {local.first_offense &&
+        {(!readOnly || local.first_offense) &&
           renderInput("First Offense", "first_offense", local.first_offense)}
 
         {/* SECOND OFFENSE */}
-        {local.second_offense &&
+        {(!readOnly || local.second_offense) &&
           renderInput("Second Offense", "second_offense", local.second_offense)}
 
         {/* THIRD OFFENSE */}
-        {local.third_offense &&
+        {(!readOnly || local.third_offense) &&
           renderInput("Third Offense", "third_offense", local.third_offense)}
       </div>
     </div>
@@ -171,7 +169,7 @@ const PenaltiesSection = ({ data, readOnly }) => {
       third_offense: "",
     };
 
-    const updated = [...clauses, newClause];
+    const updated = [newClause, ...clauses];
 
     setClauses(updated);
     syncToContext(updated);
