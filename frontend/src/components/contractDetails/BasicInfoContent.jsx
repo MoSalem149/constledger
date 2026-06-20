@@ -5,7 +5,7 @@ import { ClockIcon } from "../icons/ClockIcon";
 import { DollarIcon } from "../icons/DollarIcon.jsx";
 import { TrendIcon } from "../icons/TrendIcon";
 import { ContractContext } from "../../context/EditContaractContext.jsx";
-import { addSpace } from "../../utils/textFormater.js";
+import { addSpace, formatRole } from "../../utils/textFormater.js";
 
 // =================== STATUS DOT ===================
 const Dot = () => (
@@ -26,7 +26,7 @@ const PartyField = ({
   return (
     <div className="flex items-center gap-3">
       <input
-        value={role ? addSpace(role) : ""}
+        value={role ? formatRole(role) : ""}
         onChange={
           readOnly ? undefined : (e) => onChangeRole(index, e.target.value)
         }

@@ -30,6 +30,7 @@ export default function ContractDetailPage() {
         if (data.status == "active") set_read_only(true);
         else set_read_only(false);
         setContractData(data);
+        console.log(data);
       } catch (err) {
         console.error(err);
         setError("Failed to load contract.");
