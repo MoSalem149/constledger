@@ -52,10 +52,10 @@ export default function ReportsPage() {
       <div className="container py-8">
         {/* Header */}
         <div>
-          <h1 className="text-4xl font-bold text-text-primary">Reports</h1>
+          <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>
 
-          <p className="mt-2 text-text-secondary text-lg">
-            Aggregated views across all projects • export to PDF or Excel
+          <p className="text-[14px] mt-2 text-text-secondary">
+            Aggregated views across all projects • export to Excel
           </p>
         </div>
 
