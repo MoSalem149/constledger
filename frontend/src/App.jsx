@@ -1,28 +1,144 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext.jsx';
-import PrivateRoute from './components/common/PrivateRoute.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import ContractsPage from './pages/ContractsPage.jsx';
-import FinancePage from './pages/FinancePage.jsx';
-import PerformancePage from './pages/PerformancePage.jsx';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import PrivateRoute from "./components/common/PrivateRoute";
+import DashboardLayout from "./components/common/DashboardLayout";
+import RoleGuard from "./components/common/RoleGuard";
+
+/* ------------------------------------------------------------------ */
+// Pages — all stubs initially, built out per sprint
+/* ------------------------------------------------------------------ */
+
+import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
+import UploadContractPage from "./pages/UploadContractPage";
+import ContractDetailPage from "./pages/ContractDetailPage";
+import ReviewEditFormPage from "./pages/ReviewEditFormPage";
+import ReportsPage from "./pages/ReportsPage";
+import AdminPage from "./pages/AdminPage";
+import NotFoundPage from "./components/common/NotFoundPage";
+import ContractsPage from "./pages/ContractsPage";
+import EditContractContext from "./context/EditContaractContext";
+import UploadedContractContext from "./context/UploadedContractContext";
+import ContractsReport from "./pages/ContractsReport";
+import PlannedBudgetReport from "./pages/PlannedBudgetReport";
 
 function App() {
   return (
+    /**
+     * AuthProvider wraps the entire router so that auth state is available
+     * to every route component (via useAuth()). It also injects its logout
+     * function into the Axios instance so 401 responses are handled globally.
+     */
+
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<PrivateRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/contracts/*" element={<ContractsPage />} />
-            <Route path="/finance/*" element={<FinancePage />} />
-            <Route path="/performance/*" element={<PerformancePage />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
+      <BrowserRouter>
+        <UploadedContractContext>
+          <EditContractContext>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* ---------------------------------------------------------- */}
+              {/* Protected routes — all require authentication                */}
+              {/*                                                            */}
+              {/* Nesting: PrivateRoute → DashboardLayout → page routes       */}
+              {/*   1. PrivateRoute checks auth (loading→spinner, !auth→login) */}
+              {/*   2. DashboardLayout renders sidebar + topbar + <Outlet /> */}
+              {/*   3. Matched page route renders inside the outlet            */}
+              {/*                                                            */}
+              {/* This means every new page automatically gets auth + chrome.  */}
+              {/* ---------------------------------------------------------- */}
+
+              <Route element={<PrivateRoute />}>
+                <Route element={<DashboardLayout />}>
+                  {/* Dashboard */}
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "contract_manager",
+                          "finance_team",
+                          "top_management",
+                        ]}
+                      >
+                        <DashboardPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Contracts */}
+                  {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
+                  {/* button on dashboard navigates directly to /contracts/upload. */}
+                  //* Make sure you make the role gard of this route
+                  <Route
+                    path="/contracts"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <ContractsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/contracts/upload"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <UploadContractPage />
+                      </RoleGuard>
+                    }
+                  />
+                  <Route
+                    path="/contracts/:id"
+                    element={<ContractDetailPage />}
+                  />
+                  <Route
+                    path="/contracts/:id/edit"
+                    element={
+                      <RoleGuard roles={["contract_manager"]}>
+                        <ReviewEditFormPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Reports (tabs) */}
+                  <Route
+                    path="/reports"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "top_management",
+                          "contract_manager",
+                          "finance_team",
+                        ]}
+                      >
+                        <ReportsPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Admin — PMO only */}
+                  <Route
+                    path="/admin"
+                    element={
+                      <RoleGuard roles={["pmo"]}>
+                        <AdminPage />
+                      </RoleGuard>
+                    }
+                  />
+                  {/* Reports (tabs) */}
+                  <Route path="/reports" element={<ReportsPage />} />
+                  <Route
+                    path="/reports/contracts"
+                    element={<ContractsReport />}
+                  />
+                  <Route
+                    path="/reports/planned-budget"
+                    element={<PlannedBudgetReport />}
+                  />
+                  {/* 404 catch-all */}
+                  <Route path="*" element={<NotFoundPage />} />
+                </Route>
+              </Route>
+            </Routes>
+          </EditContractContext>
+        </UploadedContractContext>
+      </BrowserRouter>
     </AuthProvider>
   );
 }

@@ -1,31 +1,60 @@
 import axios from 'axios';
 
-// Vite exposes env vars as import.meta.env.VITE_*
+/**
+ * Axios instance — single source of truth for all API calls.
+ * Pre-configured with the backend base URL and credentials flag.
+ */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  // VITE_API_URL is injected by Vite at build time from .env.local
+  baseURL: import.meta.env.VITE_API_URL,
+
+  // withCredentials is REQUIRED for the httpOnly cookie auth flow.
+  // The access token lives in an httpOnly cookie set by the server; the
+  // browser sends it automatically on every request. There is no refresh
+  // token and we never store or read the token in JS — this keeps us
+  // XSS-safe by design. On 401 the interceptor calls onUnauthorized() to
+  // clear the React auth state and redirect to /login.
+  withCredentials: true,
+
+  headers: { 'Content-Type': 'application/json' },
 });
 
-const aiApi = axios.create({
-  baseURL: import.meta.env.VITE_AI_API_URL || 'http://localhost:5000/api',
-});
+/* ------------------------------------------------------------------ */
+// 401 handler — callback injection pattern
+/* ------------------------------------------------------------------ */
 
-[api, aiApi].forEach((instance) => {
-  instance.interceptors.request.use((config) => {
-    const token = localStorage.getItem('cpms_token');
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-    return config;
-  });
+// Axios interceptors run outside React's render cycle, so they can't
+// call useAuth(). Directly importing AuthContext here would create a
+// circular dependency (api.js → authService.js → AuthContext → api.js).
+//
+// Instead, we expose a setter. AuthProvider injects its logout function
+// via setOnUnauthorized() after mount. The interceptor calls that
+// function — no DOM events, no circular imports, fully testable.
+let onUnauthorized = null;
 
-  instance.interceptors.response.use(
-    (res) => res,
-    (err) => {
-      if (err.response?.status === 401) {
-        localStorage.clear();
-        window.location.href = '/login';
+export const setOnUnauthorized = (fn) => {
+  onUnauthorized = fn;
+};
+
+// Response interceptor: global 401 handler
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error.response?.status === 401 && onUnauthorized) {
+      // Cookie expired or invalid — force logout.
+      // AuthProvider clears user state, which triggers PrivateRoute
+      // to redirect to /login automatically.
+      //
+      // Guard: skip if the failing request is itself /auth/logout.
+      // Otherwise, onUnauthorized → logout → POST /auth/logout →
+      // 401 → onUnauthorized → ... infinite loop.
+      const url = error.config?.url || '';
+      if (!url.includes('/auth/logout')) {
+        onUnauthorized();
       }
-      return Promise.reject(err);
     }
-  );
-});
+    return Promise.reject(error);
+  }
+);
 
-export { api, aiApi };
+export default api;

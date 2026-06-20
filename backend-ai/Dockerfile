@@ -30,12 +30,12 @@ FROM node:20-alpine AS runtime
 RUN apk add --no-cache dumb-init wget
 
 ENV NODE_ENV=production \
-    PORT=8080
+    PORT=5000
 
 WORKDIR /app
 
 # Production-only deps, cleanly. --ignore-scripts blocks any postinstall code.
-COPY package.json package-lock.json ./
+COPY --chown=node:node package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Compiled JS from the builder stage — owned by the unprivileged `node` user
@@ -43,12 +43,11 @@ COPY --from=builder --chown=node:node /app/dist ./dist
 
 USER node
 
-# Cloud Run defaults to 8080. Locally the app falls back to PORT if set.
-EXPOSE 8080
+EXPOSE 5000
 
 # Health probe — hits /health every 30 seconds
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost:${PORT}/health || exit 1
+  CMD wget --quiet --tries=1 --spider "http://127.0.0.1:${PORT}/health" || exit 1
 
 # dumb-init in front of node so signals reach the process correctly
 ENTRYPOINT ["dumb-init", "--"]

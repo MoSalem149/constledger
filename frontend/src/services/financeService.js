@@ -1,12 +1,55 @@
-import { api } from './api';
+import api from "./api";
 
 export const financeService = {
-  getPlannedBudget: (contractId) => api.get(`/finance/planned/${contractId}`).then((r) => r.data),
-  updatePlanned: (contractId, data) =>
-    api.put(`/finance/planned/${contractId}`, data).then((r) => r.data),
-  listReports: (params) => api.get('/finance/actual', { params }).then((r) => r.data),
-  submitReport: (data) => api.post('/finance/actual', data).then((r) => r.data),
-  approveReport: (id) => api.put(`/finance/actual/${id}/approve`).then((r) => r.data),
-  rejectReport: (id, reason) =>
-    api.put(`/finance/actual/${id}/reject`, { reason }).then((r) => r.data),
+  async generatePlan(contractId, strategy, params = {}) {
+    const { data } = await api.post(`/finance/${contractId}/plans/generate`, {
+      strategy,
+      params,
+    });
+    return data;
+  },
+
+  async getPlan(contractId) {
+    const { data } = await api.get(`/finance/${contractId}/plan`);
+    return data;
+  },
+
+  async updatePlan(contractId, periods) {
+    const { data } = await api.put(`/finance/${contractId}/plan`, {
+      periods,
+    });
+    return data;
+  },
+
+  async confirmPlan(contractId) {
+    const { data } = await api.post(`/finance/${contractId}/plan/confirm`);
+    return data;
+  },
+
+  async getPaymentSchedule(contractId) {
+    const { data } = await api.get(`/finance/${contractId}/payment-schedule`);
+    return data;
+  },
+
+  async exportPlan(contractId) {
+    const response = await api.get(`/finance/${contractId}/plan/export`, {
+      responseType: "blob",
+    });
+    const blob = new Blob([response.data], {
+      type:
+        response.headers["content-type"] ||
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const cd = response.headers["content-disposition"] || "";
+    const match = cd.match(/filename="?([^"]+)"?/);
+    a.download = match ? match[1] : `plan-${contractId}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return true;
+  },
 };

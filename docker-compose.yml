@@ -1,3 +1,5 @@
+name: constledger
+
 services:
 
   # ── MongoDB ─────────────────────────────────────────────────────────
@@ -9,6 +11,12 @@ services:
       - '27017:27017'           # MongoDB default
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cpms-net
 
@@ -21,18 +29,18 @@ services:
     restart: unless-stopped
     env_file: ./backend-core/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - AI_SERVICE_URL=http://backend-ai:5000
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb+srv://mohamedsalemdevofficial_db_user:6eDqJY4jY520illL@cpms-db.ko9ddow.mongodb.net/cpms
+      FRONTEND_URL: http://localhost:5173
+      AI_SERVICE_URL: http://backend-ai:5000
     ports:
       - '3000:3000'             # Express default
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     networks:
       - cpms-net
-    volumes:
-      # hot-reload in dev — comment out for production image
-      - ./backend-core/src:/app/src:ro
-
   # ── AI Backend (Node/Express TS) ─────────────────────────────────────
   backend-ai:
     build:
@@ -42,13 +50,18 @@ services:
     restart: unless-stopped
     env_file: ./backend-ai/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - CORE_SERVICE_URL=http://backend-core:3000
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb+srv://mohamedsalemdevofficial_db_user:6eDqJY4jY520illL@cpms-db.ko9ddow.mongodb.net/cpms
+      FRONTEND_URL: http://localhost:5173
+      CORE_SERVICE_URL: http://backend-core:3000
     ports:
       - '5000:5000'             # AI service default
     depends_on:
-      - mongo
-      - backend-core
+      mongo:
+        condition: service_healthy
+      backend-core:
+        condition: service_healthy
     networks:
       - cpms-net
 
