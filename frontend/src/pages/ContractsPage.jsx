@@ -8,7 +8,7 @@ import SpinnerIcon from "../components/icons/SpinnerIcon";
 import { EmptyIcon } from "../components/icons/EmptyIcon";
 import projectImage from "../assets/projectImage.png";
 import { contractService } from "../services/contractService";
-import { FadeLoader } from "react-spinners";
+import FullPageSpinner from "../components/common/FullPageSpinner";
 
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
@@ -226,13 +226,7 @@ const ContractsPage = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
-        <FadeLoader
-          height={20}
-          margin={2}
-          radius={2}
-          width={4}
-          color="#FF4800"
-        />
+        <FullPageSpinner />
       </div>
     );
   }
