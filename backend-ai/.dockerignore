@@ -1,4 +1,60 @@
-node_modules
-dist
+# ── Dependencies (reinstalled inside the image) ──────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# ── Build artifacts (built by the Docker builder stage) ──────────────
+dist/
+*.tsbuildinfo
+
+# ── Environment / secrets ────────────────────────────────────────────
+# Real env files never enter the image; they are injected by Cloud Run.
 .env
+.env.*
+!.env.example
+
+# ── Logs ─────────────────────────────────────────────────────────────
+logs/
 *.log
+
+# ── Temp / downloaded files ──────────────────────────────────────────
+tmp/
+temp/
+downloads/
+
+# ── Tesseract language data (downloaded at runtime — bloats image) ───
+*.traineddata
+
+# ── Git ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── Docs (not needed at runtime) ─────────────────────────────────────
+# Note: OrderSchema.md under src/services/contract-analysis/assets MUST stay
+# in the image — it's read at runtime by loadOrderSchema(). So we only ignore
+# top-level docs, not *.md globally.
+README.md
+docs/
+*.example.md
+
+# ── Editor / OS metadata ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ── Tests / coverage ─────────────────────────────────────────────────
+coverage/
+.nyc_output/
+test/
+tests/
+__tests__/
+
+# ── Docker meta ──────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml

@@ -1,37 +1,152 @@
-const Contract = require('../models/Contract');
-const PlannedBudget = require('../models/PlannedBudget');
-const ActualReport = require('../models/ActualReport');
+import {
+  createAllContractsWorkbook,
+  createPaymentScheduleWorkbook,
+  createPlannedBudgetWorkbook,
+  createProjectSummaryWorkbook,
+} from "../services/exportService.js";
+import {
+  getAllContractsReport,
+  getPaymentScheduleReport,
+  getPlannedBudgetReport,
+  getProjectSummaryReport,
+  ReportError,
+} from "../services/reportingService.js";
 
-exports.allContractsReport = async (req, res, next) => {
-  try {
-    const { year, status } = req.query;
-    const filter = {};
-    if (status) filter.status = status;
-    if (year) filter.start_date = { $regex: `^${year}` };
-    const contracts = await Contract.find(filter).select('name parties contract_value start_date end_date status duration_days');
-    res.json({ contracts, total: contracts.length });
-  } catch (err) { next(err); }
+// reportingService throws typed ReportError instances carrying their own HTTP
+// status code; this helper forwards them to the client uniformly.
+const sendReportError = (res, err) => {
+  if (!(err instanceof ReportError)) return false;
+
+  res.status(err.statusCode).json({
+    code: err.code,
+    message: err.message,
+  });
+  return true;
 };
 
-exports.monthlyReport = async (req, res, next) => {
-  try {
-    const { month, year, contractId } = req.query;
-    const filter = { status: 'approved' };
-    if (contractId) filter.contract = contractId;
-    const reports = await ActualReport.find(filter).populate('contract', 'name contract_value');
-    res.json({ reports });
-  } catch (err) { next(err); }
+// Common XLSX response — sets content-type and attachment headers and writes the workbook.
+const sendWorkbook = async (res, workbook, filename) => {
+  const buffer = await workbook.xlsx.writeBuffer();
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${filename}"`,
+  );
+  return res.send(buffer);
 };
 
-exports.projectPerformanceReport = async (req, res, next) => {
+// GET /api/reports/contracts — filters ?year & ?status
+export const allContractsReport = async (req, res, next) => {
   try {
-    const contract = await Contract.findById(req.params.projectId);
-    if (!contract) return res.status(404).json({ message: 'Contract not found' });
-    const budget = await PlannedBudget.findOne({ contract: contract._id });
-    const reports = await ActualReport.find({ contract: contract._id, status: 'approved' });
-    const totalActual = reports.reduce((sum, r) => sum + (r.totalActualCost || 0), 0);
-    const totalPlanned = contract.contract_value || 0;
-    const cpi = totalActual > 0 ? totalPlanned / totalActual : null;
-    res.json({ contract, budget, totalActual, totalPlanned, cpi, reports });
-  } catch (err) { next(err); }
+    const report = await getAllContractsReport(req.query.year, req.query.status);
+    return res.json(report);
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/contracts/export
+export const exportAllContractsReport = async (req, res, next) => {
+  try {
+    const report = await getAllContractsReport(req.query.year, req.query.status);
+    const year = report.filters.year ?? "all";
+    const status = report.filters.status ?? "all";
+    return sendWorkbook(
+      res,
+      createAllContractsWorkbook(report),
+      `all-contracts-${year}-${status}.xlsx`,
+    );
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/planned-budget — requires ?contractId & ?year
+export const plannedBudgetReport = async (req, res, next) => {
+  try {
+    const report = await getPlannedBudgetReport(
+      req.query.contractId,
+      req.query.year,
+    );
+    return res.json(report);
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/planned-budget/export
+export const exportPlannedBudgetReport = async (req, res, next) => {
+  try {
+    const report = await getPlannedBudgetReport(
+      req.query.contractId,
+      req.query.year,
+    );
+    const workbook = createPlannedBudgetWorkbook(report);
+    return sendWorkbook(
+      res,
+      workbook,
+      `planned-budget-${report.contract.id}-${report.year}.xlsx`,
+    );
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/payment-schedule — requires ?contractId
+export const paymentScheduleReport = async (req, res, next) => {
+  try {
+    const report = await getPaymentScheduleReport(req.query.contractId);
+    return res.json(report);
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/payment-schedule/export
+export const exportPaymentScheduleReport = async (req, res, next) => {
+  try {
+    const report = await getPaymentScheduleReport(req.query.contractId);
+    return sendWorkbook(
+      res,
+      createPaymentScheduleWorkbook(report),
+      `payment-schedule-${report.contract.id}.xlsx`,
+    );
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/project/:id/summary
+export const projectSummaryReport = async (req, res, next) => {
+  try {
+    const report = await getProjectSummaryReport(req.params.id);
+    return res.json(report);
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/project/:id/summary/export
+export const exportProjectSummaryReport = async (req, res, next) => {
+  try {
+    const report = await getProjectSummaryReport(req.params.id);
+    return sendWorkbook(
+      res,
+      createProjectSummaryWorkbook(report),
+      `project-summary-${report.contract.id}.xlsx`,
+    );
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
 };

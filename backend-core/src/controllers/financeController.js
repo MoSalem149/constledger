@@ -1,6 +1,11 @@
+// NOTE: This file is not currently mounted by app.js (the live finance endpoints
+// live in planningController.js). It is also written in CommonJS while the rest
+// of the project uses ESM (package.json has "type": "module"). See README/notes.
+
 const PlannedBudget = require('../models/PlannedBudget');
 const ActualReport = require('../models/ActualReport');
 
+// GET planned budget for a contract
 exports.getPlannedBudget = async (req, res, next) => {
   try {
     const budget = await PlannedBudget.findOne({ contract: req.params.contractId });
@@ -9,6 +14,7 @@ exports.getPlannedBudget = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// PUT planned budget for a contract
 exports.updatePlannedBudget = async (req, res, next) => {
   try {
     const budget = await PlannedBudget.findOneAndUpdate(
@@ -18,6 +24,7 @@ exports.updatePlannedBudget = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// GET actual reports — optional filters ?contractId & ?status
 exports.listActualReports = async (req, res, next) => {
   try {
     const { contractId, status } = req.query;
@@ -29,6 +36,7 @@ exports.listActualReports = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// POST a new actual report
 exports.submitActualReport = async (req, res, next) => {
   try {
     const report = await ActualReport.create({ ...req.body, submittedBy: req.user._id });
@@ -36,6 +44,7 @@ exports.submitActualReport = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Approve a pending actual report
 exports.approveReport = async (req, res, next) => {
   try {
     const report = await ActualReport.findByIdAndUpdate(
@@ -45,6 +54,7 @@ exports.approveReport = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+// Reject a pending actual report with a reason
 exports.rejectReport = async (req, res, next) => {
   try {
     const report = await ActualReport.findByIdAndUpdate(
