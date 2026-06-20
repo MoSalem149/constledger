@@ -12,10 +12,16 @@ Node.js + Express REST API for authentication, user management, finance planning
 cp .env.example .env       # then fill in JWT_SECRET, MONGODB_URI
 npm install
 npm run dev                # http://localhost:3000 (nodemon)
+npm test                   # run focused Vitest tests once
+npm run test:watch         # re-run tests while files change
 npm start                  # production mode
 ```
 
 `GET /health` returns `{ "status": "ok", "service": "cpms-core" }` for liveness probes.
+
+The tests in `tests/` cover the main finance planning invariants and report
+aggregation helpers. They are intentionally database-free, so no MongoDB
+instance or environment file is required to run them.
 
 ---
 
@@ -99,20 +105,30 @@ src/
 
 Supported plan strategies: `straight_line`, `s_curve` (params: `kSteepness` 3–10, default 6), `milestone_weighted` (falls back to `s_curve` if no priced milestones land in range).
 
+Plans can only be generated for contracts with `status: active`. Regenerating
+or manually editing a plan snapshots the previous plan and period rows in
+`finance_plan_versions`. Manual period updates must sum to the contract value
+within `0.01`.
+
 ### Reports — `/api/reports`
 
 | Method | Path | Description |
 |---|---|---|
 | GET | `/contracts` | All contracts report (filters: `?year`, `?status`) |
 | GET | `/contracts/export` | XLSX |
-| GET | `/planned-budget` | Planned budget by contract + year |
-| GET | `/planned-budget/export` | XLSX |
-| GET | `/payment-schedule` | Payment schedule by contract |
-| GET | `/payment-schedule/export` | XLSX |
+| GET | `/planned-budget` | Requires `?contractId=<id>&year=YYYY` |
+| GET | `/planned-budget/export` | Same query; XLSX |
+| GET | `/payment-schedule` | Requires `?contractId=<id>` |
+| GET | `/payment-schedule/export` | Same query; XLSX |
 | GET | `/project/:id/summary` | Plan + KPIs + payment schedule in one shape |
 | GET | `/project/:id/summary/export` | 3-sheet XLSX |
 
 Reports only operate on **confirmed** plans. Draft plans return HTTP 409 `plan_not_confirmed`.
+
+The implemented KPIs are `peakCash` (maximum cumulative planned value) and
+`burnRate` (contract value divided by contract duration in months). SPI, CPI,
+actual-progress approval, monthly/quarterly reports, and PDF export are not
+mounted by the current application.
 
 ---
 
@@ -137,12 +153,12 @@ Every authenticated user can read finance and reporting data; only `contract_man
 
 ## Notes on the current codebase
 
-A few files exist but are **not** mounted in `app.js` and use CommonJS (the rest of the project is ESM). They cannot run as-is and either need to be converted to ESM or deleted:
+Two legacy files are **not** mounted in `app.js` and use CommonJS while the
+live project uses ES modules:
 
-- `src/controllers/contractController.js` (also imports `axios`, not installed)
 - `src/controllers/financeController.js`
-- `src/routes/contractRoutes.js` (also imports `multer`, not installed)
 - `src/models/PlannedBudget.js`
-- `src/models/ActualReport.js`
 
-Each file carries a comment at the top calling this out.
+They reference the removed `ActualReport` model. The live implementation uses
+`planningController.js`, `FinancePlan`, `FinancePlanned`, and
+`FinancePlanVersion`.

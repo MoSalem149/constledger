@@ -1,13 +1,13 @@
-import { randomUUID } from 'crypto';
-import { Response, NextFunction } from 'express';
-import { Types } from 'mongoose';
+import { randomUUID } from "crypto";
+import { Response, NextFunction } from "express";
+import { Types } from "mongoose";
 
-import { connectDatabase } from '../config/database';
-import { AuthenticatedRequest } from '../middleware/jwtAuth';
-import { ContractModel } from '../models/Contract.model';
-import { UploadJobModel, IUploadJob } from '../models/UploadJob.model';
-import { runContractAnalysis } from '../services/contract-analysis/runContractAnalysis';
-import { downloadS3Object, getPresignedDownloadUrl } from '../utils/s3Storage';
+import { connectDatabase } from "../config/database";
+import { AuthenticatedRequest } from "../middleware/jwtAuth";
+import { ContractModel } from "../models/Contract.model";
+import { UploadJobModel, IUploadJob } from "../models/UploadJob.model";
+import { runContractAnalysis } from "../services/contract-analysis/runContractAnalysis";
+import { downloadS3Object, getPresignedDownloadUrl } from "../utils/s3Storage";
 
 // Background-task error sink — flips status to analysis_failed so the
 // frontend's poll loop can stop and surface the error to the user.
@@ -17,7 +17,7 @@ const markAnalysisFailed = async (
 ): Promise<void> => {
   console.error(`[analyze] failed for ${contractId}:`, (err as Error).message);
   await ContractModel.findByIdAndUpdate(contractId, {
-    status: 'analysis_failed',
+    status: "analysis_failed",
   });
 };
 
@@ -25,9 +25,9 @@ const markAnalysisFailed = async (
 // requesting user.
 async function resolveUploadJob(uploadId: string, userId: string) {
   const uploadJob = await UploadJobModel.findById(uploadId);
-  if (!uploadJob) return { error: 'Upload record not found' as const };
+  if (!uploadJob) return { error: "Upload record not found" as const };
   if (uploadJob.uploadedBy.toString() !== userId) {
-    return { error: 'You do not have access to this upload' as const };
+    return { error: "You do not have access to this upload" as const };
   }
   return { uploadJob };
 }
@@ -52,26 +52,32 @@ export const uploadContract = async (
   try {
     const { uploadId, name } = req.body as { uploadId?: string; name?: string };
     if (!uploadId) {
-      res.status(400).json({ message: 'uploadId is required' });
+      res.status(400).json({ message: "uploadId is required" });
       return;
     }
 
     await connectDatabase();
 
     const resolved = await resolveUploadJob(uploadId, req.user!.id);
-    if ('error' in resolved) {
-      res.status(resolved.error === 'Upload record not found' ? 404 : 403).json({
-        message: resolved.error,
-      });
+    if ("error" in resolved) {
+      res
+        .status(resolved.error === "Upload record not found" ? 404 : 403)
+        .json({
+          message: resolved.error,
+        });
       return;
     }
 
     const { uploadJob } = resolved;
 
     // One UploadJob can back at most one Contract — reject reuse with 409.
-    const alreadyLinked = await ContractModel.findOne({ contractDocId: uploadJob._id });
+    const alreadyLinked = await ContractModel.findOne({
+      contractDocId: uploadJob._id,
+    });
     if (alreadyLinked) {
-      res.status(409).json({ message: 'This upload is already linked to a contract' });
+      res
+        .status(409)
+        .json({ message: "This upload is already linked to a contract" });
       return;
     }
 
@@ -80,10 +86,10 @@ export const uploadContract = async (
       name: name || uploadJob.fileName,
       contractDocId: uploadJob._id,
       uploadedBy: req.user!.id,
-      status: 'processing',
+      status: "processing",
     });
 
-    await UploadJobModel.findByIdAndUpdate(uploadJob._id, { status: 'linked' });
+    await UploadJobModel.findByIdAndUpdate(uploadJob._id, { status: "linked" });
 
     const contractId = contract._id.toString();
 
@@ -97,7 +103,7 @@ export const uploadContract = async (
     res.status(202).json({
       id: contractId,
       name: contract.name,
-      status: 'processing',
+      status: "processing",
     });
   } catch (err) {
     next(err);
@@ -125,10 +131,12 @@ export const listContracts = async (
 
     // `name` and `search` are aliases — both do a case-insensitive substring match
     const nameToSearch = name || search;
-    if (nameToSearch) filter.name = { $regex: nameToSearch, $options: 'i' };
+    if (nameToSearch) filter.name = { $regex: nameToSearch, $options: "i" };
 
     const rawContracts = await ContractModel.find(filter)
-      .select('name status contract_value currency start_date end_date')
+      .select(
+        "name status contract_value currency start_date end_date contractNumber parties milestones",
+      )
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
@@ -143,6 +151,13 @@ export const listContracts = async (
       currency: c.currency,
       startDate: c.start_date,
       endDate: c.end_date,
+      contractNumber: c.contractNumber,
+      parties: c.parties,
+      milestones: c.milestones?.map((m) => ({
+        name: m.name,
+        dueDate: m.due_date,
+        value: m.value,
+      })),
     }));
 
     res.json(contracts);
@@ -160,11 +175,11 @@ export const getContract = async (
 ): Promise<void> => {
   try {
     const contract = await ContractModel.findById(req.params.id)
-      .populate('uploadedBy', 'name email')
-      .populate('contractDocId');
+      .populate("uploadedBy", "name email")
+      .populate("contractDocId");
 
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
 
@@ -196,7 +211,9 @@ export const getContract = async (
     // ids, rename _id -> id, and flatten the populated refs.
     const contractObj = contract.toObject();
     const { _id, __v, contractDocId: _docRef, ...rest } = contractObj;
-    const uploadedByRaw = rest.uploadedBy as { _id?: Types.ObjectId } | undefined;
+    const uploadedByRaw = rest.uploadedBy as
+      | { _id?: Types.ObjectId }
+      | undefined;
     const { _id: uploadedId, ...uploadedByRest } = uploadedByRaw ?? {};
 
     res.json({
@@ -235,11 +252,11 @@ export const updateContract = async (
       { new: true, runValidators: true },
     );
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
     res.json({
-      message: 'Successfully updated contract',
+      message: "Successfully updated contract",
       id: contract._id,
     });
   } catch (err) {
@@ -255,26 +272,30 @@ export const reanalyzeContract = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const contract = await ContractModel.findById(req.params.id).populate('contractDocId');
+    const contract = await ContractModel.findById(req.params.id).populate(
+      "contractDocId",
+    );
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
 
     const uploadJob = getPopulatedUploadJob(contract.contractDocId);
     if (!uploadJob?.s3Key) {
-      res.status(400).json({ message: 'Contract has no linked upload document' });
+      res
+        .status(400)
+        .json({ message: "Contract has no linked upload document" });
       return;
     }
 
     const contractId = contract._id.toString();
-    await ContractModel.findByIdAndUpdate(contractId, { status: 'processing' });
+    await ContractModel.findByIdAndUpdate(contractId, { status: "processing" });
 
     downloadS3Object(uploadJob.s3Key)
       .then((buffer) => runContractAnalysis(contractId, buffer))
       .catch((err) => markAnalysisFailed(contractId, err));
 
-    res.json({ message: 'Re-analysis started' });
+    res.json({ message: "Re-analysis started" });
   } catch (err) {
     next(err);
   }

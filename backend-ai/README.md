@@ -14,11 +14,17 @@ This service only **verifies** JWTs issued by backend-core — it never issues t
 cp .env.example .env       # fill in real values before running
 npm install
 npm run dev                # http://localhost:5000 (tsx watch)
+npm test                   # run focused Vitest tests once
+npm run test:watch         # re-run tests while files change
 npm run build              # compiles TS to dist/ and copies assets
 npm start                  # runs dist/index.js
 ```
 
 `GET /health` returns `{ "status": "ok", "service": "cpms-ai" }` for liveness probes.
+
+The tests in `tests/` focus on extraction validation, including valid data,
+soft review notes, and hard failures. They do not call MongoDB, S3, OCR, or an
+external AI provider.
 
 ---
 
@@ -80,6 +86,16 @@ All endpoints require a valid JWT cookie set by backend-core login.
 | POST | `/sign` | contract_manager, pmo | Returns a presigned S3 PUT URL — the browser uploads the contract file directly to S3 |
 | POST | `/complete` | contract_manager, pmo | Records a successful upload as an UploadJob (idempotent — upsert on `(s3Key, uploadedBy)`) |
 
+Upload flow:
+
+1. Call `/sign` with `filename`, `mimeType`, and `size`.
+2. Upload the bytes directly to the returned S3 URL with `PUT`.
+3. Call `/complete` with `s3Key`, `fileName`, `mimeType`, and `size`.
+4. Call `/api/contracts/upload` with the returned `uploadId`.
+
+Clients should omit the optional `contractId` field from `/sign`; see the
+known limitation below.
+
 ### Contracts — `/api/contracts`
 
 | Method | Path | Roles | Description |
@@ -115,7 +131,7 @@ POST /api/contracts/upload
         │
         ▼
   4. validateExtraction.ts  →  rules V1–V9 (hard violations throw; soft
-     issues become notes that move the contract to pending_review)
+     issues are stored as validation notes)
         │
         ▼
   5. ContractModel.findByIdAndUpdate(...)     ← user-facing record
@@ -123,6 +139,8 @@ POST /api/contracts/upload
 ```
 
 The frontend polls `GET /api/contracts/:id` until `status` leaves `processing`.
+Every successful AI run is intentionally saved as `pending_review`; the AI
+never activates a contract automatically.
 
 ---
 
@@ -148,7 +166,6 @@ src/
 │       ├── parseContractFile.ts                # PDF text layer + bounded OCR / vision fallback
 │       ├── aiModelClient.ts                    # Provider retries, timeout, paid fallback
 │       ├── extractContractDataSinglePass.ts    # Active extraction + repair pass
-│       ├── extractContractData.ts              # LEGACY 5-prompt split-task extractor (excluded from build)
 │       ├── validateExtraction.ts               # SRS §3.3 rules V1–V9
 │       ├── saveExtraction.ts                   # Persist to MongoDB
 │       ├── loadOrderSchema.ts                  # Loads the prompt schema below
@@ -177,7 +194,17 @@ In short: `Contract` is what the rest of the app treats as "the contract"; `Cont
 
 ---
 
-## Notes on the current codebase
+## Current limitations
 
-- **`src/services/contract-analysis/extractContractData.ts` is LEGACY** and excluded from the production build via `tsconfig.json`. It references an older `aiConfig` shape (`.apiKey`, `.baseURL`, `.model`, `.timeoutMs`, `.httpReferer`, `.appTitle`) that no longer exists. The active extraction is `extractContractDataSinglePass.ts`. Delete the legacy file or port it to the new `aiConfig.{primary,fallback}` shape when you're sure it isn't coming back.
-- **`utils/s3Upload.ts:buildObjectKey`** currently accepts a `contractId` argument and uses it in the S3 key prefix. **`utils/s3Access.ts:assertUserOwnsS3Key`** expects the prefix to be `contracts/{userId}/...`. If a client passes `contractId` to `/api/uploads/sign`, the resulting key will fail the ownership check at `/complete`. Treat `contractId` as effectively unused for now and pass only `userId`.
+- The upload MIME allow-list accepts PDF, DOC, and DOCX, but
+  `parseContractFile.ts` currently processes PDF only. Word documents will
+  fail during analysis and move the contract to `analysis_failed`.
+- `utils/s3Upload.ts:buildObjectKey` accepts a `contractId` argument and uses it
+  in the S3 key prefix. `utils/s3Access.ts:assertUserOwnsS3Key` expects the
+  prefix to be `contracts/{userId}/`. If a client passes `contractId` to
+  `/api/uploads/sign`, `/complete` rejects the resulting key. Omit
+  `contractId`.
+- `JWT_EXPIRES_IN` and `AI_SERVICE_SECRET` remain in `.env.example`, but this
+  service does not read them.
+- Extraction computes review indicators, but the workflow deliberately sends
+  every successful analysis to human review.
