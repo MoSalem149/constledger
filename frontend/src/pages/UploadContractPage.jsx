@@ -56,7 +56,7 @@ function getTimestamp() {
 /* ------------------------------------------------------------------ */
 
 export default function UploadContractPage() {
-  const { saveContractData } = useContext(UContractContext);
+  const { setContractData } = useContext(UContractContext);
   const navigate = useNavigate();
   const [pageState, setPageState] = useState("idle");
   const [error, setError] = useState(null);
@@ -163,7 +163,7 @@ export default function UploadContractPage() {
         cleanup();
         cleanupRef.current = null;
 
-        saveContractData(contract);
+        setContractData(contract);
 
         if (contract.status === "analysis_failed") {
           // AI failed but contract record exists — let user see partial data
