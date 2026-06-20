@@ -134,13 +134,9 @@ export const listContracts = async (
     if (nameToSearch) filter.name = { $regex: nameToSearch, $options: "i" };
 
     const rawContracts = await ContractModel.find(filter)
-<<<<<<< HEAD
-      .select("name status contract_value currency start_date end_date")
-=======
       .select(
         "name status contract_value currency start_date end_date contractNumber parties milestones",
       )
->>>>>>> 560a763dff02092fb98a765ede52bf3d4dd68adc
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
