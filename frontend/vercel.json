@@ -2,11 +2,11 @@
   "rewrites": [
     {
       "source": "/api/auth/:path*",
-      "destination": "https://cpms-core--test-prod.mosalem149.deno.net/api/auth/:path*"
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/auth/:path*"
     },
     {
       "source": "/api/users/:path*",
-      "destination": "https://cpms-core--test-prod.mosalem149.deno.net/api/users/:path*"
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/users/:path*"
     },
     {
       "source": "/api/contracts/:path*",
