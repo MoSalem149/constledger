@@ -145,24 +145,4 @@ export const contractService = {
    */
   getContractTimeline: (id) =>
     api.get(`/contracts/${id}/timeline`).then((res) => res.data),
-  /* Response: { message, id }
-   */
-  updateContract: (id, data) =>
-    api.put(`/contracts/${id}`, data).then((res) => res.data),
-
-  /**
-   * POST /api/contracts/:id/analyze
-   * Re-trigger AI analysis for an existing contract.
-   * Returns { message } immediately (analysis runs asynchronously).
-   */
-  reanalyzeContract: (id) =>
-    api.post(`/contracts/${id}/analyze`).then((res) => res.data),
-
-  /**
-   * GET /api/contracts/:id/timeline
-   * Get milestone timeline for a contract.
-   * Returns { milestones, start_date, end_date }
-   */
-  getContractTimeline: (id) =>
-    api.get(`/contracts/${id}/timeline`).then((res) => res.data),
 };
