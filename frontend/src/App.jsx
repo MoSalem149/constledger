@@ -131,8 +131,6 @@ function App() {
                     path="/reports/planned-budget"
                     element={<PlannedBudgetReport />}
                   />
-                  {/* Admin */}
-                  <Route path="/admin" element={<AdminPage />} />
                   {/* 404 catch-all */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

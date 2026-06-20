@@ -299,7 +299,7 @@ export default function UploadContractPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mr-10">
         {/* Left: breadcrumb + title + subtitle */}
         <div className="flex flex-col gap-3 max-w-[750px]">
           <span className="text-xs font-normal text-text-placeholder leading-[18px] font-sans">
@@ -338,7 +338,7 @@ export default function UploadContractPage() {
 
       {/* Content area */}
       {pageState === "idle" && (
-        <div className="flex gap-4 mr-16">
+        <div className="flex gap-4 mr-10">
           <UploadDropzone onFileSelect={handleFileSelect} />
           <AIExtractsPanel />
         </div>
