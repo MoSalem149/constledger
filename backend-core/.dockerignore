@@ -1,33 +1,54 @@
-# ── Dependencies ──────────────────────────────────────────────────────
-# Installed fresh inside the container — never copy from host
+# ── Dependencies (re-installed inside the image) ─────────────────────
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
 
-# ── Environment / secrets ─────────────────────────────────────────────
-# Secrets are injected at runtime via Deno Deploy environment variables
+# ── Environment / secrets ────────────────────────────────────────────
+# Real env files never enter the image; they are provided at runtime.
 .env
 .env.*
+!.env.example
 
-# ── Logs ──────────────────────────────────────────────────────────────
+# ── Logs ─────────────────────────────────────────────────────────────
 logs/
 *.log
-npm-debug.log*
 
-# ── Temp files ────────────────────────────────────────────────────────
+# ── Local uploads / temp files ───────────────────────────────────────
 tmp/
+uploads/
 
-# ── Git ───────────────────────────────────────────────────────────────
+# ── Git ──────────────────────────────────────────────────────────────
 .git/
 .gitignore
+.gitattributes
 
-# ── Docs (not needed at runtime) ──────────────────────────────────────
+# ── Docs (not needed at runtime) ─────────────────────────────────────
 README.md
 *.md
+docs/
 
-# ── OS / Editor ───────────────────────────────────────────────────────
+# ── Editor / OS metadata ─────────────────────────────────────────────
 .DS_Store
-Thumbbs.db
+Thumbs.db
 .vscode/
 .idea/
+*.swp
 
-# ── Tests / coverage ──────────────────────────────────────────────────
+# ── Tests / coverage ─────────────────────────────────────────────────
 coverage/
+.nyc_output/
+test/
+tests/
+__tests__/
+
+# ── Build artifacts / runtimes not used by Docker ────────────────────
+dist/
+.deno/
+deno.json
+
+# ── Docker meta ──────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml

@@ -1,30 +1,29 @@
 /**
  * UploadContractPage — drag-and-drop contract upload with S3 presigned URL flow.
  *
- * Sprint 2 builds the full screen:
+ * Upload flow:
  *   idle      → file picker + "What AI Extracts" side panel
- *   uploading → stepper steps 1-3 (S3 sign, S3 PUT, complete upload)
- *   processing→ stepper step 4 active + progress bar + activity log (frontend simulation)
+ *   processing→ stepper + progress bar + activity log
+ *               (Upload step active during S3 upload, then Read/Extract simulation)
+ *               while backend runs OCR + AI analysis asynchronously
  *
- * The backend only returns terminal status after `createContract` completes.
- * `createContract` is synchronous (blocks 20-30s during AI analysis).
- * All intermediate progress (stepper, progress bar, activity log) is simulated
- * on the frontend via `fakeProgress.js` for a smooth UX.
+ * Why async polling instead of waiting on createContract?
+ *   Vercel has a hard 60s proxy timeout. The AI pipeline (OCR + 5 LLM calls)
+ *   takes 3–5 minutes. The backend now returns 202 immediately and runs
+ *   analysis in the background. We poll GET /api/contracts/:id every 4s
+ *   until status is no longer 'processing'.
  *
  * S3 flow:
  *   1. signUpload    → get presigned URL
  *   2. putFileToS3   → PUT file directly to S3
  *   3. completeUpload→ notify backend upload is done
- *   4. createContract→ POST JSON { name, uploadId } (blocks until AI finishes)
- *                      Backend downloads the file from S3 itself.
- *
- * The "Back to Projects" button navigates to /dashboard.
- * Pass ?demo=1 in the URL to preview the processing state with mock data.
+ *   4. createContract→ POST { name, uploadId } → 202 { id, status: 'processing' }
+ *   5. pollContractReady(id) → polls GET /api/contracts/:id until done
  *
  * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
 import { useState, useEffect, useRef, useCallback, useContext } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import UploadDropzone from "../components/contracts/UploadDropzone";
 import AIExtractsPanel from "../components/contracts/AIExtractsPanel";
@@ -45,11 +44,12 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/* ------------------------------------------------------------------ */
-// Mock data for ?demo=1
-/* ------------------------------------------------------------------ */
-
-const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
+function getTimestamp() {
+  return new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 /* ------------------------------------------------------------------ */
 // Page
@@ -58,65 +58,34 @@ const DEMO_FILE = { name: "Aswan_Solar_Park.pdf", size: 7130317 }; // ~6.8 MB
 export default function UploadContractPage() {
   const { setContractData } = useContext(UContractContext);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const isDemo = searchParams.get("demo") === "1";
-
-  // Page state machine: idle | uploading | processing | error
-  const [pageState, setPageState] = useState(isDemo ? "processing" : "idle");
+  const [pageState, setPageState] = useState("idle");
   const [error, setError] = useState(null);
 
   // Processing state
-  const [fileInfo, setFileInfo] = useState(
-    isDemo
-      ? { name: DEMO_FILE.name, size: formatFileSize(DEMO_FILE.size) }
-      : null,
-  );
-  const [stepStatus, setStepStatus] = useState(
-    isDemo
-      ? ["completed", "active", "pending", "pending"]
-      : ["pending", "pending", "pending", "pending"],
-  );
+  const [fileInfo, setFileInfo] = useState(null);
+  const [stepStatus, setStepStatus] = useState([
+    "pending",
+    "pending",
+    "pending",
+    "pending",
+  ]);
   const [progress, setProgress] = useState(null);
   const [activityLog, setActivityLog] = useState([]);
 
   // Refs for cleanup
   const cleanupRef = useRef(null);
-  const demoTimerRef = useRef(null);
-
-  /* ---------------------------------------------------------------- */
-  // Demo mode simulation
-  /* ---------------------------------------------------------------- */
+  // Track whether the component is still mounted to avoid state updates after unmount
+  const mountedRef = useRef(true);
 
   useEffect(() => {
-    if (!isDemo || pageState !== "processing") return;
-
-    // Start simulation for visual preview
-    const cleanup = startSimulation({
-      onStepChange: setStepStatus,
-      onProgress: setProgress,
-      onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
-    });
-    cleanupRef.current = cleanup;
-
-    // Auto-navigate after ~30s
-    demoTimerRef.current = setTimeout(() => {
-      cleanup();
-      cleanupRef.current = null;
-      navigate("/contracts/demo/edit");
-    }, 30000);
-
+    mountedRef.current = true;
     return () => {
-      cleanup();
-      cleanupRef.current = null;
-      if (demoTimerRef.current) {
-        clearTimeout(demoTimerRef.current);
-        demoTimerRef.current = null;
-      }
+      mountedRef.current = false;
     };
-  }, [isDemo, pageState, navigate]);
+  }, []);
 
   /* ---------------------------------------------------------------- */
-  // Handlers
+  // Main upload + poll handler
   /* ---------------------------------------------------------------- */
 
   const handleFileSelect = useCallback(
@@ -133,23 +102,28 @@ export default function UploadContractPage() {
 
       setError(null);
       setFileInfo({ name: file.name, size: formatFileSize(file.size) });
-      setPageState("uploading");
-      setActivityLog([]);
-      setProgress(null);
-      setStepStatus(["completed", "active", "pending", "pending"]);
+      setPageState("processing");
+      setActivityLog([
+        {
+          timestamp: getTimestamp(),
+          message: "Uploading file to secure storage...",
+        },
+      ]);
+      setProgress({ label: "Uploading file...", percent: 0 });
+      setStepStatus(["active", "pending", "pending", "pending"]);
 
       try {
-        // Step 1: Request presigned S3 URL
+        // ── Step 1: Request presigned S3 URL ──────────────────────────
         const { uploadUrl, key } = await contractService.signUpload({
           filename: file.name,
           mimeType: file.type,
           size: file.size,
         });
 
-        // Step 2: Upload file directly to S3
+        // ── Step 2: Upload file directly to S3 ───────────────────────
         await putFileToS3(uploadUrl, file);
 
-        // Step 3: Notify backend upload is complete
+        // ── Step 3: Notify backend upload is complete ─────────────────
         const { uploadId } = await contractService.completeUpload({
           s3Key: key,
           fileName: file.name,
@@ -157,10 +131,15 @@ export default function UploadContractPage() {
           size: file.size,
         });
 
-        // Step 4: Create contract (synchronous — blocks until AI analysis finishes)
-        setPageState("processing");
-        setStepStatus(["completed", "completed", "active", "pending"]);
+        // ── Step 4: Create contract record (returns 202 immediately) ──
+        // The backend kicks off AI analysis in the background and responds
+        // in <1s with { id, name, status: 'processing' }.
+        //
+        // Hand off from Upload step to Read step. fakeProgress starts at the
+        // read phase and will immediately mark Upload completed + Read active.
+        setStepStatus(["completed", "active", "pending", "pending"]);
 
+        // Start the fake progress simulation while we wait for AI
         const cleanup = startSimulation({
           onStepChange: setStepStatus,
           onProgress: setProgress,
@@ -168,21 +147,39 @@ export default function UploadContractPage() {
         });
         cleanupRef.current = cleanup;
 
-        const contract = await contractService.createContract(
+        const { id: contractId } = await contractService.createContract(
           file.name,
           uploadId,
         );
 
-        // send uploded contract to context
+        // ── Step 5: Poll until analysis finishes ──────────────────────
+        // GET /api/contracts/:id every 4s until status !== 'processing'
+        const contract = await contractService.pollContractReady(contractId);
+
+        // Guard: don't update state if the user navigated away
+        if (!mountedRef.current) return;
+
+        // Stop the simulation
+        cleanup();
+        cleanupRef.current = null;
 
         setContractData(contract);
 
-        // Success — stop simulation and navigate to review form
-        cleanup();
-        cleanupRef.current = null;
-        navigate(`/contracts/${contract.id}/edit`);
+        if (contract.status === "analysis_failed") {
+          // AI failed but contract record exists — let user see partial data
+          navigate(`/contracts/${contract.id}/edit`, {
+            state: {
+              analysisError: "AI analysis failed. Some fields may be missing.",
+              partialData: true,
+            },
+          });
+        } else {
+          navigate(`/contracts/${contract.id}/edit`);
+        }
       } catch (err) {
-        // Clean up any running simulation
+        if (!mountedRef.current) return;
+
+        // Stop any running simulation
         if (cleanupRef.current) {
           cleanupRef.current();
           cleanupRef.current = null;
@@ -192,30 +189,9 @@ export default function UploadContractPage() {
         const data = err?.response?.data;
 
         if (status === 409) {
-          // Upload already linked to a contract
           setError(
             data?.message ||
               "This file is already linked to a contract. Please upload a different file.",
-          );
-        } else if (status === 422) {
-          // AI analysis failed — contract may have partial data
-          const contract = data?.contract;
-          if (contract?._id || contract?.id) {
-            // Navigate to edit page so user can see partial data
-            setContractData(contract);
-            const id = contract.id || contract._id;
-            navigate(`/contracts/${id}/edit`, {
-              state: {
-                analysisError: data?.error || "AI analysis failed",
-                partialData: true,
-              },
-            });
-            return;
-          }
-          setError(
-            data?.message ||
-              data?.error ||
-              "AI analysis failed. Please try again or contact support.",
           );
         } else {
           setError(
@@ -228,7 +204,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate],
+    [navigate, saveContractData],
   );
 
   const handleBack = useCallback(() => {
@@ -249,10 +225,6 @@ export default function UploadContractPage() {
         cleanupRef.current();
         cleanupRef.current = null;
       }
-      if (demoTimerRef.current) {
-        clearTimeout(demoTimerRef.current);
-        demoTimerRef.current = null;
-      }
     };
   }, []);
 
@@ -262,7 +234,9 @@ export default function UploadContractPage() {
 
   const subtitleText =
     pageState === "processing"
-      ? "AI is processing your document. This may take a few moments."
+      ? stepStatus[0] === "active"
+        ? "Uploading your contract to secure storage..."
+        : "AI is processing your document. This may take a few moments."
       : "Drop your signed contract - our AI will read it and extract the key terms. You'll review and confirm everything before it goes live.";
 
   /* ---------------------------------------------------------------- */
@@ -272,7 +246,7 @@ export default function UploadContractPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mr-10">
         {/* Left: breadcrumb + title + subtitle */}
         <div className="flex flex-col gap-3 max-w-[750px]">
           <span className="text-xs font-normal text-text-placeholder leading-[18px] font-sans">
@@ -311,18 +285,9 @@ export default function UploadContractPage() {
 
       {/* Content area */}
       {pageState === "idle" && (
-        <div className="flex gap-4 mr-16">
+        <div className="flex gap-4 mr-10">
           <UploadDropzone onFileSelect={handleFileSelect} />
           <AIExtractsPanel />
-        </div>
-      )}
-
-      {pageState === "uploading" && (
-        <div className="flex items-center justify-center h-[428px]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm text-text-secondary">Uploading contract...</p>
-          </div>
         </div>
       )}
 

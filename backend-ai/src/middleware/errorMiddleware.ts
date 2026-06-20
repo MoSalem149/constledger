@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 
+// 404 fallthrough — registered after all routers
 export const notFound = (req: Request, res: Response): void => {
   res.status(404).json({ message: `Route not found: ${req.originalUrl}` });
 };
 
+// Centralized error handler — logs every error and returns JSON. Stack traces
+// only leak outside production.
 export const errorHandler = (
   err: Error & { statusCode?: number },
   _req: Request,

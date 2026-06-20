@@ -1,6 +1,4 @@
-// ── Shared types for the AI service ──────────────────────────────────
-
-export type ReportingPeriod = 'weekly' | 'biweekly' | 'monthly';
+export type ReportingPeriod = "weekly" | "biweekly" | "monthly";
 
 export interface PaymentProgress {
   basis: string | null;
@@ -14,30 +12,34 @@ export interface PaymentTerm {
   description: string | null;
 }
 
-/** SRS §3.3 — exact fields, no more, no less */
-export interface ContractExtraction {
-  /** All contract parties with their role */
-  parties: { name: string; role: string }[];
+export interface Penalty {
+  condition: string;
+  penalty: string | null;
+  first_offense: string | null;
+  second_offense: string | null;
+  third_offense: string | null;
+}
 
-  /** Total contract price */
+// CANONICAL shape of AI-extracted contract data (SRS §3.3). This MUST stay in
+// sync with assets/OrderSchema.md (the LLM prompt schema) and the Contract /
+// ContractExtraction Mongoose schemas — all three describe the same fields
+// and should be updated together.
+export interface ContractExtraction {
+  parties: { name: string; role: string }[];
   contract_value: number | null;
 
   /** ISO-4217 currency code e.g. USD, EGP */
   currency: string | null;
-
-  /** Price per unit for each work item */
-  unit_prices: { item: string; unit: string; unit_price: number }[];
-
-  /** Progress payment card — one per contract */
+  unit_prices: {
+    item: string;
+    unit: string;
+    unit_price: number;
+    quantity: number;
+    total_cost: number;
+  }[];
   paymentProgress: PaymentProgress | null;
-
-  /** Structured payment milestones (advance, progress, retention, etc.) */
   payment_terms: PaymentTerm[];
-
-  /** Specific payment dates and amounts */
   payment_schedule: { date: string; amount: number }[];
-
-  /** Official project start date (YYYY-MM-DD) */
   start_date: string | null;
 
   /** Official project end date (YYYY-MM-DD) */
@@ -45,22 +47,8 @@ export interface ContractExtraction {
 
   /** Total duration in days */
   duration_days: number | null;
-
-  /** Is progress reported weekly, biweekly, or monthly? */
   reporting_period: ReportingPeriod | null;
-
-  /** Key deliverables and their deadlines */
   milestones: { name: string; due_date: string; value?: number | null }[];
-
-  /** Delay penalties: condition and amount/formula */
-  penalties: { condition: string; penalty: string }[];
-}
-
-export interface FinanceForecast {
-  periods: {
-    label: string;
-    plannedAmount: number;
-    startDate: string;
-    endDate: string;
-  }[];
+  // Delay penalties and HSE offense tiers, grouped by condition.
+  penalties: Penalty[];
 }

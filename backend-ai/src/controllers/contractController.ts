@@ -1,33 +1,39 @@
-import { randomUUID } from 'crypto';
-import { Response, NextFunction } from 'express';
-import { Types } from 'mongoose';
+import { randomUUID } from "crypto";
+import { Response, NextFunction } from "express";
+import { Types } from "mongoose";
 
-import { connectDatabase } from '../config/database';
-import { AuthenticatedRequest } from '../middleware/jwtAuth';
-import { ContractModel } from '../models/Contract.model';
-import { UploadJobModel, IUploadJob } from '../models/UploadJob.model';
-import { runContractAnalysis } from '../services/contract-analysis/runContractAnalysis';
-import { downloadS3Object, getPresignedDownloadUrl } from '../utils/s3Storage';
+import { connectDatabase } from "../config/database";
+import { AuthenticatedRequest } from "../middleware/jwtAuth";
+import { ContractModel } from "../models/Contract.model";
+import { UploadJobModel, IUploadJob } from "../models/UploadJob.model";
+import { runContractAnalysis } from "../services/contract-analysis/runContractAnalysis";
+import { downloadS3Object, getPresignedDownloadUrl } from "../utils/s3Storage";
 
+// Background-task error sink — flips status to analysis_failed so the
+// frontend's poll loop can stop and surface the error to the user.
 const markAnalysisFailed = async (
   contractId: string,
   err: unknown,
 ): Promise<void> => {
   console.error(`[analyze] failed for ${contractId}:`, (err as Error).message);
   await ContractModel.findByIdAndUpdate(contractId, {
-    status: 'analysis_failed',
+    status: "analysis_failed",
   });
 };
 
+// Ownership check — the upload must exist AND have been uploaded by the
+// requesting user.
 async function resolveUploadJob(uploadId: string, userId: string) {
   const uploadJob = await UploadJobModel.findById(uploadId);
-  if (!uploadJob) return { error: 'Upload record not found' as const };
+  if (!uploadJob) return { error: "Upload record not found" as const };
   if (uploadJob.uploadedBy.toString() !== userId) {
-    return { error: 'You do not have access to this upload' as const };
+    return { error: "You do not have access to this upload" as const };
   }
   return { uploadJob };
 }
 
+// contractDocId is either an unpopulated ObjectId or a populated UploadJob doc.
+// Returns the populated form when present, null otherwise.
 function getPopulatedUploadJob(
   contractDocId: Types.ObjectId | IUploadJob | undefined,
 ): IUploadJob | null {
@@ -35,6 +41,9 @@ function getPopulatedUploadJob(
   return contractDocId;
 }
 
+// POST /api/contracts/upload — links an UploadJob to a brand-new Contract and
+// kicks off background AI analysis. Returns 202 immediately; the client polls
+// GET /api/contracts/:id until status leaves 'processing'.
 export const uploadContract = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -42,26 +51,33 @@ export const uploadContract = async (
 ): Promise<void> => {
   try {
     const { uploadId, name } = req.body as { uploadId?: string; name?: string };
-    console.log(req.body);
     if (!uploadId) {
-      res.status(400).json({ message: 'uploadId is required' });
+      res.status(400).json({ message: "uploadId is required" });
       return;
     }
 
     await connectDatabase();
 
     const resolved = await resolveUploadJob(uploadId, req.user!.id);
-    if ('error' in resolved) {
-      res.status(resolved.error === 'Upload record not found' ? 404 : 403).json({
-        message: resolved.error,
-      });
+    if ("error" in resolved) {
+      res
+        .status(resolved.error === "Upload record not found" ? 404 : 403)
+        .json({
+          message: resolved.error,
+        });
       return;
     }
 
     const { uploadJob } = resolved;
-    const alreadyLinked = await ContractModel.findOne({ contractDocId: uploadJob._id });
+
+    // One UploadJob can back at most one Contract — reject reuse with 409.
+    const alreadyLinked = await ContractModel.findOne({
+      contractDocId: uploadJob._id,
+    });
     if (alreadyLinked) {
-      res.status(409).json({ message: 'This upload is already linked to a contract' });
+      res
+        .status(409)
+        .json({ message: "This upload is already linked to a contract" });
       return;
     }
 
@@ -70,34 +86,31 @@ export const uploadContract = async (
       name: name || uploadJob.fileName,
       contractDocId: uploadJob._id,
       uploadedBy: req.user!.id,
-      status: 'processing',
+      status: "processing",
     });
 
-    await UploadJobModel.findByIdAndUpdate(uploadJob._id, { status: 'linked' });
+    await UploadJobModel.findByIdAndUpdate(uploadJob._id, { status: "linked" });
 
     const contractId = contract._id.toString();
 
-    // ── Fire and forget ──────────────────────────────────────────────
-    // Run AI analysis in the background so we can respond immediately.
-    // Vercel (and any other proxy) has a hard 60s timeout — awaiting the
-    // full OCR + LLM pipeline here would always cause a 502.
-    // The frontend polls GET /api/contracts/:id until status is no longer
-    // 'processing' to know when analysis is done.
+    // Fire-and-forget — run the OCR + LLM pipeline in the background and
+    // respond now. Vercel and most proxies enforce a 60s hard timeout, so
+    // awaiting the full pipeline here would always produce a 502.
     downloadS3Object(uploadJob.s3Key)
       .then((buffer) => runContractAnalysis(contractId, buffer))
       .catch((err) => markAnalysisFailed(contractId, err));
 
-    // Respond immediately with the contract in 'processing' status
     res.status(202).json({
       id: contractId,
       name: contract.name,
-      status: 'processing',
+      status: "processing",
     });
   } catch (err) {
     next(err);
   }
 };
 
+// GET /api/contracts/ — list with optional filters and pagination
 export const listContracts = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -113,18 +126,21 @@ export const listContracts = async (
 
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
+    // start_date is stored as a YYYY-MM-DD string; a year filter just regexes the prefix
     if (year) filter.start_date = { $regex: `^${year}` };
 
+    // `name` and `search` are aliases — both do a case-insensitive substring match
     const nameToSearch = name || search;
-    if (nameToSearch) filter.name = { $regex: nameToSearch, $options: 'i' };
+    if (nameToSearch) filter.name = { $regex: nameToSearch, $options: "i" };
 
     const rawContracts = await ContractModel.find(filter)
-      .select('name status contract_value currency start_date end_date')
+      .select("name status contract_value currency start_date end_date")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
+    // Reshape into the API response shape — flatten _id and rename snake_case fields
     const contracts = rawContracts.map((c) => ({
       id: c._id?.toString(),
       name: c.name,
@@ -141,6 +157,8 @@ export const listContracts = async (
   }
 };
 
+// GET /api/contracts/:id — full contract document plus uploader info and a
+// short-lived presigned URL the frontend can use to render the PDF.
 export const getContract = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -148,17 +166,20 @@ export const getContract = async (
 ): Promise<void> => {
   try {
     const contract = await ContractModel.findById(req.params.id)
-      .populate('uploadedBy', 'name email')
-      .populate('contractDocId');
+      .populate("uploadedBy", "name email")
+      .populate("contractDocId");
 
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
 
+    // Today at 00:00 local for the milestone "is overdue" check
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    // Sort milestones chronologically (undated milestones to the end) and
+    // flag the ones whose due date has already passed.
     const sortedMilestones = [...(contract.milestones || [])]
       .sort((a, b) => {
         const da = a.due_date ? new Date(a.due_date).getTime() : Infinity;
@@ -177,9 +198,13 @@ export const getContract = async (
       ? await getPresignedDownloadUrl(uploadJob.s3Key)
       : null;
 
+    // Reshape the Mongo document into the API response shape: drop internal
+    // ids, rename _id -> id, and flatten the populated refs.
     const contractObj = contract.toObject();
     const { _id, __v, contractDocId: _docRef, ...rest } = contractObj;
-    const uploadedByRaw = rest.uploadedBy as { _id?: Types.ObjectId } | undefined;
+    const uploadedByRaw = rest.uploadedBy as
+      | { _id?: Types.ObjectId }
+      | undefined;
     const { _id: uploadedId, ...uploadedByRest } = uploadedByRaw ?? {};
 
     res.json({
@@ -204,6 +229,8 @@ export const getContract = async (
   }
 };
 
+// PUT /api/contracts/:id — generic edit. runValidators makes Mongoose apply
+// schema-level validation on update (not the default).
 export const updateContract = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -216,11 +243,11 @@ export const updateContract = async (
       { new: true, runValidators: true },
     );
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
     res.json({
-      message: 'Successfully updated contract',
+      message: "Successfully updated contract",
       id: contract._id,
     });
   } catch (err) {
@@ -228,56 +255,38 @@ export const updateContract = async (
   }
 };
 
+// POST /api/contracts/:id/analyze — re-run AI analysis on the already-linked
+// document. Uses the same fire-and-forget pattern as uploadContract.
 export const reanalyzeContract = async (
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const contract = await ContractModel.findById(req.params.id).populate('contractDocId');
+    const contract = await ContractModel.findById(req.params.id).populate(
+      "contractDocId",
+    );
     if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
+      res.status(404).json({ message: "Contract not found" });
       return;
     }
 
     const uploadJob = getPopulatedUploadJob(contract.contractDocId);
     if (!uploadJob?.s3Key) {
-      res.status(400).json({ message: 'Contract has no linked upload document' });
+      res
+        .status(400)
+        .json({ message: "Contract has no linked upload document" });
       return;
     }
 
     const contractId = contract._id.toString();
-    await ContractModel.findByIdAndUpdate(contractId, { status: 'processing' });
+    await ContractModel.findByIdAndUpdate(contractId, { status: "processing" });
 
     downloadS3Object(uploadJob.s3Key)
       .then((buffer) => runContractAnalysis(contractId, buffer))
       .catch((err) => markAnalysisFailed(contractId, err));
 
-    res.json({ message: 'Re-analysis started' });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const getTimeline = async (
-  req: AuthenticatedRequest,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const contract = await ContractModel.findById(
-      req.params.id,
-      'milestones start_date end_date',
-    );
-    if (!contract) {
-      res.status(404).json({ message: 'Contract not found' });
-      return;
-    }
-    res.json({
-      milestones: contract.milestones,
-      start_date: contract.start_date,
-      end_date: contract.end_date,
-    });
+    res.json({ message: "Re-analysis started" });
   } catch (err) {
     next(err);
   }

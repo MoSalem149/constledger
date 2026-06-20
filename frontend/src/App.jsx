@@ -13,11 +13,6 @@ import DashboardPage from "./pages/DashboardPage";
 import UploadContractPage from "./pages/UploadContractPage";
 import ContractDetailPage from "./pages/ContractDetailPage";
 import ReviewEditFormPage from "./pages/ReviewEditFormPage";
-import FinancePage from "./pages/FinancePage";
-import BudgetVariancePage from "./pages/BudgetVariancePage";
-import ProgressListPage from "./pages/ProgressListPage";
-import ProgressFormPage from "./pages/ProgressFormPage";
-import ReviewProgressPage from "./pages/ReviewProgressPage";
 import ReportsPage from "./pages/ReportsPage";
 import AdminPage from "./pages/AdminPage";
 import NotFoundPage from "./components/common/NotFoundPage";
@@ -56,7 +51,20 @@ function App() {
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   {/* Dashboard */}
-                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <RoleGuard
+                        roles={[
+                          "contract_manager",
+                          "finance_team",
+                          "top_management",
+                        ]}
+                      >
+                        <DashboardPage />
+                      </RoleGuard>
+                    }
+                  />
                   {/* Contracts */}
                   {/* NOTE: No /contracts list page per Figma — "Add Project"     */}
                   {/* button on dashboard navigates directly to /contracts/upload. */}
@@ -89,37 +97,27 @@ function App() {
                       </RoleGuard>
                     }
                   />
-                  {/* Finance */}
-                  <Route path="/finance" element={<FinancePage />} />
+                  {/* Reports (tabs) */}
                   <Route
-                    path="/finance/:contractId/variance"
-                    element={<BudgetVariancePage />}
-                  />
-                  <Route
-                    path="/finance/:contractId/progress"
-                    element={<ProgressListPage />}
-                  />
-                  <Route
-                    path="/finance/:contractId/progress/new"
+                    path="/reports"
                     element={
-                      <RoleGuard roles={["finance_team"]}>
-                        <ProgressFormPage />
+                      <RoleGuard
+                        roles={[
+                          "top_management",
+                          "contract_manager",
+                          "finance_team",
+                        ]}
+                      >
+                        <ReportsPage />
                       </RoleGuard>
                     }
                   />
+                  {/* Admin — PMO only */}
                   <Route
-                    path="/finance/:contractId/progress/:entryId/edit"
+                    path="/admin"
                     element={
-                      <RoleGuard roles={["finance_team"]}>
-                        <ProgressFormPage />
-                      </RoleGuard>
-                    }
-                  />
-                  <Route
-                    path="/finance/:contractId/progress/:entryId/review"
-                    element={
-                      <RoleGuard roles={["contract_manager"]}>
-                        <ReviewProgressPage />
+                      <RoleGuard roles={["pmo"]}>
+                        <AdminPage />
                       </RoleGuard>
                     }
                   />
@@ -133,8 +131,6 @@ function App() {
                     path="/reports/planned-budget"
                     element={<PlannedBudgetReport />}
                   />
-                  {/* Admin */}
-                  <Route path="/admin" element={<AdminPage />} />
                   {/* 404 catch-all */}
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>

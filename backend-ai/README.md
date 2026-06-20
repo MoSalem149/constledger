@@ -1,192 +1,183 @@
-# CPMS — Backend AI Service
+# CPMS — Backend AI Service (`cpms-backend-ai`)
 
-Node.js + Express (TypeScript) — **all SRS business APIs** powered by AI models.  
-**Deployed to:** Google Cloud Run  
-**Local dev port:** `5000`
+Node.js + Express (TypeScript) service for contract upload, parsing, OCR, and LLM-based field extraction. Pairs with **backend-core**, which handles authentication and finance planning. Both services share the same MongoDB database (`cpms`) and the same `JWT_SECRET`.
 
-Authentication is handled by **backend-core**. This service only **verifies** JWTs issued by core — it never issues them.
+This service only **verifies** JWTs issued by backend-core — it never issues them.
+
+**Default port:** `5000` local · `8080` Cloud Run &nbsp;·&nbsp; **TypeScript strict mode**
 
 ---
 
-## Getting Started
+## Getting started
 
 ```bash
+cp .env.example .env       # fill in real values before running
 npm install
-npm run dev       # → http://localhost:5000
-npm run build     # compiles TS → dist/
-npm start         # runs dist/index.js
+npm run dev                # http://localhost:5000 (tsx watch)
+npm run build              # compiles TS to dist/ and copies assets
+npm start                  # runs dist/index.js
 ```
+
+`GET /health` returns `{ "status": "ok", "service": "cpms-ai" }` for liveness probes.
 
 ---
 
-## Deploying to Cloud Run (branch: test)
+## Running with Docker
 
-### 1. Build and push the image
+The Dockerfile is a multi-stage build: `builder` compiles TypeScript, `runtime` ships a small image with no toolchain. The runtime image runs as the non-root `node` user, uses `dumb-init` as PID 1 for proper signal handling, and includes a `HEALTHCHECK` that hits `/health`.
 
 ```bash
-# Authenticate with GCP
-gcloud auth configure-docker
-
-# Build the production image
-docker build -t gcr.io/<YOUR_PROJECT_ID>/cpms-backend-ai:test .
-
-# Push to Container Registry
-docker push gcr.io/<YOUR_PROJECT_ID>/cpms-backend-ai:test
+docker build -t cpms-backend-ai .
+docker run --rm -p 8080:8080 --env-file .env cpms-backend-ai
 ```
 
-### 2. Deploy to Cloud Run
+### Deploying to Cloud Run
 
 ```bash
+gcloud auth configure-docker
+docker build -t gcr.io/<YOUR_PROJECT_ID>/cpms-backend-ai:test .
+docker push gcr.io/<YOUR_PROJECT_ID>/cpms-backend-ai:test
+
 gcloud run deploy cpms-backend-ai \
   --image gcr.io/<YOUR_PROJECT_ID>/cpms-backend-ai:test \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --port 8080 \
-  --set-env-vars NODE_ENV=production \
-  --set-env-vars MONGODB_URI="mongodb+srv://..." \
-  --set-env-vars OPENAI_API_KEY="sk-..." \
-  --set-env-vars OPENAI_MODEL="gpt-4o-mini" \
-  --set-env-vars JWT_SECRET="..." \
-  --set-env-vars FRONTEND_URL="https://<your-app>.vercel.app" \
-  --set-env-vars AI_SERVICE_SECRET="..." \
-  --set-env-vars AWS_REGION="us-east-1" \
-  --set-env-vars AWS_ACCESS_KEY_ID="..." \
-  --set-env-vars AWS_SECRET_ACCESS_KEY="..." \
-  --set-env-vars S3_BUCKET="cpms-prod" \
-  --set-env-vars S3_UPLOAD_URL_TTL="300" \
-  --set-env-vars S3_DOWNLOAD_URL_TTL="900" \
-  --set-env-vars S3_MAX_FILE_SIZE="52428800"
+  --port 8080
 ```
 
-> **PORT** is set automatically by Cloud Run — do not pass it manually.  
-> Prefer using **Secret Manager** for sensitive values (`OPENAI_API_KEY`, `JWT_SECRET`, etc.) instead of `--set-env-vars` in production.
+Then attach env vars (or Secret Manager refs) via `--set-env-vars` / `--set-secrets`. `PORT` is set automatically by Cloud Run — do not pass it manually. Prefer **Secret Manager** for `JWT_SECRET`, `GEMINI_API_KEY`, `OPENROUTER_API_KEY`, and AWS credentials in production.
 
 ---
 
-## Environment Variables
+## Environment variables
 
-See `.env.example` for full descriptions of every variable.
+See `.env.example` for the canonical list with descriptions. Required at minimum:
 
-| Variable | Required | Description |
-|---|---|---|
-| `PORT` | No | Auto-set by Cloud Run (8080). Defaults to `5000` locally. |
-| `NODE_ENV` | Yes | `development` or `production` |
-| `MONGODB_URI` | Yes | Shared MongoDB Atlas URI — database name: `cpms` |
-| `OPENAI_API_KEY` | Yes | OpenAI secret key |
-| `OPENAI_MODEL` | No | Model name (default `gpt-4o-mini`) |
-| `JWT_SECRET` | Yes | Must match `JWT_SECRET` in backend-core exactly |
-| `FRONTEND_URL` | Yes | CORS allowed origin (Vercel URL in production) |
-| `AI_SERVICE_SECRET` | Yes | Shared secret for internal backend-core → backend-ai calls |
-| `AWS_REGION` | Yes | S3 bucket region |
-| `AWS_ACCESS_KEY_ID` | Yes | IAM key with S3 read/write access |
-| `AWS_SECRET_ACCESS_KEY` | Yes | IAM secret |
-| `S3_BUCKET` | Yes | Bucket name for contract file storage |
-| `S3_UPLOAD_URL_TTL` | No | Presigned upload URL TTL in seconds (default `300`) |
-| `S3_DOWNLOAD_URL_TTL` | No | Presigned download URL TTL in seconds (default `900`) |
-| `S3_MAX_FILE_SIZE` | No | Max upload size in bytes (default `52428800` = 50 MB) |
+| Variable                                                                | Description                                          |
+| ----------------------------------------------------------------------- | ---------------------------------------------------- |
+| `NODE_ENV`                                                              | `development` or `production`                        |
+| `MONGODB_URI`                                                           | Shared MongoDB connection string (database: `cpms`)  |
+| `JWT_SECRET`                                                            | Must match backend-core exactly                      |
+| `GEMINI_API_KEY` _or_ `OPENROUTER_API_KEY`                              | At least one — matching your primary/fallback choice |
+| `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET` | S3 access                                            |
+| `FRONTEND_URL`                                                          | CORS allowed origin (your Vercel URL in prod)        |
+
+Optional AI tuning: `AI_PRIMARY_PROVIDER`, `AI_PRIMARY_MODEL`, `AI_FALLBACK_PROVIDER`, `AI_FALLBACK_MODEL`, `AI_REQUEST_TIMEOUT_MS`, `AI_MAX_RETRIES`, `AI_ENABLE_PAID_FALLBACK`, `AI_SCAN_INPUT_MODE` (`vision` or `ocr`).
+
+> `JWT_EXPIRES_IN` and `AI_SERVICE_SECRET` appear in `.env.example` but are **not read anywhere in `src/`** — they look like leftovers from an in-progress internal-auth feature. Either wire them up (e.g. an `internalAuth` middleware reading `AI_SERVICE_SECRET`) or remove them from `.env.example` to avoid confusion.
 
 ---
 
-## API Endpoints (SRS)
+## API endpoints
 
 All endpoints require a valid JWT cookie set by backend-core login.
 
-### Upload — `/api/uploads`
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| POST | `/sign` | contract_manager, pmo | Get a presigned S3 URL to upload a contract PDF |
-| POST | `/complete` | contract_manager, pmo | Confirm upload done and trigger AI analysis pipeline |
+### Uploads — `/api/uploads`
+
+| Method | Path        | Roles                 | Description                                                                                |
+| ------ | ----------- | --------------------- | ------------------------------------------------------------------------------------------ |
+| POST   | `/sign`     | contract_manager, pmo | Returns a presigned S3 PUT URL — the browser uploads the contract file directly to S3      |
+| POST   | `/complete` | contract_manager, pmo | Records a successful upload as an UploadJob (idempotent — upsert on `(s3Key, uploadedBy)`) |
 
 ### Contracts — `/api/contracts`
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/` | Any | List all contracts |
-| GET | `/:id` | Any | Get full contract details |
-| PUT | `/:id` | contract_manager, pmo | Update contract fields |
-| GET | `/:id/timeline` | Any | Get milestones timeline |
-| POST | `/:id/analyze` | contract_manager, pmo | Re-trigger AI analysis |
 
-### Finance — `/api/finance`
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/:contractId/planned` | Any | Get AI-generated planned budget |
-| PUT | `/:contractId/planned` | pmo | Edit planned budget |
-| GET | `/:contractId/actual` | Any | List actual reports |
-| POST | `/:contractId/actual` | finance_team, pmo | Submit actual report |
-| PUT | `/:contractId/actual/:id` | finance_team, pmo | Edit pending report |
-| POST | `/:contractId/actual/:id/approve` | pmo | Approve report |
-| POST | `/:contractId/actual/:id/reject` | pmo | Reject report |
-| GET | `/:contractId/comparison` | Any | Planned vs actual comparison |
-
-### Reports — `/api/reports`
-| Method | Path | Roles | Description |
-|---|---|---|---|
-| GET | `/contracts` | Any | All contracts summary report |
-| GET | `/monthly` | Any | Monthly planned vs actual |
-| GET | `/quarterly` | Any | Quarterly report |
-| GET | `/project/:id/performance` | Any | Per-project KPIs (SPI, CPI) |
-| GET | `/penalties` | Any | Penalties report |
-| POST | `/export` | Any | Export report |
-
-### Internal (backend-core only) — `/api/internal`
-| Method | Path | Description |
-|---|---|---|
-| POST | `/contracts/:contractId/analyze` | Trigger AI contract analysis (requires `AI_SERVICE_SECRET` header) |
+| Method | Path           | Roles                 | Description                                                                             |
+| ------ | -------------- | --------------------- | --------------------------------------------------------------------------------------- |
+| GET    | `/`            | any                   | List contracts. Filters: `status`, `year`, `name`/`search`. Pagination: `limit`, `skip` |
+| POST   | `/upload`      | contract_manager, pmo | Link an UploadJob to a new contract and kick off background AI analysis (202)           |
+| GET    | `/:id`         | any                   | Full contract details, including a short-lived presigned PDF URL                        |
+| PUT    | `/:id`         | contract_manager, pmo | Update contract fields                                                                  |
+| POST   | `/:id/analyze` | contract_manager, pmo | Re-trigger AI analysis on the already-linked document                                   |
 
 ---
 
-## Contract Analysis Pipeline
+## Contract analysis pipeline
 
 ```
-POST /api/uploads/complete
+POST /api/contracts/upload
         │
         ▼
-  1. Confirm S3 upload → create contract record (status: processing)
+  1. Link the UploadJob to a new Contract (status: processing) and respond
+     IMMEDIATELY — analysis runs in the background
         │
         ▼
-  2. Parse PDF → rasterize pages + Arabic OCR (tesseract.js)
+  2. parseContractFile.ts
+     • pdf.js extracts the text layer where present
+     • scanned pages -> @napi-rs/canvas rasterizer -> tesseract.js (or skip
+       OCR and feed images directly to the model, per AI_SCAN_INPUT_MODE)
         │
         ▼
-  3. GPT-4o vision → extract SRS §3.3 fields against OrderSchema
+  3. extractContractDataSinglePass.ts
+     • Single LLM call against the full contract using assets/OrderSchema.md
+     • Visual evidence (page images) attached for scanned + table pages
+     • One repair pass if critical fields (parties / value / dates) are missing
         │
         ▼
-  4. Validate extraction → update contract (status: completed | analysis_failed)
+  4. validateExtraction.ts  →  rules V1–V9 (hard violations throw; soft
+     issues become notes that move the contract to pending_review)
         │
         ▼
-  5. Auto-generate planned budget (generateBudgetPlan)
+  5. ContractModel.findByIdAndUpdate(...)     ← user-facing record
+     saveExtraction (ContractExtraction)      ← strict audit copy
 ```
+
+The frontend polls `GET /api/contracts/:id` until `status` leaves `processing`.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 src/
-├── app.ts                          # Express app setup, middleware, route mounting
-├── index.ts                        # Entry point — starts HTTP server
+├── app.ts                          # Express setup, middleware, route mounting
+├── index.ts                        # Bootstrap: connect Mongo, listen
 ├── config/
-│   ├── aiConfig.ts                 # OpenAI client setup
-│   ├── database.ts                 # MongoDB connection
-│   └── s3.ts                       # AWS S3 client setup
+│   ├── aiConfig.ts                 # Provider-neutral AI config (Gemini, OpenRouter, Groq)
+│   ├── database.ts                 # MongoDB connection + legacy index migration
+│   └── s3.ts                       # AWS S3 client
 ├── controllers/                    # Route handlers
 ├── middleware/
-│   ├── jwtAuth.ts                  # Verify JWT cookie from backend-core
-│   ├── authorize.ts                # Role-based access control
-│   ├── internalAuth.ts             # Validate AI_SERVICE_SECRET header
-│   └── errorMiddleware.ts          # Global error handler
-├── models/                         # Mongoose schemas
+│   ├── jwtAuth.ts                  # Verifies the JWT cookie issued by backend-core
+│   ├── authorize.ts                # Role-based access
+│   └── errorMiddleware.ts          # Centralized error handler
+├── models/                         # Mongoose schemas (see "Contract vs ContractExtraction" below)
 ├── routes/                         # Express routers
 ├── services/
-│   └── contract-analysis/          # Full AI analysis pipeline
-│       ├── parseContractFile.ts    # PDF rasterization + OCR
-│       ├── extractContractData.ts  # GPT-4o extraction
-│       ├── validateExtraction.ts   # Schema validation
-│       ├── saveExtraction.ts       # Persist to MongoDB
-│       └── assets/OrderSchema.md   # Field schema fed to GPT
-├── types/                          # Shared TypeScript types
+│   └── contract-analysis/
+│       ├── parseContractFile.ts                # PDF text layer + bounded OCR / vision fallback
+│       ├── aiModelClient.ts                    # Provider retries, timeout, paid fallback
+│       ├── extractContractDataSinglePass.ts    # Active extraction + repair pass
+│       ├── extractContractData.ts              # LEGACY 5-prompt split-task extractor (excluded from build)
+│       ├── validateExtraction.ts               # SRS §3.3 rules V1–V9
+│       ├── saveExtraction.ts                   # Persist to MongoDB
+│       ├── loadOrderSchema.ts                  # Loads the prompt schema below
+│       └── assets/OrderSchema.md               # Field schema injected into every LLM prompt
+├── types/                          # Shared TypeScript types (ContractExtraction etc.)
 └── utils/
-    ├── s3Access.ts                 # Presigned download URLs
-    ├── s3Storage.ts                # S3 object operations
-    └── s3Upload.ts                 # Presigned upload URLs
+    ├── s3Access.ts                 # Per-user S3 key ownership check
+    ├── s3Storage.ts                # Object download + presigned download URLs
+    └── s3Upload.ts                 # Presigned upload URLs + key naming
 ```
+
+### `Contract` vs `ContractExtraction`
+
+Both live in `src/models/` and store the same extracted fields, but they serve different purposes:
+
+|                   | `Contract.model.ts`                                                                                                                 | `ContractExtraction.model.ts`                                                                    |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Collection        | `contracts`                                                                                                                         | `contract_extractions`                                                                           |
+| Role              | The live, user-facing contract record — what the API reads/writes/displays. `status` drives the upload → analyze → review workflow. | An audit/history copy of each extraction run, plus extraction-specific metadata.                 |
+| Identity          | Has its own `_id`; referenced by `uploadedBy` (User) and `contractDocId` (UploadJob).                                               | Keyed by `contractId` (string FK to the `Contract` document) and upserted on every analysis run. |
+| Extra fields      | `contractNumber` (sparse-unique, `CPMS-<uuid>`), `status: processing \| analysis_failed \| pending_review \| active`.               | `isScanned`, `validationNotes`, `status: active \| needs_review \| approved \| analysis_failed`. |
+| Schema strictness | Loosely typed sub-schemas (most fields are plain `String`/`Number`).                                                                | Strictly typed sub-schemas with `required`, `min`, `enum`, `trim`.                               |
+| Updated by        | `runContractAnalysis.ts` via `ContractModel.findByIdAndUpdate(...)`.                                                                | `saveExtraction.ts` via `findOneAndUpdate(..., { upsert: true })`.                               |
+
+In short: `Contract` is what the rest of the app treats as "the contract"; `ContractExtraction` is a stricter, separately-versioned record of what the AI pipeline actually produced for it. Users can edit `Contract` directly via `PUT /api/contracts/:id`, so the two can drift over time — `ContractExtraction` is the more trustworthy source if you ever need to re-run analysis and compare.
+
+---
+
+## Notes on the current codebase
+
+- **`src/services/contract-analysis/extractContractData.ts` is LEGACY** and excluded from the production build via `tsconfig.json`. It references an older `aiConfig` shape (`.apiKey`, `.baseURL`, `.model`, `.timeoutMs`, `.httpReferer`, `.appTitle`) that no longer exists. The active extraction is `extractContractDataSinglePass.ts`. Delete the legacy file or port it to the new `aiConfig.{primary,fallback}` shape when you're sure it isn't coming back.
+- **`utils/s3Upload.ts:buildObjectKey`** currently accepts a `contractId` argument and uses it in the S3 key prefix. **`utils/s3Access.ts:assertUserOwnsS3Key`** expects the prefix to be `contracts/{userId}/...`. If a client passes `contractId` to `/api/uploads/sign`, the resulting key will fail the ownership check at `/complete`. Treat `contractId` as effectively unused for now and pass only `userId`.

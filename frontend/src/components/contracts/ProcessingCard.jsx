@@ -2,7 +2,7 @@
  * ProcessingCard — the full-width card shown after uploading a contract.
  *
  * Displays:
- *   - File name/size + "Extracting…" badge
+ *   - File name/size + dynamic status badge
  *   - 4-step stepper (Upload → Read → Extract → Review)
  *   - Progress bar (during Extract step)
  *   - Activity log
@@ -52,7 +52,9 @@ export default function ProcessingCard({
           {/* Right: status badge */}
           <div className="bg-bg-mainColor rounded-[28px] px-2.5 py-[3px] flex items-center justify-center">
             <span className="text-xs font-medium text-primary">
-              Extracting…
+              {["Uploading…", "Reading…", "Extracting…", "Reviewing…"][
+                currentStep
+              ] ?? "Processing…"}
             </span>
           </div>
         </div>

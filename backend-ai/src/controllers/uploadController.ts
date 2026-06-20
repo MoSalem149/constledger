@@ -1,14 +1,17 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { Response, NextFunction } from 'express';
-import { Types } from 'mongoose';
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Response, NextFunction } from "express";
+import { Types } from "mongoose";
 
-import { s3Client } from '../config/s3';
-import { AuthenticatedRequest } from '../middleware/jwtAuth';
-import { UploadJobModel } from '../models/UploadJob.model';
-import { assertUserOwnsS3Key } from '../utils/s3Access';
-import { ALLOWED_MIME, MAX_SIZE, buildObjectKey } from '../utils/s3Upload';
+import { s3Client } from "../config/s3";
+import { AuthenticatedRequest } from "../middleware/jwtAuth";
+import { UploadJobModel } from "../models/UploadJob.model";
+import { assertUserOwnsS3Key } from "../utils/s3Access";
+import { ALLOWED_MIME, MAX_SIZE, buildObjectKey } from "../utils/s3Upload";
 
+// POST /api/uploads/sign — returns a presigned S3 PUT URL the browser can
+// use to upload the contract file directly to S3 (bytes never proxy through
+// this server).
 export const signUpload = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -25,15 +28,17 @@ export const signUpload = async (
     if (!filename || !mimeType || size == null) {
       res
         .status(400)
-        .json({ message: 'filename, mimeType, and size are required' });
+        .json({ message: "filename, mimeType, and size are required" });
       return;
     }
+    // Security: enforce mime allow-list and size cap server-side. Trusting the
+    // client values would let an attacker upload arbitrary content.
     if (!ALLOWED_MIME.has(mimeType)) {
-      res.status(400).json({ message: 'Unsupported file type' });
+      res.status(400).json({ message: "Unsupported file type" });
       return;
     }
     if (Number(size) > MAX_SIZE) {
-      res.status(400).json({ message: 'File exceeds 50MB limit' });
+      res.status(400).json({ message: "File exceeds 50MB limit" });
       return;
     }
 
@@ -43,6 +48,7 @@ export const signUpload = async (
       userId: req.user?.id,
     });
 
+    // 5 minutes is plenty for the browser to finish a single PUT
     const expiresIn = Number(process.env.S3_UPLOAD_URL_TTL) || 300;
 
     const uploadUrl = await getSignedUrl(
@@ -61,6 +67,9 @@ export const signUpload = async (
   }
 };
 
+// POST /api/uploads/complete — client tells us the S3 upload finished; we
+// record an UploadJob. Upsert on (s3Key, uploadedBy) so a retried "complete"
+// call is idempotent.
 export const completeUpload = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -73,28 +82,30 @@ export const completeUpload = async (
       mimeType?: string;
       size?: number;
     };
-    console.log(s3Key, fileName, mimeType, size)
     if (!s3Key || !fileName || !mimeType || size == null) {
       res
         .status(400)
-        .json({ message: 's3Key, fileName, mimeType, and size are required' });
+        .json({ message: "s3Key, fileName, mimeType, and size are required" });
       return;
     }
     if (!ALLOWED_MIME.has(mimeType)) {
-      res.status(400).json({ message: 'Unsupported file type' });
+      res.status(400).json({ message: "Unsupported file type" });
       return;
     }
     if (Number(size) > MAX_SIZE) {
-      res.status(400).json({ message: 'File exceeds 50MB limit' });
+      res.status(400).json({ message: "File exceeds 50MB limit" });
       return;
     }
 
     if (!req.user?.id) {
-      res.status(401).json({ message: 'Unauthorized' });
+      res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
     const userId = req.user.id;
+
+    // Security: the S3 key must live under this user's own prefix so a user
+    // cannot attach someone else's uploaded file to their own account.
     assertUserOwnsS3Key(s3Key, userId);
 
     const uploadedBy = new Types.ObjectId(userId);
@@ -107,7 +118,7 @@ export const completeUpload = async (
         mimeType,
         sizeBytes: Number(size),
         uploadedBy,
-        status: 'uploaded',
+        status: "uploaded",
       },
       { upsert: true, new: true, runValidators: true },
     );

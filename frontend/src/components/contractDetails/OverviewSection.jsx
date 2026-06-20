@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { BudgetAndProgressSection } from "./BudgetAndProgressSection";
 import { ApprovalsSection } from "./ApprovalsSection";
 import ContractSection from "./ContractSection";
 import { ChartIcon } from "../icons/ChartIcon";

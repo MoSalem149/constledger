@@ -1,5 +1,6 @@
-export const TrendIcon = () => (
+export const TrendIcon = ({ className }) => (
   <svg
+    className={className}
     width="15"
     height="15"
     viewBox="0 0 24 24"

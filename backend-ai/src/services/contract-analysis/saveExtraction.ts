@@ -1,28 +1,19 @@
-/**
- * saveExtraction.ts
- *
- * Persists a validated ContractExtraction to MongoDB.
- * Upserts by contractId so re-running analysis overwrites the previous record.
- */
-
-import { ContractExtraction } from '../../types';
+import { ContractExtraction } from "../../types";
 import {
   ContractExtractionModel,
   IContractExtractionDocument,
-} from '../../models/ContractExtraction.model';
+} from "../../models/ContractExtraction.model";
 
 export interface SaveExtractionInput {
   contractId: string;
   data: ContractExtraction;
   isScanned: boolean;
   validationNotes: string[];
-  status: IContractExtractionDocument['status'];
+  status: IContractExtractionDocument["status"];
 }
 
-/**
- * Upsert the extraction for a given contractId.
- * Returns the saved document (either newly created or updated).
- */
+// Upsert by contractId — re-running analysis (see reanalyzeContract) overwrites
+// the previous extraction record instead of creating a duplicate row.
 export async function saveExtraction(
   input: SaveExtractionInput,
 ): Promise<IContractExtractionDocument> {
@@ -47,7 +38,9 @@ export async function saveExtraction(
   );
 
   if (!doc) {
-    throw new Error(`[saveExtraction] Failed to upsert extraction for contractId: ${contractId}`);
+    throw new Error(
+      `[saveExtraction] Failed to upsert extraction for contractId: ${contractId}`,
+    );
   }
 
   console.log(

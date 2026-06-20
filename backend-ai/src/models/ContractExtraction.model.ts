@@ -1,23 +1,14 @@
-/**
- * ContractExtraction.model.ts
- *
- * Mongoose schema + model for persisting AI-extracted contract data.
- * Every field mirrors ContractExtraction in types/index.ts, plus:
- *   - contractId       — reference back to the core-backend contract record
- *   - isScanned        — whether the source PDF was a scanned image
- *   - validationNotes  — warnings produced by validateExtraction()
- *   - status           — lifecycle stage: active | needs_review | approved | analysis_failed
- *
- * All extracted string values are stored in English only.
- */
-
 import mongoose, { Document, Schema } from "mongoose";
 
-// ── Sub-document interfaces ───────────────────────────────────────────
+// ContractExtraction — append-friendly mirror of the AI-extracted fields,
+// upserted by contractId on every analysis run (see saveExtraction.ts). Its
+// schema is the strictly-validated source of truth for what the AI produced;
+// the Contract collection holds the loosely-typed editable copy that users
+// see. All extracted string values are stored in English.
 
 export interface IParty {
   name: string;
-  role: string; // 'contractor' | 'subcontractor' | 'owner'
+  role: string;
 }
 
 export interface IUnitPrice {
@@ -41,7 +32,10 @@ export interface IMilestone {
 
 export interface IPenalty {
   condition: string;
-  penalty: string;
+  penalty: string | null;
+  first_offense: string | null;
+  second_offense: string | null;
+  third_offense: string | null;
 }
 
 export interface IPaymentProgress {
@@ -56,13 +50,9 @@ export interface IPaymentTerm {
   description: string | null;
 }
 
-// ── Main document interface ───────────────────────────────────────────
-
 export interface IContractExtractionDocument extends Document {
-  /** Foreign key — ID of the contract record in the contracts collection */
   contractId: string;
 
-  // ── Extracted fields (all strings are English) ────────────────────
   parties: IParty[];
   contract_value: number | null;
   currency: string | null;
@@ -77,17 +67,13 @@ export interface IContractExtractionDocument extends Document {
   milestones: IMilestone[];
   penalties: IPenalty[];
 
-  // ── Meta ──────────────────────────────────────────────────────────
   isScanned: boolean;
   validationNotes: string[];
   status: "active" | "needs_review" | "approved" | "analysis_failed";
 
-  // ── Timestamps (added by Mongoose) ───────────────────────────────
   createdAt: Date;
   updatedAt: Date;
 }
-
-// ── Sub-schemas ───────────────────────────────────────────────────────
 
 const PartySchema = new Schema<IParty>(
   {
@@ -128,7 +114,10 @@ const MilestoneSchema = new Schema<IMilestone>(
 const PenaltySchema = new Schema<IPenalty>(
   {
     condition: { type: String, required: true, trim: true },
-    penalty: { type: String, required: true, trim: true },
+    penalty: { type: String, default: null, trim: true },
+    first_offense: { type: String, default: null, trim: true },
+    second_offense: { type: String, default: null, trim: true },
+    third_offense: { type: String, default: null, trim: true },
   },
   { _id: false },
 );
@@ -150,8 +139,6 @@ const PaymentTermSchema = new Schema<IPaymentTerm>(
   },
   { _id: false },
 );
-
-// ── Main schema ───────────────────────────────────────────────────────
 
 const ContractExtractionSchema = new Schema<IContractExtractionDocument>(
   {
@@ -182,6 +169,7 @@ const ContractExtractionSchema = new Schema<IContractExtractionDocument>(
 
     isScanned: { type: Boolean, default: false },
     validationNotes: { type: [String], default: [] },
+    // Independent of Contract.status — see Contract.model.ts header.
     status: {
       type: String,
       enum: ["active", "needs_review", "approved", "analysis_failed"],
@@ -189,15 +177,13 @@ const ContractExtractionSchema = new Schema<IContractExtractionDocument>(
     },
   },
   {
-    timestamps: true, // adds createdAt + updatedAt automatically
+    timestamps: true,
     collection: "contract_extractions",
   },
 );
 
-// ── Index: look up the latest extraction for a contract quickly ───────
+// Supports "give me the latest extraction for this contract" lookups.
 ContractExtractionSchema.index({ contractId: 1, createdAt: -1 });
-
-// ── Model ─────────────────────────────────────────────────────────────
 
 export const ContractExtractionModel =
   mongoose.model<IContractExtractionDocument>(

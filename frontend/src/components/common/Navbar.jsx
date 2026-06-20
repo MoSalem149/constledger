@@ -64,7 +64,7 @@ export default function Navbar({ title }) {
         </h1>
 
         {/* Search placeholder */}
-        <div
+        {/* <div
           className="w-[330px] h-10 bg-white rounded-[28px] flex items-center gap-2 px-4 py-[10px]
                      shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
         >
@@ -72,19 +72,19 @@ export default function Navbar({ title }) {
           <span className="text-xs text-text-placeholder select-none">
             Search ...
           </span>
-        </div>
+        </div> */}
       </div>
 
       {/* Right — notification + profile */}
       <div className="flex items-center gap-3">
         {/* Notification bell (no action) */}
-        <button
+        {/* <button
           className="w-10 h-10 bg-white rounded-lg flex items-center justify-center
                      shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
           aria-label="Notifications"
         >
           <NotificationIcon className="text-text-secondary w-[18px] h-5" />
-        </button>
+        </button> */}
 
         {/* Profile card + dropdown */}
         <div className="relative" ref={profileRef}>

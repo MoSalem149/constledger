@@ -1,75 +1,39 @@
 # ConstLedger — Agent Guide
 
-**Stack:** React 18 + Vite + Tailwind (JSX, ESM). Ignore backend dirs.
-**Font:** Lexend via `font-sans` class (loaded in `index.html` + `index.css`).
-**Env:** `VITE_API_URL`, `VITE_AI_API_URL` via `import.meta.env` (see `frontend/.env.example`).
+`docker-compose.yml` at root orchestrates all three services + MongoDB 7.
 
-## Commands (run from `frontend/`)
+| Service | Dir | Stack | Port | Deploy | Role |
+|---|---|---|---|---|---|
+| **Frontend** | `frontend/` | React 18 + Vite + Tailwind (JSX, ESM) | 5173 | Vercel | UI |
+| **Backend Core** | `backend-core/` | Node/Express (JS, ESM) | 3000 | Deno Deploy | Auth + users + finance — `/api/auth`, `/api/users`, `/api/finance` |
+| **Backend AI** | `backend-ai/` | Node/Express (TypeScript) | 5000 | Google Cloud Run | Contracts + uploads — `/api/contracts`, `/api/uploads` |
+
+## Dev commands
 
 ```bash
-npm run dev       # :5173 — strictPort: true (kill prior vite if port taken)
-npm run build     # vite build → dist/
-npm run preview   # also :5173
-npm run lint      # fails (no eslintrc). No tests, no CI/CD.
+# Start order: MongoDB → backend-core → backend-ai → frontend
+cd frontend && npm run dev          # vite on :5173, strictPort:true
+cd backend-core && npm run dev      # nodemon src/index.js on :3000
+cd backend-ai && npm run dev        # tsx watch src/index.ts on :5000
+cd backend-ai && npm run build      # tsc + copies assets/ dir to dist/
+docker compose up --build           # everything at once
 ```
 
-## Auth Is Live
+## Critical gotchas
 
-`AuthProvider`, `PrivateRoute`, `RoleGuard`, Axios 401 interceptor — **all active** in `App.jsx`. `LoginPage` at `/login`, `Navbar` shows real user name/role from context with profile dropdown + logout. `EditContractContext` wraps protected routes. Requires backend running.
+- `JWT_SECRET` must be **identical** in `backend-core/.env` and `backend-ai/.env`. Both backends share the same `cpms` MongoDB. Auth breaks if they mismatch.
+- `VITE_API_URL=/api` in `.env.example` (relative path). In dev, **Vite proxy** routes `/api/auth` + `/api/users` + `/api/finance` → `:3000` (backend-core) and all other `/api/*` → `:5000` (backend-ai) (defined in `frontend/vite.config.js:12-18`). The Cookie domain is `localhost:5173` in dev, so there's no CORS issue.
+- Auth is **httpOnly cookie only** — never a Bearer token. Axios has `withCredentials: true`. The 401 interceptor uses a **callback injection** pattern (`setOnUnauthorized`) to avoid circular imports between `api.js` and `AuthContext`.
+- Roles use **snake_case**: `contract_manager`, `finance_team`, `top_management`, `pmo`.
+- `frontend/tailwind.config.js` uses **nested color keys**. Write `bg-bg-main`, not `bg-main`. Write `text-text-primary`, `text-status-risk`. Other key paths: `bg-status-track`, `bg-processing`, `text-text-secondary`.
+- Filename **typo**: `EditContaractContext` (missing `c`). Import from `./context/EditContaractContext`, not `EditContractContext`.
+- **Typo**: `ContarctDetailsSections` (file + export) and `ContarctCard` (export only, file is `ContractCard.jsx`). Both used in `ContractDetailPage` and `ReviewEditFormPage`.
+- Sidebar "Projects" links to `/contracts` (list page), not `/contracts/upload`.
+- **Duplicate routes bug**: `App.jsx` defines `/reports` TWICE — once with RoleGuard (lines 101-113) and once without (line 125). Last definition wins, so `/reports` has no guard. Only unguarded route: `/contracts/:id`.
+- `fakeProgress.js` simulates all intermediate stepper/progress/log locally. Backend only returns `active`/`analysis_failed`. Upload flow is 4-step S3 presigned URL with async polling — see `contractService.js:4-18`.
 
-## What Exists vs Stubs
-
-| Area                    | Built                                                                                                                                                                                             | Stubs                                        |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| **Upload page**         | Full flow: drag-drop dropzone (`UploadDropzone`), AI info panel (`AIExtractsPanel`), 4-step stepper (`ContractStepper`), progress bar, activity log (`ActivityLog`). Supports PDF + DOCX. `?demo=1` previews processing with mock data. | S3 presigned URL flow being added (uncommitted) |
-| **Progress simulation** | `fakeProgress.js` — all intermediate stepper/progress/activity log simulated locally. Backend only returns terminal status (`active`/`analysis_failed`). Frontend still polls every 5s for that.  | —                                            |
-| **Icons**               | 29 SVG components in `components/icons/` (extracted from inline SVGs)                                                                                                                             | —                                            |
-| **Services**            | `contractService.js` (3 methods), `authService.js` (3 methods)                                                                                                                                    | `financeService.js`, `reportService.js` — empty |
-| **Auth**                | `AuthProvider`, `PrivateRoute`, `RoleGuard`, `authService`, `EditContractContext`, Axios 401 interceptor — all active                                                                            | —                                            |
-| **Layout**              | `Sidebar` (Dashboard→`/dashboard`, Projects→`/contracts`, Reports→`/reports`, Admin→`/admin`), `Navbar` (search, bell, profile dropdown with logout using `useAuth()`)                             | —                                            |
-| **Login page**          | Full form UI: email/password inputs, show/hide toggle (`EyeIcon`/`EyeOffIcon`), validation, error display, spinner. Calls `useAuth().login()`                                                    | —                                            |
-| **Dashboard**           | Greeting card, date display, "Add Project" link to `/contracts/upload`                                                                                                                            | —                                            |
-| **Contracts list**      | `/contracts` route, `ContractsPage` with search bar + contract cards                                                                                                                              | —                                            |
-| **Review/edit form**    | `/contracts/:id/edit`, `ReviewEditFormPage` (221 lines), uses `components/contractDetails/` (10 files: BasicInfoContent, FinancialTermsSection, ScheduleMilestonesSection, ContractCard, etc.)      | —                                            |
-| **Contract detail**     | `ContractDetailPage`                                                                                                                                                                              | Still a stub (placeholder)                   |
-| **Other 6 pages**       | —                                                                                                                                                                                                | Finance, BudgetVariance, ProgressList, ProgressForm, ReviewProgress, Reports — all stubs. AdminPage stub. |
-
-## Route Quirks
-
-- **No `PerformancePage`** — replaced by `ReportsPage` (tabs). Don't recreate.
-- **`/contracts/:id`** is still a stub (placeholder)
-- Sidebar label "Projects" links to `/contracts` (list page), not `/contracts/upload`
-
-## Auth Architecture
-
-```
-api.js interceptor → 401? → onUnauthorized()
-                              ↑
-AuthProvider injects logout via setOnUnauthorized() (useEffect)
-                              ↑
-                    PrivateRoute / RoleGuard / useAuth()
-```
-
-- **httpOnly cookie** for JWT — no JS token in memory. `withCredentials: true` on Axios.
-- **Callback injection** (not DOM events) — avoids circular import between api.js and AuthContext.
-- Roles in code are **snake_case**: `contract_manager`, `finance_team`, `top_management`
-
-## Tailwind — Nested Keys
-
-Config at `frontend/tailwind.config.js` uses **nested** color keys. Write `bg-bg-main`, `text-text-primary`, `bg-primary`, `text-status-risk`, `bg-status-track`. Don't guess flat class names like `bg-main`.
-
-## Sprints
-
-| Epic | Sprint       | Content                                         |
-| ---- | ------------ | ----------------------------------------------- |
-| 2    | **S2 (now)** | Upload & AI — contract upload, stepper, polling |
-| 3    | S2           | Contract data review form                       |
-| 1    | S3           | Auth (login, guards, roles)                     |
-| 4    | S3           | Planned budget                                  |
-| 5    | S4           | Actual progress                                 |
-| 6    | S4           | Reports & KPIs                                  |
-
-## References
-
-- `.opencode/plans/routing-skeleton.md` — full route spec
-- `Octagram_final_sprints.html` — original sprint plan
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/007-admin-polish-cross-cutting/plan.md
+<!-- SPECKIT END -->

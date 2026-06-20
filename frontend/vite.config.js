@@ -14,7 +14,7 @@ export default defineConfig({
       // AI backend (contracts, uploads, finance, reports)
       '/api/contracts': 'http://localhost:5000',
       '/api/uploads': 'http://localhost:5000',
-      '/api/finance': 'http://localhost:5000',
+      '/api/finance': 'http://localhost:3000',
       '/api/reports': 'http://localhost:5000',
     },
   },

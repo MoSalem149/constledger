@@ -1,6 +1,6 @@
-import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useLocation } from "react-router-dom";
 /**
  * RoleGuard — role-based access control wrapper.
  *
@@ -17,7 +17,11 @@ import { useAuth } from '../../context/AuthContext';
  */
 export default function RoleGuard({ roles, children }) {
   const { hasRole } = useAuth();
+  const { pathname } = useLocation();
 
+  if (hasRole("pmo") && !pathname.startsWith("/admin")) {
+    return <Navigate to="/admin" replace />;
+  }
   if (!hasRole(...roles)) {
     // User is authenticated but doesn't have the right role.
     // Redirect to dashboard instead of login (they ARE logged in,

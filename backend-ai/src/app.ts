@@ -1,39 +1,35 @@
-/**
- * Express application setup.
- * Registers middleware, CORS, health check, business routes, and global error handlers.
- */
 import express, { Request, Response } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
-// ⚠️  Import ALL models here so Mongoose registers their schemas before any
-// controller runs populate(). Order matters: referenced models first.
+// Side-effect imports — load every model so Mongoose registers their schemas
+// before any controller calls .populate() on them. Order matters: referenced
+// models (User, UploadJob) must register before the models that ref() them.
 import "./models/User.model";
 import "./models/UploadJob.model";
 import "./models/Contract.model";
 import "./models/ContractExtraction.model";
-import "./models/ActualReport.model";
-import "./models/PlannedBudget.model";
 
 import contractRoutes from "./routes/contractRoutes";
-import financeRoutes from "./routes/financeRoutes";
-import reportRoutes from "./routes/reportRoutes";
 import uploadRoutes from "./routes/uploadRoutes";
 import { errorHandler, notFound } from "./middleware/errorMiddleware";
 
 const app = express();
 
-// Allowed CORS origins — reads FRONTEND_URL from env at startup.
+// CORS allow-list — localhost for dev, plus FRONTEND_URL in production.
 const allowedOrigins = [
   "http://localhost:5173",
   process.env.FRONTEND_URL,
 ].filter(Boolean) as string[];
 
-// Security & logging
+// Security headers + request logging
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// credentials: true is required so the httpOnly auth cookie issued by
+// backend-core actually travels with cross-origin requests.
 app.use(
   cors({
     origin(origin, callback) {
@@ -43,24 +39,24 @@ app.use(
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
+// 50mb body limit — large enough for base64-encoded PDFs sent through the API.
+// Direct uploads use S3 presigned URLs and never hit this limit.
 app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 
-// Health check
+// Liveness probe for Cloud Run / orchestrators
 app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", service: "cpms-ai" });
 });
 
-// Business routes
+// Feature routers
 app.use("/api/contracts", contractRoutes);
-app.use("/api/finance", financeRoutes);
-app.use("/api/reports", reportRoutes);
 app.use("/api/uploads", uploadRoutes);
 
-// Error handling
+// 404 + centralized error handler — must be last
 app.use(notFound);
 app.use(errorHandler);
 
