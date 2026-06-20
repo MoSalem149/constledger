@@ -357,8 +357,8 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 
   const handleAdd = () => {
     const updated = [
-      ...payments,
       { id: Date.now(), date: "", amount: 0, type: "" },
+      ...payments,
     ];
     setPayments(updated);
     syncToContext(updated);
