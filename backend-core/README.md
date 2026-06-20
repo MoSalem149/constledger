@@ -4,8 +4,6 @@ Node.js + Express REST API for authentication, user management, finance planning
 
 **Default port:** `3000` &nbsp;·&nbsp; **Module system:** ESM &nbsp;·&nbsp; **Database:** MongoDB
 
-All SRS business APIs (contracts, finance, performance, reports) live on **backend-ai** (port 5000).
-
 ---
 
 ## Getting started
@@ -40,14 +38,14 @@ docker run --rm -p 3000:3000 --env-file .env cpms-backend-core
 
 ## Environment variables
 
-| Variable         | Required | Description                                                                   |
-| ---------------- | -------- | ----------------------------------------------------------------------------- |
-| `PORT`           | no       | Server port (default `3000`)                                                  |
-| `NODE_ENV`       | yes      | `development` or `production` — controls log format and cookie security flags |
-| `MONGODB_URI`    | yes      | MongoDB connection string (shared with backend-ai)                            |
-| `JWT_SECRET`     | yes      | Long random secret used to sign JWTs; **must match backend-ai**               |
-| `JWT_EXPIRES_IN` | no       | Token lifetime (default `8h`)                                                 |
-| `FRONTEND_URL`   | no       | Extra origin allowed by CORS (localhost:5173 always allowed)                  |
+| Variable | Required | Description |
+|---|---|---|
+| `PORT` | no | Server port (default `3000`) |
+| `NODE_ENV` | yes | `development` or `production` — controls log format and cookie security flags |
+| `MONGODB_URI` | yes | MongoDB connection string (shared with backend-ai) |
+| `JWT_SECRET` | yes | Long random secret used to sign JWTs; **must match backend-ai** |
+| `JWT_EXPIRES_IN` | no | Token lifetime (default `8h`) |
+| `FRONTEND_URL` | no | Extra origin allowed by CORS (localhost:5173 always allowed) |
 
 Generate a strong `JWT_SECRET` with `openssl rand -hex 64`.
 
@@ -76,34 +74,34 @@ src/
 
 ### Auth — `/api/auth`
 
-| Method | Path      | Auth      | Description                            |
-| ------ | --------- | --------- | -------------------------------------- |
-| POST   | `/login`  | public    | Login, returns JWT via httpOnly cookie |
-| POST   | `/logout` | protected | Clear auth cookie                      |
-| GET    | `/me`     | protected | Get current user                       |
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/login` | public | Login, returns JWT via httpOnly cookie |
+| POST | `/logout` | protected | Clear auth cookie |
+| GET | `/me` | protected | Get current user |
 
 ### Users — `/api/users` (PMO only)
 
-| Method | Path   | Description                                      |
-| ------ | ------ | ------------------------------------------------ |
-| POST   | `/`    | Create user                                      |
-| GET    | `/`    | List users (excludes protected admin)            |
-| GET    | `/:id` | Get user                                         |
-| PUT    | `/:id` | Update name / email / role / isActive / password |
-| DELETE | `/:id` | Hard-delete user                                 |
+| Method | Path | Description |
+|---|---|---|
+| POST | `/` | Create user |
+| GET | `/` | List users (excludes protected admin) |
+| GET | `/:id` | Get user |
+| PUT | `/:id` | Update name / email / role / isActive / password |
+| DELETE | `/:id` | Hard-delete user |
 
 > The oldest active PMO account is treated as a **protected admin** — it cannot be listed, fetched, modified, or deleted via the API.
 
 ### Finance planning — `/api/finance`
 
-| Method | Path                            | Description                                           |
-| ------ | ------------------------------- | ----------------------------------------------------- |
-| POST   | `/:contractId/plans/generate`   | Generate or regenerate a plan using a strategy        |
-| GET    | `/:contractId/plan`             | Read the current plan + periods + KPIs                |
-| PUT    | `/:contractId/plan`             | Manually edit periods (sum must equal contract value) |
-| POST   | `/:contractId/plan/confirm`     | Move plan from draft to confirmed                     |
-| GET    | `/:contractId/payment-schedule` | Payment schedule view                                 |
-| GET    | `/:contractId/plan/export`      | XLSX export of the plan                               |
+| Method | Path | Description |
+|---|---|---|
+| POST | `/:contractId/plans/generate` | Generate or regenerate a plan using a strategy |
+| GET | `/:contractId/plan` | Read the current plan + periods + KPIs |
+| PUT | `/:contractId/plan` | Manually edit periods (sum must equal contract value) |
+| POST | `/:contractId/plan/confirm` | Move plan from draft to confirmed |
+| GET | `/:contractId/payment-schedule` | Payment schedule view |
+| GET | `/:contractId/plan/export` | XLSX export of the plan |
 
 Supported plan strategies: `straight_line`, `s_curve` (params: `kSteepness` 3–10, default 6), `milestone_weighted` (falls back to `s_curve` if no priced milestones land in range).
 
@@ -114,16 +112,16 @@ within `0.01`.
 
 ### Reports — `/api/reports`
 
-| Method | Path                          | Description                                        |
-| ------ | ----------------------------- | -------------------------------------------------- |
-| GET    | `/contracts`                  | All contracts report (filters: `?year`, `?status`) |
-| GET    | `/contracts/export`           | XLSX                                               |
-| GET    | `/planned-budget`             | Requires `?contractId=<id>&year=YYYY`              |
-| GET    | `/planned-budget/export`      | Same query; XLSX                                   |
-| GET    | `/payment-schedule`           | Requires `?contractId=<id>`                        |
-| GET    | `/payment-schedule/export`    | Same query; XLSX                                   |
-| GET    | `/project/:id/summary`        | Plan + KPIs + payment schedule in one shape        |
-| GET    | `/project/:id/summary/export` | 3-sheet XLSX                                       |
+| Method | Path | Description |
+|---|---|---|
+| GET | `/contracts` | All contracts report (filters: `?year`, `?status`) |
+| GET | `/contracts/export` | XLSX |
+| GET | `/planned-budget` | Requires `?contractId=<id>&year=YYYY` |
+| GET | `/planned-budget/export` | Same query; XLSX |
+| GET | `/payment-schedule` | Requires `?contractId=<id>` |
+| GET | `/payment-schedule/export` | Same query; XLSX |
+| GET | `/project/:id/summary` | Plan + KPIs + payment schedule in one shape |
+| GET | `/project/:id/summary/export` | 3-sheet XLSX |
 
 Reports only operate on **confirmed** plans. Draft plans return HTTP 409 `plan_not_confirmed`.
 
@@ -142,12 +140,12 @@ JWTs are issued as **httpOnly cookies** named `token` and default to an 8-hour l
 
 ## Roles
 
-| Role               | Access                                                            |
-| ------------------ | ----------------------------------------------------------------- |
-| `pmo`              | Full access to `/api/users` + all finance and reporting endpoints |
-| `contract_manager` | Generate / edit / confirm / export plans                          |
-| `finance_team`     | Read finance + reports                                            |
-| `top_management`   | Read finance + reports                                            |
+| Role | Access |
+|---|---|
+| `pmo` | Full access to `/api/users` + all finance and reporting endpoints |
+| `contract_manager` | Generate / edit / confirm / export plans |
+| `finance_team` | Read finance + reports |
+| `top_management` | Read finance + reports |
 
 Every authenticated user can read finance and reporting data; only `contract_manager` and `pmo` can mutate plans.
 

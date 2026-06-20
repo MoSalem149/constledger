@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 // Each plan can carry warnings raised by planningService (e.g. milestone
 // out-of-range, fallback used). They are surfaced to the UI.
@@ -18,14 +18,14 @@ const financePlanSchema = new mongoose.Schema(
   {
     contractId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Contract",
+      ref: 'Contract',
       required: true,
       unique: true,
       index: true,
     },
     strategy: {
       type: String,
-      enum: ["straight_line", "s_curve", "milestone_weighted"],
+      enum: ['straight_line', 's_curve', 'milestone_weighted'],
       required: true,
     },
     strategyParams: { type: mongoose.Schema.Types.Mixed, default: {} },
@@ -33,18 +33,14 @@ const financePlanSchema = new mongoose.Schema(
     // float drift across roll-ups and exports.
     totalAmount: { type: mongoose.Schema.Types.Decimal128, required: true },
     generatedAt: { type: Date, required: true, default: Date.now },
-    generatedBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    status: { type: String, enum: ["draft", "confirmed"], default: "draft" },
+    generatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    status: { type: String, enum: ['draft', 'confirmed'], default: 'draft' },
     warnings: { type: [warningSchema], default: [] },
   },
   {
     timestamps: true,
-    collection: "finance_plan",
+    collection: 'finance_plan',
   },
 );
 
-export default mongoose.model("FinancePlan", financePlanSchema);
+export default mongoose.model('FinancePlan', financePlanSchema);

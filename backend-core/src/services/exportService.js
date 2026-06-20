@@ -22,26 +22,12 @@ const FONT_NAME = "Arial";
 // Centralized style dictionary used by every workbook builder via applyStyle()
 const style = {
   mainHeader: {
-    font: {
-      name: FONT_NAME,
-      bold: true,
-      size: 14,
-      color: { argb: COLORS.headerFg },
-    },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.headerBg },
-    },
+    font: { name: FONT_NAME, bold: true, size: 14, color: { argb: COLORS.headerFg } },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.headerBg } },
     alignment: { horizontal: "left", vertical: "middle" },
   },
   metaLabel: {
-    font: {
-      name: FONT_NAME,
-      bold: true,
-      size: 10,
-      color: { argb: COLORS.labelFg },
-    },
+    font: { name: FONT_NAME, bold: true, size: 10, color: { argb: COLORS.labelFg } },
     alignment: { horizontal: "left", vertical: "middle" },
   },
   metaValue: {
@@ -49,17 +35,8 @@ const style = {
     alignment: { horizontal: "left", vertical: "middle" },
   },
   colHeader: {
-    font: {
-      name: FONT_NAME,
-      bold: true,
-      size: 10,
-      color: { argb: COLORS.subHeaderFg },
-    },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.subHeaderBg },
-    },
+    font: { name: FONT_NAME, bold: true, size: 10, color: { argb: COLORS.subHeaderFg } },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.subHeaderBg } },
     alignment: { horizontal: "center", vertical: "middle", wrapText: true },
     border: {
       bottom: { style: "medium", color: { argb: COLORS.headerBg } },
@@ -71,25 +48,12 @@ const style = {
   },
   rowAlt: {
     font: { name: FONT_NAME, size: 10 },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.rowAlt },
-    },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.rowAlt } },
     alignment: { vertical: "middle" },
   },
   totalRow: {
-    font: {
-      name: FONT_NAME,
-      bold: true,
-      size: 10,
-      color: { argb: COLORS.totalFg },
-    },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.totalBg },
-    },
+    font: { name: FONT_NAME, bold: true, size: 10, color: { argb: COLORS.totalFg } },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.totalBg } },
     alignment: { vertical: "middle" },
     border: {
       top: { style: "medium", color: { argb: COLORS.totalFg } },
@@ -97,26 +61,13 @@ const style = {
     },
   },
   warningHeader: {
-    font: {
-      name: FONT_NAME,
-      bold: true,
-      size: 10,
-      color: { argb: COLORS.warningFg },
-    },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.warningBg },
-    },
+    font: { name: FONT_NAME, bold: true, size: 10, color: { argb: COLORS.warningFg } },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.warningBg } },
     alignment: { horizontal: "left", vertical: "middle" },
   },
   warningRow: {
     font: { name: FONT_NAME, size: 10, color: { argb: COLORS.warningFg } },
-    fill: {
-      type: "pattern",
-      pattern: "solid",
-      fgColor: { argb: COLORS.warningBg },
-    },
+    fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.warningBg } },
     alignment: { vertical: "middle", wrapText: true },
   },
 };
@@ -141,8 +92,7 @@ const addThinBorder = (row, colCount) => {
     const cell = row.getCell(c);
     cell.border = {
       ...cell.border,
-      left:
-        c === 1 ? { style: "thin", color: { argb: COLORS.border } } : undefined,
+      left: c === 1 ? { style: "thin", color: { argb: COLORS.border } } : undefined,
       right: { style: "thin", color: { argb: COLORS.border } },
       bottom: { style: "thin", color: { argb: COLORS.border } },
     };
@@ -163,14 +113,7 @@ export const createFinancePlanWorkbook = (contract, result) => {
       fitToPage: true,
       fitToWidth: 1,
       fitToHeight: 0,
-      margins: {
-        left: 0.5,
-        right: 0.5,
-        top: 0.75,
-        bottom: 0.75,
-        header: 0.3,
-        footer: 0.3,
-      },
+      margins: { left: 0.5, right: 0.5, top: 0.75, bottom: 0.75, header: 0.3, footer: 0.3 },
     },
     headerFooter: {
       oddHeader: `&L&B${contract.name || "Finance Plan"}&R&BPage &P of &N`,
@@ -208,10 +151,7 @@ export const createFinancePlanWorkbook = (contract, result) => {
   const meta = [
     ["Reporting Period", contract.reporting_period || "—"],
     ["Strategy", result.plan.strategy],
-    [
-      "Generated At",
-      result.plan.generatedAt?.toISOString().slice(0, 10) || "—",
-    ],
+    ["Generated At", result.plan.generatedAt?.toISOString().slice(0, 10) || "—"],
     ["Total Contract Value", totalAmount],
     ["Number of Periods", result.periods.length],
   ];
@@ -225,11 +165,7 @@ export const createFinancePlanWorkbook = (contract, result) => {
     Object.assign(labelCell, {
       font: style.metaLabel.font,
       alignment: style.metaLabel.alignment,
-      fill: {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: COLORS.accentBg },
-      },
+      fill: { type: "pattern", pattern: "solid", fgColor: { argb: COLORS.accentBg } },
     });
 
     ws.mergeCells(rowNum, 2, rowNum, COL_COUNT);
@@ -398,10 +334,7 @@ export const createPlannedBudgetWorkbook = (report) => {
   const meta = [
     ["Contract", report.contract.name],
     ["Contract Number", report.contract.contractNumber || "—"],
-    [
-      "Contract Period",
-      `${report.contract.startDate || "—"} to ${report.contract.endDate || "—"}`,
-    ],
+    ["Contract Period", `${report.contract.startDate || "—"} to ${report.contract.endDate || "—"}`],
     ["Plan Strategy", report.plan.strategy],
     ["Plan Status", report.plan.status],
     ["Contract Value", report.contract.contractValue],
@@ -509,13 +442,7 @@ export const createPlannedBudgetWorkbook = (report) => {
 };
 
 // Internal helper — every reports workbook starts with one of these sheets.
-const createReportWorksheet = (
-  workbook,
-  name,
-  title,
-  columnCount,
-  options = {},
-) =>
+const createReportWorksheet = (workbook, name, title, columnCount, options = {}) =>
   workbook.addWorksheet(name, {
     pageSetup: {
       paperSize: 9,
@@ -637,7 +564,7 @@ export const createAllContractsWorkbook = (report) => {
       row.values = [total.currency, total.contractCount, total.totalValue];
       applyStyle(row, index % 2 ? style.rowAlt : style.rowNormal);
       addThinBorder(row, 3);
-      row.getCell(3).numFmt = "#,##0.00";
+      row.getCell(3).numFmt = '#,##0.00';
     });
   }
 
@@ -670,15 +597,11 @@ export const createAllContractsWorkbook = (report) => {
       // Parties rendered as "Name (Role); Name (Role)" — wrapped in cell
       contract.parties
         .map((party) =>
-          party.role
-            ? `${party.name || "Unnamed"} (${party.role})`
-            : party.name,
+          party.role ? `${party.name || "Unnamed"} (${party.role})` : party.name,
         )
         .filter(Boolean)
         .join("; "),
-      contract.startDate
-        ? new Date(`${contract.startDate}T00:00:00.000Z`)
-        : null,
+      contract.startDate ? new Date(`${contract.startDate}T00:00:00.000Z`) : null,
       contract.endDate ? new Date(`${contract.endDate}T00:00:00.000Z`) : null,
       contract.durationDays,
       contract.reportingPeriod || "",
@@ -710,8 +633,7 @@ const addPaymentScheduleSheet = (
   sheetName = "Payment Schedule",
 ) => {
   const columnCount = 8;
-  const currency =
-    report.contract.currency || report.schedule.currency || "EGP";
+  const currency = report.contract.currency || report.schedule.currency || "EGP";
   const currencyFmt = `#,##0.00 "${currency}";(#,##0.00 "${currency}");"-"`;
   const headerRowNum = 9;
   const ws = createReportWorksheet(
@@ -948,10 +870,7 @@ export const createProjectSummaryWorkbook = (report) => {
       ["Contract", report.contract.name],
       ["Contract Number", report.contract.contractNumber || "—"],
       ["Status", report.contract.status],
-      [
-        "Contract Period",
-        `${report.contract.startDate || "—"} to ${report.contract.endDate || "—"}`,
-      ],
+      ["Contract Period", `${report.contract.startDate || "—"} to ${report.contract.endDate || "—"}`],
       ["Contract Value", report.contract.contractValue],
       ["Currency", currency],
       ["Reporting Period", report.contract.reportingPeriod || "—"],
@@ -991,10 +910,13 @@ export const createProjectSummaryWorkbook = (report) => {
 
   // Sheets 2 & 3
   addPlanPeriodsSheet(workbook, report);
-  addPaymentScheduleSheet(workbook, {
-    contract: report.contract,
-    plan: report.plan,
-    schedule: report.paymentSchedule,
-  });
+  addPaymentScheduleSheet(
+    workbook,
+    {
+      contract: report.contract,
+      plan: report.plan,
+      schedule: report.paymentSchedule,
+    },
+  );
   return workbook;
 };
