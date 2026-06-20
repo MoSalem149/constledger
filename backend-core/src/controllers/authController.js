@@ -61,7 +61,3 @@ export const logout = (_req, res) => {
 export const me = async (req, res) => {
   res.json({ user: req.user });
 };
-
-export const me = async (req, res) => {
-  res.json({ user: req.user });
-};
