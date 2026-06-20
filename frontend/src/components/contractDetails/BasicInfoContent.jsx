@@ -177,19 +177,17 @@ const ContractFieldsGrid = ({ fields, readOnly }) => (
 
 // =================== NOTE BOX ===================
 const NoteBox = ({ bgClass, textClass, value, onBlur, onChange, readOnly }) => (
-  <div className={`${bgClass} p-2 flex gap-2 items-start rounded`}>
+  <div className={`${bgClass} p-2 flex gap-2 items-start rounded-lg`}>
     <div className={`${textClass} mt-0.5 flex-shrink-0`}>
       <InfoIcon />
     </div>
-    <textarea
-      value={value ?? ""}
-      onChange={readOnly ? undefined : onChange}
-      onBlur={readOnly ? undefined : onBlur}
-      readOnly={readOnly}
-      className={`text-[11.5px] ${textClass} leading-relaxed bg-transparent border-none outline-none w-full ${
+    <div
+      className={`text-[11.5px] ${textClass} leading-relaxed h-fit bg-transparent border-none outline-none w-full ${
         readOnly ? "cursor-default resize-none" : ""
       }`}
-    />
+    >
+      {value ?? ""}
+    </div>
   </div>
 );
 

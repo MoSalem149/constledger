@@ -48,24 +48,23 @@ export default function ReportsPage() {
   ];
 
   return (
-    <section className="min-h-screen bg-bg-main">
-      <div className="container py-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>
+    <section className="min-h-screen bg-bg-main pr-10">
+      {/* Header */}
+      <div>
+        <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>
 
-          <p className="text-[14px] mt-2 text-text-secondary">
-            Aggregated views across all projects • export to Excel
-          </p>
-        </div>
+        <p className="text-[14px] mt-2 text-text-secondary">
+          Aggregated views across all projects • export to Excel
+        </p>
+      </div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
-          {reportsCards.map((card) => (
-            <div
-              key={card.id}
-              onClick={() => navigate(card.route)}
-              className="
+      {/* Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
+        {reportsCards.map((card) => (
+          <div
+            key={card.id}
+            onClick={() => navigate(card.route)}
+            className="
                 bg-bg-cards1
                 rounded-lg
                 shadow
@@ -81,42 +80,41 @@ export default function ReportsPage() {
                 flex-col
                 justify-between
               "
-            >
-              <div>
-                {/* Icon + Title */}
-                <div className="flex items-center gap-4">
-                  {card.icon}
+          >
+            <div>
+              {/* Icon + Title */}
+              <div className="flex items-center gap-4">
+                {card.icon}
 
-                  <div>
-                    <h2 className="text-[18px] font-semibold text-text-primary">
-                      {card.title}
-                    </h2>
-                  </div>
+                <div>
+                  <h2 className="text-[18px] font-semibold text-text-primary">
+                    {card.title}
+                  </h2>
                 </div>
-
-                {/* Description */}
-                <p className="mt-6 text-text-secondary leading-8 text-[14px] max-w-[500px]">
-                  {card.description}
-                </p>
               </div>
 
-              {/* Footer */}
-              <div className="flex justify-end mt-8">
-                <button
-                  className="
+              {/* Description */}
+              <p className="mt-6 text-text-secondary leading-8 text-[14px] max-w-[500px]">
+                {card.description}
+              </p>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end mt-8">
+              <button
+                className="
                     flex items-center gap-2
                     text-primary
                     font-semibold
                     text-[14px]
                   "
-                >
-                  Open
-                  <ArrowRightIcon className="w-5 h-5" />
-                </button>
-              </div>
+              >
+                Open
+                <ArrowRightIcon className="w-5 h-5" />
+              </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </section>
   );

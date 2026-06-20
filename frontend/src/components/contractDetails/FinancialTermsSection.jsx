@@ -14,7 +14,6 @@ const AddBtn = ({ label, onClick }) => (
     <PlusIcon /> {label}
   </button>
 );
-
 // =================== UNIT PRICES ===================
 const UNIT_COLS = "grid-cols-[2fr_100px_100px_150px_130px_44px]";
 
@@ -38,17 +37,35 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
     <div
       className={`grid ${UNIT_COLS} gap-2 px-4 py-4 items-center border-t border-gray-100`}
     >
-      <input
-        value={local.name.split(" ").slice(0, 4).join(" ")}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange(local)}
-        readOnly={readOnly}
-        className={inputCls("truncate")}
-      />
+      {/* Name with tooltip */}
+      <div className="relative group min-w-0">
+        <input
+          value={local.name}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange(local)}
+          readOnly={readOnly}
+          className={inputCls("truncate")}
+        />
+        {local.name && (
+          <div
+            className="
+              absolute bottom-full left-0 mb-1.5
+              px-2 py-1 rounded bg-gray-800 text-white text-xs
+              whitespace-nowrap shadow-md
+              opacity-0 group-hover:opacity-100
+              transition-opacity duration-150
+              pointer-events-none z-20
+            "
+          >
+            {local.name}
+          </div>
+        )}
+      </div>
+
       <input
         value={local.unit}
         onChange={

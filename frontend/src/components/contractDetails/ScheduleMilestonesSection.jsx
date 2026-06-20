@@ -66,7 +66,7 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
   );
 
   const formatLabel = (d) =>
-    d?.toLocaleDateString("ar-EG", {
+    d?.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
@@ -129,7 +129,7 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
             >
               <div className="w-3.5 h-3.5 bg-primary rotate-45 mt-[21px] flex-shrink-0" />
               <span className="text-[10px] font-medium text-text-secondary mt-[8px] whitespace-nowrap max-w-[100px] overflow-hidden text-ellipsis text-center">
-                {m.name || `M${i + 1}`}
+                {`M${i + 1}`}
               </span>
             </div>
           );
@@ -161,8 +161,7 @@ const DateFields = ({
           <input
             type="text"
             value={formatDate(value)}
-            onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
-            readOnly={readOnly}
+            onChange={(e) => onChange(e.target.value)}
             className={`w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
               text-text-primary bg-bg-cards1 outline-none transition-colors ${
                 readOnly ? "cursor-default" : "focus:border-primary"
@@ -183,7 +182,7 @@ const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
 
   return (
     <div
-      className={`grid ${readOnly ? "grid-cols-[1fr_160px_100px]" : "grid-cols-[1fr_160px_100px_44px]"} px-4 py-4 items-center border-b border-gray-100`}
+      className={`grid ${readOnly ? "grid-cols-[1fr_160px]" : "grid-cols-[1fr_160px_44px]"} px-4 py-4 items-center border-b border-gray-100`}
     >
       <input
         value={local.name}
@@ -209,9 +208,7 @@ const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
         className={`text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
           outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
       />
-      <span className="text-[13.5px] text-text-secondary">
-        {milestone.source}
-      </span>
+
       {!readOnly && (
         <button
           onClick={onRemove}
@@ -251,7 +248,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
     <div className="overflow-x-auto">
       <div className="min-w-[460px] shadow rounded overflow-hidden">
         <div
-          className={`grid ${readOnly ? "grid-cols-[1fr_160px_100px]" : "grid-cols-[1fr_160px_100px_44px]"} bg-gray-100 px-4 py-4`}
+          className={`grid ${readOnly ? "grid-cols-[1fr_160px]" : "grid-cols-[1fr_160px_44px]"} bg-gray-100 px-4 py-4`}
         >
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             REPORTING PERIOD
@@ -259,9 +256,7 @@ const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             Due Time
           </span>
-          <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
-            Source
-          </span>
+
           {!readOnly && <span />}
         </div>
         {milestones.map((m) => (

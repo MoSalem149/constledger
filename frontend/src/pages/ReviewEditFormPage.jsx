@@ -6,6 +6,7 @@ import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import { contractService } from "../services/contractService";
 import { Link } from "react-router-dom";
 import { UContractContext } from "../context/UploadedContractContext";
+import { ContractContext } from "../context/EditContaractContext";
 /**
  * ReviewEditFormPage — 13-field contract review/edit form.
  *
@@ -19,6 +20,12 @@ import { UContractContext } from "../context/UploadedContractContext";
 
 export default function ReviewEditFormPage() {
   const { contractData } = useContext(UContractContext);
+  const { data: editedData } = useContext(ContractContext);
+
+  const mergedData = {
+    ...contractData,
+    ...editedData,
+  };
 
   // const [contractData, setContractData] = useState(null);
   // useEffect(() => {
@@ -48,8 +55,8 @@ export default function ReviewEditFormPage() {
           <div className="text-sm sm:text-base">All Projects</div>
         </Link>
 
-        <ContarctCard contractData={contractData} />
-        <ContarctDetailsSections contractData={contractData} readOnly={false} />
+        <ContarctCard contractData={mergedData} />
+        <ContarctDetailsSections contractData={mergedData} readOnly={false} />
       </div>
     </div>
   );

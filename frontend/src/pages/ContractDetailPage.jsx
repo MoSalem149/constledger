@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { ContarctDetailsSections } from "../components/contractDetails/ContarctDetailsSections";
 import { ContarctCard } from "../components/contractDetails/ContractCard";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import { Link, useParams } from "react-router-dom";
 import { contractService } from "../services/contractService";
+import { ContractContext } from "../context/EditContaractContext";
 
 /**
  * ContractDetailPage — read-only contract view.
@@ -22,6 +23,13 @@ export default function ContractDetailPage() {
   const [error, setError] = useState(null);
   const [read_only, set_read_only] = useState(false);
 
+  const { data: editedData } = useContext(ContractContext);
+
+  const mergedData = {
+    ...contractData,
+    ...editedData,
+  };
+
   useEffect(() => {
     async function fetchContract() {
       try {
@@ -30,7 +38,6 @@ export default function ContractDetailPage() {
         if (data.status == "active") set_read_only(true);
         else set_read_only(false);
         setContractData(data);
-        console.log(data);
       } catch (err) {
         console.error(err);
         setError("Failed to load contract.");
@@ -71,9 +78,9 @@ export default function ContractDetailPage() {
           <div className="text-sm sm:text-base">All Projects</div>
         </Link>
 
-        <ContarctCard contractData={contractData} />
+        <ContarctCard contractData={mergedData} />
         <ContarctDetailsSections
-          contractData={contractData}
+          contractData={mergedData}
           readOnly={read_only}
         />
       </div>
