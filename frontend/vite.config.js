@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -11,14 +11,14 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: {
-      // Core backend (auth + users)
-      '/api/auth': 'http://localhost:3000',
-      '/api/users': 'http://localhost:3000',
-      // AI backend (contracts, uploads, finance, reports)
-      '/api/contracts': 'http://localhost:5000',
-      '/api/uploads': 'http://localhost:5000',
-      '/api/finance': 'http://localhost:3000',
-      '/api/reports': 'http://localhost:5000',
+      // Core backend (auth + users + finance + reports)
+      "/api/auth": "http://localhost:3000",
+      "/api/users": "http://localhost:3000",
+      "/api/finance": "http://localhost:3000",
+      "/api/reports": "http://localhost:3000",
+      // AI backend (contracts, uploads)
+      "/api/contracts": "http://localhost:5000",
+      "/api/uploads": "http://localhost:5000",
     },
   },
   preview: {
