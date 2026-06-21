@@ -1,14 +1,12 @@
 /**
- * ReportsPage — consolidated reports with tabs.
+ * ReportsPage — hub page for available reports.
  *
- * Sprint 4 builds the full screen with tabs for:
- *   - Monthly reports
- *   - Quarterly reports
- *   - Performance KPIs
- *   - Penalties
+ * Currently provides two report types:
+ *   - All Contracts: aggregated contract stats and export
+ *   - Planned Budget: per-contract planned budget with period breakdown
  *
- * Using tabs avoids 5 near-identical page files per CPMS-105 decision.
- * Replaces the old standalone PerformancePage.
+ * Additional report types (monthly, quarterly, KPIs, penalties) are
+ * planned for future sprints.
  */
 import { useNavigate } from "react-router-dom";
 
@@ -48,7 +46,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <section className="min-h-screen bg-bg-main pr-10">
+    <section className="min-h-[100vh - 116px] bg-bg-main pr-10">
       {/* Header */}
       <div>
         <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>

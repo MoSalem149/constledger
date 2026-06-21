@@ -48,7 +48,7 @@ const WhiteCard = ({ value, label, sub }) => (
 );
 
 // =================== SECTION ===================
-export default function OverviewCards({ contracts, activeContracts, plans }) {
+export default function OverviewCards({ contracts, activeContracts, plans, reportData }) {
   const totalValue = contracts.reduce(
     (sum, c) => sum + (c.contractValue || 0),
     0,
@@ -72,7 +72,11 @@ export default function OverviewCards({ contracts, activeContracts, plans }) {
         label="Active Contracts"
         sub={`of ${contracts.length} total projects`}
       />
-      {/* Reports card hidden — routes not mounted yet */}
+      <WhiteCard
+        value={reportData?.contractCount ?? 0}
+        label="Reports"
+        sub="of all projects"
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import EditContractContext from "./context/EditContaractContext";
 import UploadedContractContext from "./context/UploadedContractContext";
 import ContractsReport from "./pages/ContractsReport";
 import PlannedBudgetReport from "./pages/PlannedBudgetReport";
+import { PlannedBudgetByIdReport } from "./pages/PlannedBudgetByIdReport";
 
 function App() {
   return (
@@ -121,8 +122,6 @@ function App() {
                       </RoleGuard>
                     }
                   />
-                  {/* Reports (tabs) */}
-                  <Route path="/reports" element={<ReportsPage />} />
                   <Route
                     path="/reports/contracts"
                     element={<ContractsReport />}
@@ -130,6 +129,10 @@ function App() {
                   <Route
                     path="/reports/planned-budget"
                     element={<PlannedBudgetReport />}
+                  />
+                  <Route
+                    path="/reports/planned-budget/:id"
+                    element={<PlannedBudgetByIdReport />}
                   />
                   {/* 404 catch-all */}
                   <Route path="*" element={<NotFoundPage />} />

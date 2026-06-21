@@ -1,8 +1,10 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ProjectCard from "../contracts/ProjectCard";
 
 // =================== SECTION ===================
 export default function ActiveProjectsSection({ activeContracts }) {
+  const navigate = useNavigate();
+
   if (!activeContracts || activeContracts.length === 0) return null;
 
   return (
@@ -26,7 +28,7 @@ export default function ActiveProjectsSection({ activeContracts }) {
             <ProjectCard
               contract={contract}
               onClick={() => {
-                window.location.href = `/contracts/${contract.id}`;
+                navigate(`/contracts/${contract.id}`);
               }}
             />
           </div>

@@ -1,158 +1,187 @@
-import { useState, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
-import RegenerateIcon from "../icons/RegenerateIcon";
-import PlanChart from "./PlanChart";
-import PlanTable from "./PlanTable";
-import PlanKpis from "./PlanKpis";
-import FallbackNotice from "./FallbackNotice";
+import {
+  formatDate,
+  formatCompact,
+  formatPct,
+  formatShortEGP,
+} from "../../utils/format";
 
-export default function PlanningPlanView({
-  contractData,
-  planData,
-  status,
+export default function PlanTable({
+  periods,
+  contractValue,
+  readOnly,
+  onChange,
+  isConfirmed,
   canPlan,
-  onUpdate,
-  onConfirm,
-  onRegenerate,
   onExport,
+  isBalanced,
+  remaining,
+  currency,
 }) {
-  const { plan, periods = [], kpis = {}, warnings = [] } = planData || {};
-  const [localPeriods, setLocalPeriods] = useState(periods);
-  const [confirming, setConfirming] = useState(false);
-
-  // keep local periods in sync when new planData arrives
-  useState(() => {
-    setLocalPeriods(periods);
-  }); // intentional: will sync on re-render via useEffect below
-
-  useMemo(() => {
-    setLocalPeriods(periods);
-  }, [periods]);
-
-  const contractValue = contractData?.contract_value || 0;
-  const currency = contractData?.currency || "EGP";
-
-  const totalPlanned = useMemo(
-    () =>
-      localPeriods.reduce((sum, p) => sum + (Number(p.plannedAmount) || 0), 0),
-    [localPeriods],
+  const totalPlanned = periods.reduce(
+    (sum, p) => sum + (Number(p.plannedAmount) || 0),
+    0,
   );
-
-  const remaining = contractValue - totalPlanned;
-  const isBalanced = Math.abs(remaining) <= 0.01;
-
-  const handlePeriodChange = useCallback((index, newAmount) => {
-    setLocalPeriods((prev) => {
-      const next = [...prev];
-      next[index] = { ...next[index], plannedAmount: Number(newAmount) || 0 };
-      // recompute cumulative
-      let cum = 0;
-      for (let i = 0; i < next.length; i++) {
-        cum += Number(next[i].plannedAmount) || 0;
-        next[i] = { ...next[i], cumulativePlanned: cum };
-      }
-      return next;
-    });
-  }, []);
-
-  const handleConfirm = async () => {
-    if (!isBalanced) return;
-    setConfirming(true);
-    try {
-      // Save current edits first, then confirm
-      const payload = localPeriods.map((p) => ({
-        periodLabel: p.periodLabel,
-        periodStart: p.periodStart,
-        periodEnd: p.periodEnd,
-        plannedAmount: p.plannedAmount,
-        sortOrder: p.sortOrder,
-      }));
-      await onUpdate(payload);
-      await onConfirm();
-    } finally {
-      setConfirming(false);
-    }
-  };
-
-  const isConfirmed = status === "confirmed";
+  const totalPct = contractValue > 0 ? totalPlanned / contractValue : 0;
 
   return (
-    <div className="font-sans space-y-6">
+    <div>
       {/* Header */}
-      <div className=" flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <div className="flex flex-col font-sans sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
         <div>
-          <p className="text-xs font-normal text-text-placeholder tracking-widest mb-4">
-            {contractData?.contractNumber} · FINANCE
-          </p>
-          <h2 className="text-lg font-medium text-text-primary mb-4">
-            Project Plan
-          </h2>
-          <p className="text-sm text-text-secondary">
-            How the contract value is forecast across the reporting periods .
-            Current plan
+          <h3 className="text-lg font-medium text-text-primary">
+            Planned Amount by Period
+          </h3>
+          <p className="text-xs font-normal text-text-placeholder mt-2">
+            Track planned project progress, period allocations, and cumulative
+            budget
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start">
-          {isConfirmed && canPlan && (
+        <div className="flex flex-col items-end gap-2 self-start">
+          {canPlan && (
             <button
               onClick={onExport}
-              className="px-4 py-2 rounded-full border border-gray-200 text-text-primary text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="px-4 py-2.5 rounded-3xl shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] bg-button-active text-text-light text-xs font-medium hover:opacity-90 transition-opacity"
             >
               Export Schedule
             </button>
           )}
-          {canPlan && !isConfirmed && (
-            <>
-              <button
-                onClick={onRegenerate}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-3xl border border-gray-200 bg-white text-text-primary text-xs font-normal hover:bg-gray-50 transition-colors"
-              >
-                <RegenerateIcon className="w-5 h-5" />
-                Regenerate
-              </button>
-              <button
-                onClick={handleConfirm}
-                disabled={confirming || !isBalanced}
-                className="px-4 py-2.5 rounded-3xl bg-primary shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] text-white text-xs font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {confirming ? "Confirming..." : "Confirm"}
-              </button>
-            </>
+          {!isConfirmed && canPlan && (
+            <div
+              className={`text-xs font-medium px-3 py-1.5 rounded-full ${
+                isBalanced
+                  ? "bg-status-track/10 text-status-track"
+                  : "bg-status-risk/10 text-status-risk"
+              }`}
+            >
+              {isBalanced
+                ? `Balanced — total equals ${formatShortEGP(contractValue)} ${currency}`
+                : `Remaining: ${formatShortEGP(remaining)} ${currency}`}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Fallback notice */}
-      <FallbackNotice warnings={warnings} />
-
-      {/* KPIs */}
-      <PlanKpis
-        contractValue={contractValue}
-        currency={currency}
-        periodsCount={localPeriods.length}
-        strategy={plan?.strategy}
-        periods={localPeriods}
-      />
-
-      {/* Chart */}
-      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] px-6 pt-6 pb-14">
-        <PlanChart periods={localPeriods} strategy={plan?.strategy} />
-      </div>
-
       {/* Table */}
-      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
-        <PlanTable
-          periods={localPeriods}
-          contractValue={contractValue}
-          readOnly={isConfirmed || !canPlan}
-          onChange={handlePeriodChange}
-          isConfirmed={isConfirmed}
-          canPlan={canPlan}
-          onExport={onExport}
-          isBalanced={isBalanced}
-          remaining={remaining}
-          currency={currency}
-        />
+      <div className="overflow-x-auto bg-bg-cards1 mt-6">
+        <table className="table-auto w-full">
+          <colgroup>
+            <col className="w-1/3" />
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr className="bg-text-light">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period Start
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period End
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                Planned
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                Cumulative
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                % of Contract
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((period, idx) => {
+              const pct =
+                contractValue > 0
+                  ? (Number(period.plannedAmount) || 0) / contractValue
+                  : 0;
+              return (
+                <tr
+                  key={period.id || idx}
+                  className="border-b border-gray-100 hover:bg-gray-50/50"
+                >
+                  <td className="px-6 py-7 font-medium text-text-primary text-sm">
+                    <div className="flex items-center gap-4">
+                      <div>{period.periodLabel}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
+                    {formatDate(period.periodStart)}
+                  </td>
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
+                    {formatDate(period.periodEnd)}
+                  </td>
+                  <td className="px-6 py-7 text-left">
+                    {readOnly ? (
+                      <span className="text-text-primary font-medium text-sm">
+                        {formatCompact(period.plannedAmount)}
+                      </span>
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={period.plannedAmount ?? ""}
+                        onChange={(e) => onChange(idx, e.target.value)}
+                        className="w-32 text-right px-2 py-1 rounded border border-gray-200 text-text-primary text-sm focus:outline-none focus:border-primary"
+                      />
+                    )}
+                  </td>
+                  <td className="px-6 py-7 text-left text-text-secondary font-medium text-sm">
+                    {formatCompact(period.cumulativePlanned)}
+                  </td>
+                  <td className="px-6 py-7 text-left">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${Math.min(pct * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-text-secondary font-bold text-xs w-8 ">
+                        {formatPct(pct)}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-text-primary text-text-light ">
+              <td
+                className="px-6 py-6 font-medium rounded-bl-lg text-lg"
+                colSpan={3}
+              >
+                Total planned
+              </td>
+              <td className="px-6 py-6 text-left  font-medium text-lg">
+                {formatCompact(totalPlanned)}
+              </td>
+              <td className="px-6 py-6 text-left  font-medium text-lg">
+                {formatCompact(totalPlanned)}
+              </td>
+              <td className="px-6 py-6 rounded-br-lg">
+                <div className="flex items-center justify-start gap-2">
+                  <div className="w-28 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${Math.min(totalPct * 100, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold w-8 text-left">
+                    {formatPct(totalPct)}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );

@@ -17,7 +17,6 @@ export const BudgetAndProgressSection = ({ contractData }) => {
 
   const fetchPlan = useCallback(async () => {
     if (!contractData?._id && !contractData?.id) return;
-    if (!isActive) return;
     try {
       setState("loading");
       setError(null);
@@ -41,7 +40,7 @@ export const BudgetAndProgressSection = ({ contractData }) => {
         setState("error");
       }
     }
-  }, [contractData, isActive]);
+  }, [contractData]);
 
   useEffect(() => {
     fetchPlan();
@@ -110,21 +109,6 @@ export const BudgetAndProgressSection = ({ contractData }) => {
     }
   };
 
-  if (!isActive) {
-    return (
-      <div className="flex items-center justify-center min-h-[300px]">
-        <div className="text-center">
-          <p className="text-text-primary font-medium mb-1">
-            Contract Not Active
-          </p>
-          <p className="text-text-secondary text-sm">
-            Confirm the contract first to start planning.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (state === "loading") {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -143,6 +127,21 @@ export const BudgetAndProgressSection = ({ contractData }) => {
         >
           Retry
         </button>
+      </div>
+    );
+  }
+
+  if (!isActive) {
+    return (
+      <div className="flex items-center justify-center min-h-[300px]">
+        <div className="text-center">
+          <p className="text-text-primary font-medium mb-1">
+            Contract Not Active
+          </p>
+          <p className="text-text-secondary text-sm">
+            Confirm the contract first to start planning.
+          </p>
+        </div>
       </div>
     );
   }

@@ -8,27 +8,21 @@ export function useDashboardData() {
   const [reportData, setReportData] = useState(null);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(null);
 
     try {
-      // Primary: fetch contracts list (works now)
       const listData = await contractService.getContracts({ limit: 100 });
       setContracts(listData || []);
 
-      // Try reports endpoint (will work when other dev mounts routes)
       try {
-        const report = await reportService.getAllContractsReport();
+        const report = await reportService.getContracts();
         setReportData(report);
-      } catch (reportErr) {
-        // 404 expected until routes are mounted — silently ignore
+      } catch {
         setReportData(null);
       }
 
-      // Fetch plans for active contracts
       const activeContracts = (listData || []).filter(
         (c) => c.status === "active"
       );
@@ -52,8 +46,7 @@ export function useDashboardData() {
       } else {
         setPlans([]);
       }
-    } catch (err) {
-      setError(err);
+    } catch {
       setContracts([]);
       setPlans([]);
     } finally {
@@ -73,7 +66,5 @@ export function useDashboardData() {
     reportData,
     plans,
     loading,
-    error,
-    refetch: fetchData,
   };
 }

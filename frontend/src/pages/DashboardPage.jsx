@@ -13,7 +13,7 @@ import { useDashboardData } from "../hooks/useDashboardData";
 // =================== PAGE ===================
 export default function DashboardPage() {
   const { user } = useContext(AuthContext);
-  const { contracts, activeContracts, plans, loading } = useDashboardData();
+  const { contracts, activeContracts, plans, reportData, loading } = useDashboardData();
 
   const userName = user?.name || "";
   const hasContracts = contracts.length > 0;
@@ -41,6 +41,7 @@ export default function DashboardPage() {
           contracts={contracts}
           activeContracts={activeContracts}
           plans={plans}
+          reportData={reportData}
         />
         <ActiveProjectsSection activeContracts={activeContracts} />
         <FinanceStrategySection contracts={contracts} plans={plans} />
