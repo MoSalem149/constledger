@@ -18,17 +18,24 @@ export const signUpload = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { filename, mimeType, size, contractId } = req.body as {
+    const { filename, mimeType, size, contractId, fileHash } = req.body as {
       filename?: string;
       mimeType?: string;
       size?: number;
       contractId?: string;
+      fileHash?: string;
     };
 
-    if (!filename || !mimeType || size == null) {
+    if (!filename || !mimeType || size == null || !fileHash) {
       res
         .status(400)
-        .json({ message: 'filename, mimeType, and size are required' });
+        .json({ message: 'filename, mimeType, size, and fileHash are required' });
+      return;
+    }
+    // fileHash must be a SHA-256 hex digest computed client-side over the
+    // raw file bytes (e.g. crypto.subtle.digest('SHA-256', file)).
+    if (!/^[a-f0-9]{64}$/i.test(fileHash)) {
+      res.status(400).json({ message: 'fileHash must be a SHA-256 hex digest' });
       return;
     }
     // Security: enforce mime allow-list and size cap server-side. Trusting the
@@ -39,6 +46,18 @@ export const signUpload = async (
     }
     if (Number(size) > MAX_SIZE) {
       res.status(400).json({ message: 'File exceeds 50MB limit' });
+      return;
+    }
+
+    // Reject duplicates before we even hand out a presigned URL, so the
+    // browser never wastes bandwidth uploading content we already have.
+    const existing = await UploadJobModel.findOne({ fileHash });
+    if (existing) {
+      res.status(409).json({
+        message: 'This file has already been uploaded',
+        existingUploadId: existing._id,
+        existingFileName: existing.fileName,
+      });
       return;
     }
 
@@ -76,17 +95,22 @@ export const completeUpload = async (
   next: NextFunction,
 ): Promise<void> => {
   try {
-    const { s3Key, fileName, mimeType, size } = req.body as {
+    const { s3Key, fileName, mimeType, size, fileHash } = req.body as {
       s3Key?: string;
       fileName?: string;
       mimeType?: string;
       size?: number;
+      fileHash?: string;
     };
 
-    if (!s3Key || !fileName || !mimeType || size == null) {
+    if (!s3Key || !fileName || !mimeType || size == null || !fileHash) {
       res
         .status(400)
-        .json({ message: 's3Key, fileName, mimeType, and size are required' });
+        .json({ message: 's3Key, fileName, mimeType, size, and fileHash are required' });
+      return;
+    }
+    if (!/^[a-f0-9]{64}$/i.test(fileHash)) {
+      res.status(400).json({ message: 'fileHash must be a SHA-256 hex digest' });
       return;
     }
     if (!ALLOWED_MIME.has(mimeType)) {
@@ -111,18 +135,31 @@ export const completeUpload = async (
 
     const uploadedBy = new Types.ObjectId(userId);
 
-    const uploadJob = await UploadJobModel.findOneAndUpdate(
-      { s3Key, uploadedBy },
-      {
-        s3Key,
-        fileName,
-        mimeType,
-        sizeBytes: Number(size),
-        uploadedBy,
-        status: 'uploaded',
-      },
-      { upsert: true, new: true, runValidators: true },
-    );
+    let uploadJob;
+    try {
+      uploadJob = await UploadJobModel.findOneAndUpdate(
+        { s3Key, uploadedBy },
+        {
+          s3Key,
+          fileName,
+          mimeType,
+          sizeBytes: Number(size),
+          fileHash,
+          uploadedBy,
+          status: 'uploaded',
+        },
+        { upsert: true, new: true, runValidators: true },
+      );
+    } catch (err: any) {
+      // Two concurrent signUpload calls for the same content can both pass
+      // the pre-check race; the unique index on fileHash is the final
+      // backstop here.
+      if (err?.code === 11000 && err?.keyPattern?.fileHash) {
+        res.status(409).json({ message: 'This file has already been uploaded' });
+        return;
+      }
+      throw err;
+    }
 
     res.status(201).json({
       uploadId: uploadJob._id,

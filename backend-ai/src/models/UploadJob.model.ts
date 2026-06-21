@@ -7,6 +7,7 @@ export interface IUploadJob extends Document {
   fileName: string;
   mimeType: string;
   sizeBytes: number;
+  fileHash: string;
   status: UploadJobStatus;
   uploadedBy: Types.ObjectId;
   createdAt: Date;
@@ -21,6 +22,10 @@ const uploadJobSchema = new Schema<IUploadJob>(
     fileName: { type: String, required: true },
     mimeType: { type: String, required: true },
     sizeBytes: { type: Number, required: true },
+    // SHA-256 of the file content, computed client-side before upload.
+    // Globally unique: if any user has already uploaded this exact content,
+    // a new UploadJob with the same hash is rejected (see signUpload).
+    fileHash: { type: String, required: true, index: true },
     status: {
       type: String,
       enum: ['uploaded', 'linked'],
@@ -40,6 +45,10 @@ const uploadJobSchema = new Schema<IUploadJob>(
 // call for the same (user, S3 key) updates the existing record instead of
 // creating a duplicate.
 uploadJobSchema.index({ s3Key: 1, uploadedBy: 1 }, { unique: true });
+
+// Global de-duplication: no two UploadJobs may share the same file content,
+// regardless of which user uploaded it.
+uploadJobSchema.index({ fileHash: 1 }, { unique: true });
 
 export const UploadJobModel = mongoose.model<IUploadJob>(
   'UploadJob',
