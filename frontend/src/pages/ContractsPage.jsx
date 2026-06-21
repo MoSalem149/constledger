@@ -6,11 +6,12 @@ import { ArrowRightIcon } from "../components/icons/ArrowRightIcon";
 import { PlusIcon } from "../components/icons/PlusIcon";
 import SpinnerIcon from "../components/icons/SpinnerIcon";
 import { EmptyIcon } from "../components/icons/EmptyIcon";
+import { TrashIcon } from "../components/icons/TrashIcon";
 import projectImage from "../assets/projectImage.png";
 import { contractService } from "../services/contractService";
 import FullPageSpinner from "../components/common/FullPageSpinner";
-
-const PAGE_SIZE = 8;
+import DeleteContractModal from "../components/contracts/DeleteContractModal";
+import { useAuth } from "../context/AuthContext";
 
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
@@ -73,7 +74,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // =================== CONTRACT CARD ===================
-const ContractCard = ({ contract, onClick }) => {
+const ContractCard = ({ contract, onClick, canDelete, onDelete }) => {
   const { status } = contract;
 
   return (
@@ -96,8 +97,21 @@ const ContractCard = ({ contract, onClick }) => {
             {contract.id.slice(-8).toUpperCase()}
           </span>
         </div>
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5">
           <StatusBadge status={status} />
+          {canDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(contract);
+              }}
+              aria-label="Delete project"
+              className="w-6 h-6 rounded-full bg-black/50 hover:bg-status-risk flex items-center justify-center transition-colors"
+            >
+              <TrashIcon className="w-3.5 h-3.5 text-white" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -190,98 +204,15 @@ const SearchBar = ({ value, onChange }) => (
   </div>
 );
 
-// =================== PAGINATION ===================
-const getVisiblePages = (currentPage, totalPages) => {
-  if (totalPages <= 5) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 3) return [1, 2, 3, 4, totalPages];
-  if (currentPage >= totalPages - 2) {
-    return [
-      1,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  }
-
-  return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
-};
-
-const Pagination = ({ currentPage, totalPages, onPageChange }) => {
-  if (totalPages <= 1) return null;
-
-  const visiblePages = getVisiblePages(currentPage, totalPages);
-
-  return (
-    <nav
-      aria-label="Contracts pagination"
-      className="mt-8 flex items-center justify-center gap-2"
-    >
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <span aria-hidden="true">←</span>
-        Previous
-      </button>
-
-      {visiblePages.map((page, index) => {
-        const previousPage = visiblePages[index - 1];
-        const hasGap = previousPage && page - previousPage > 1;
-
-        return (
-          <div key={page} className="flex items-center gap-2">
-            {hasGap && (
-              <span className="px-1 text-sm text-text-placeholder">...</span>
-            )}
-            <button
-              type="button"
-              onClick={() => onPageChange(page)}
-              aria-label={`Go to page ${page}`}
-              aria-current={page === currentPage ? "page" : undefined}
-              className={`h-9 min-w-9 rounded-full border px-3 text-xs font-medium transition-colors ${
-                page === currentPage
-                  ? "border-primary bg-primary text-white"
-                  : "border-border bg-bg-cards1 text-text-secondary hover:border-primary hover:text-primary"
-              }`}
-            >
-              {page}
-            </button>
-          </div>
-        );
-      })}
-
-      <button
-        type="button"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        Next
-        <span aria-hidden="true">→</span>
-      </button>
-    </nav>
-  );
-};
-
 // =================== PAGE ===================
 const ContractsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canDelete = user?.role === "contract_manager";
   const [search, setSearch] = useState({ searchValue: "", active: false });
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    totalPages: 0,
-  });
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleSearch = (searchVal) => {
-    setCurrentPage(1);
     if (searchVal.length > 0)
       setSearch((prev) => ({ ...prev, searchValue: searchVal, active: true }));
     else setSearch((prev) => ({ ...prev, searchValue: "", active: false }));
@@ -291,51 +222,31 @@ const ContractsPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setDebouncedSearch(search.searchValue.trim());
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [search.searchValue]);
-
-  useEffect(() => {
-    let isCurrentRequest = true;
-
     async function fetchContract() {
-      setLoading(true);
-
       try {
-        const data = await contractService.getContracts({
-          limit: PAGE_SIZE,
-          skip: (currentPage - 1) * PAGE_SIZE,
-          search: debouncedSearch || undefined,
-          excludeStatuses: "analysis_failed,processing",
-          paginated: true,
-        });
-
-        if (!isCurrentRequest) return;
-
-        setContracts(data.contracts);
-        setPagination(data.pagination);
+        const data = await contractService.getContracts();
+        setContracts(data);
       } catch (err) {
         console.log(err);
       } finally {
-        if (isCurrentRequest) setLoading(false);
+        setLoading(false);
       }
     }
-
     fetchContract();
+  }, []);
 
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [currentPage, debouncedSearch]);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  const handleDeleted = (deleted) => {
+    setContracts((prev) => prev.filter((c) => c.id !== deleted.id));
+    setDeleteTarget(null);
   };
 
+  const filtered = contracts.filter(
+    (c) =>
+      (c.name.toLowerCase().includes(search.searchValue.toLowerCase()) ||
+        c.id.toLowerCase().includes(search.searchValue.toLowerCase())) &&
+      c.status !== "analysis_failed" &&
+      c.status !== "processing",
+  );
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
@@ -351,17 +262,19 @@ const ContractsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {contracts.map((contract) => (
+        {filtered.map((contract) => (
           <ContractCard
             key={contract.id}
             contract={contract}
             onClick={() => navigate(`/contracts/${contract.id}`)}
+            canDelete={canDelete}
+            onDelete={(c) => setDeleteTarget(c)}
           />
         ))}
         {!search.searchValue && <AddNewCard />}
       </div>
 
-      {contracts.length === 0 && search.active && (
+      {filtered.length === 0 && search.active && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <EmptyIcon />
           <p className="text-[14px] text-text-secondary mt-3">
@@ -370,11 +283,13 @@ const ContractsPage = () => {
         </div>
       )}
 
-      <Pagination
-        currentPage={currentPage}
-        totalPages={pagination.totalPages}
-        onPageChange={handlePageChange}
-      />
+      {deleteTarget && (
+        <DeleteContractModal
+          contract={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={handleDeleted}
+        />
+      )}
     </div>
   );
 };
