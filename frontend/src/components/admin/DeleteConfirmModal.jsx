@@ -83,7 +83,7 @@ export default function DeleteConfirmModal({
           </div>
         )}
 
-        <div className="flex gap-3 px-14 pb-8">
+        <div className="flex gap-3 px-6 sm:px-14 pb-8">
           <button
             type="button"
             onClick={handleClose}

@@ -46,7 +46,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <section className="min-h-[100vh - 116px] bg-bg-main pr-10">
+    <section className="min-h-[calc(100vh-116px)] bg-bg-main pr-0 sm:pr-10">
       {/* Header */}
       <div>
         <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>
@@ -92,7 +92,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Description */}
-              <p className="mt-6 text-text-secondary leading-8 text-[14px] max-w-[500px]">
+                  <p className="mt-6 text-text-secondary leading-8 text-[14px]">
                 {card.description}
               </p>
             </div>
