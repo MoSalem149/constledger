@@ -78,7 +78,7 @@ export default function PlanKpis({
       {items.map((item) => (
         <div
           key={item.label}
-          className="bg-bg-cards1 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] rounded-xl  px-8 py-6"
+          className="rounded-xl bg-bg-cards1 px-5 py-5 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:px-6 lg:px-8 lg:py-6"
         >
           {/* Top row: icon + label */}
           <div className="flex items-center gap-4 mb-2">
@@ -91,7 +91,7 @@ export default function PlanKpis({
           </div>
           {/* Bottom row: value + subtitle */}
           <div>
-            <p className="text-2xl mb-2 font-medium text-text-primary">
+            <p className="mb-2 break-words text-xl font-medium text-text-primary sm:text-2xl">
               {item.value}
             </p>
             <p className="text-xs text-text-placeholder ">{item.subtitle}</p>

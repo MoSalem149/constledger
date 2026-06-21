@@ -6,16 +6,17 @@ import { formatDate } from "../../utils/formatDate";
 
 const AddBtn = ({ label, onClick }) => (
   <button
+    type="button"
     onClick={onClick}
-    className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
+    className="flex w-full items-center justify-center gap-1.5 px-3.5 py-2 shadow rounded-full
       text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
-      self-start whitespace-nowrap"
+      self-start whitespace-nowrap sm:w-auto"
   >
     <PlusIcon /> {label}
   </button>
 );
 // =================== UNIT PRICES ===================
-const UNIT_COLS = "grid-cols-[2fr_100px_100px_150px_130px_44px]";
+const UNIT_COLS = "lg:grid-cols-[2fr_100px_100px_150px_130px_44px]";
 
 const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
   const [local, setLocal] = useState({
@@ -28,17 +29,25 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
   const total = Number(local.quantity) * Number(local.unit_price);
 
   const inputCls = (extra = "") =>
-    `text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-     outline-none w-full transition-colors ${
-       readOnly ? "cursor-default" : "focus:border-gray-300"
+    `w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13px]
+     text-text-primary outline-none transition-colors lg:rounded-none lg:border-x-0
+     lg:border-t-0 lg:border-b-transparent lg:bg-transparent lg:px-0 lg:py-0 lg:text-[13.5px] ${
+       readOnly ? "cursor-default" : "focus:border-primary lg:focus:border-gray-300"
      } ${extra}`;
+
+  const MobileLabel = ({ children }) => (
+    <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-text-secondary lg:hidden">
+      {children}
+    </span>
+  );
 
   return (
     <div
-      className={`grid ${UNIT_COLS} gap-2 px-4 py-4 items-center border-t border-gray-100`}
+      className={`grid grid-cols-2 gap-3 rounded-lg border border-border bg-bg-main p-3 lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t lg:border-gray-100 lg:bg-transparent lg:px-4 lg:py-4 ${UNIT_COLS} lg:items-center`}
     >
       {/* Name with tooltip */}
-      <div className="relative group min-w-0">
+      <div className="group relative col-span-2 min-w-0 lg:col-span-1">
+        <MobileLabel>Item</MobileLabel>
         <input
           value={local.name}
           onChange={
@@ -66,51 +75,65 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
         )}
       </div>
 
-      <input
-        value={local.unit}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, unit: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange(local)}
-        readOnly={readOnly}
-        className={inputCls("text-text-secondary text-left")}
-      />
-      <input
-        value={local.quantity}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, quantity: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange(local)}
-        readOnly={readOnly}
-        className={inputCls("text-left pr-2")}
-      />
-      <input
-        value={local.unit_price}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, unit_price: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange(local)}
-        readOnly={readOnly}
-        className={inputCls("text-left pr-2")}
-      />
-      <span className="text-[13.5px] text-text-primary font-medium text-left pr-2">
-        {total.toLocaleString()}
-      </span>
+      <div>
+        <MobileLabel>Unit</MobileLabel>
+        <input
+          value={local.unit}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, unit: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange(local)}
+          readOnly={readOnly}
+          className={inputCls("text-text-secondary text-left")}
+        />
+      </div>
+      <div>
+        <MobileLabel>Quantity</MobileLabel>
+        <input
+          value={local.quantity}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, quantity: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange(local)}
+          readOnly={readOnly}
+          className={inputCls("text-left")}
+        />
+      </div>
+      <div>
+        <MobileLabel>Unit Price (EGP)</MobileLabel>
+        <input
+          value={local.unit_price}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, unit_price: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange(local)}
+          readOnly={readOnly}
+          className={inputCls("text-left")}
+        />
+      </div>
+      <div>
+        <MobileLabel>Total (EGP)</MobileLabel>
+        <span className="flex min-h-9 items-center text-[13.5px] font-medium text-text-primary">
+          {total.toLocaleString()}
+        </span>
+      </div>
       {!readOnly ? (
         <button
+          type="button"
           onClick={onRemove}
-          className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
+          aria-label="Remove unit price item"
+          className="col-span-2 flex justify-end text-text-secondary transition-colors hover:text-status-risk lg:col-span-1 lg:justify-center"
         >
           <TrashIcon />
         </button>
       ) : (
-        <span />
+        <span className="hidden lg:block" />
       )}
     </div>
   );
@@ -168,7 +191,7 @@ const UnitPricesSection = ({ data, readOnly }) => {
   );
 
   return (
-    <div className="mb-8 bg-bg-cards1 p-4 rounded shadow">
+    <div className="mb-6 min-w-0 rounded-lg bg-bg-cards1 p-4 shadow sm:mb-8">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
         <div>
           <h2 className="text-[17px] font-medium text-text-primary">
@@ -181,9 +204,9 @@ const UnitPricesSection = ({ data, readOnly }) => {
         {!readOnly && <AddBtn label="Add Item" onClick={handleAdd} />}
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[600px] overflow-hidden">
-          <div className={`grid ${UNIT_COLS} gap-2 bg-bg-grey px-4 py-3`}>
+      <div>
+        <div className="flex flex-col gap-3 lg:block">
+          <div className={`hidden ${UNIT_COLS} gap-2 bg-bg-grey px-4 py-3 lg:grid`}>
             {[
               "Item",
               "Unit",
@@ -409,7 +432,7 @@ const PaymentScheduleSection = ({ data, readOnly }) => {
 
 // =================== EXPORT ===================
 const FinancialTermsSection = ({ data, readOnly }) => (
-  <div className="bg-bg-main flex flex-col gap-4">
+  <div className="flex min-w-0 flex-col gap-4 bg-bg-main">
     <UnitPricesSection data={data} readOnly={readOnly} />
   </div>
 );

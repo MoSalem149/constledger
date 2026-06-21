@@ -57,7 +57,7 @@ export default function PlanChart({ periods, strategy }) {
   return (
     <div className="w-full">
       {/* Header with title, subtitle, legend */}
-      <div className="flex items-start justify-between ">
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <h3 className="text-lg font-medium text-text-primary">
             Planned Spend Across The Contract
@@ -66,7 +66,7 @@ export default function PlanChart({ periods, strategy }) {
             {strategyLabel} — {strategyDesc}
           </p>
         </div>
-        <div className="flex items-center gap-4 font-normal text-[10px] text-text-secondary">
+        <div className="flex flex-wrap items-center gap-3 text-[10px] font-normal text-text-secondary sm:justify-end sm:gap-4">
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
             <span>Planned this period</span>
@@ -78,7 +78,7 @@ export default function PlanChart({ periods, strategy }) {
         </div>
       </div>
 
-      <div className="w-full h-72 mt-[86px]">
+      <div className="mt-8 h-64 w-full min-w-0 sm:mt-14 sm:h-72 lg:mt-[86px]">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={data}
@@ -97,7 +97,7 @@ export default function PlanChart({ periods, strategy }) {
             />
             <Tooltip
               formatter={(value, name) => {
-                if (name === "plannedAmount")
+                if (name === "Planned this period")
                   return [formatEGP(value), "Planned this period"];
                 return [formatEGP(value), "Cumulative planned"];
               }}

@@ -24,7 +24,7 @@ const PartyField = ({
   readOnly,
 }) => {
   return (
-    <div className="flex items-center gap-3">
+    <div className="grid grid-cols-1 gap-2 rounded-lg border border-border bg-bg-cards1 p-2.5 sm:grid-cols-[140px_minmax(0,1fr)_auto] sm:items-center sm:border-0 sm:p-0">
       <input
         value={role ? formatRole(role) : ""}
         onChange={
@@ -32,7 +32,7 @@ const PartyField = ({
         }
         onBlur={readOnly ? undefined : onBlur}
         readOnly={readOnly}
-        className={`w-[140px] px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1 ${
+        className={`w-full px-2 py-2.5 rounded-lg text-[13px] bg-bg-cards1 ${
           readOnly ? "cursor-default select-text" : ""
         }`}
       />
@@ -51,7 +51,7 @@ const PartyField = ({
       {!readOnly && (
         <button
           onClick={() => onDelete(index)}
-          className="text-text-secondary p-1 flex-shrink-0"
+          className="justify-self-end p-1 text-text-secondary transition-colors hover:text-status-risk sm:justify-self-auto"
         >
           <TrashIcon />
         </button>
@@ -433,7 +433,7 @@ const PaymentTermsSection = ({ payment, readOnly }) => {
   return (
     <div>
       <p className="text-[15px] font-medium mb-3.5">Payment Terms</p>
-      <div className="flex flex-col md:flex-row gap-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <AdvancePaymentCard data={terms} readOnly={readOnly} />
         <ProgressPaymentCard data={progress} readOnly={readOnly} />
         <RetentionCard data={terms} readOnly={readOnly} />
@@ -460,7 +460,7 @@ export const BasicInfoContent = ({ data, readOnly }) => {
   ];
 
   return (
-    <div className="px-4 sm:px-6 py-2.5 bg-bg-cards1 shadow rounded">
+    <div className="rounded-lg bg-bg-cards1 px-4 py-4 shadow sm:px-6">
       <ContractPartiesSection parties={data.parties} readOnly={readOnly} />
       <ContractFieldsGrid fields={contractFields} readOnly={readOnly} />
       <PaymentTermsSection payment={data} readOnly={readOnly} />

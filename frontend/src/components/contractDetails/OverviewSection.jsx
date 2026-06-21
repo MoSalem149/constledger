@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { ApprovalsSection } from "./ApprovalsSection";
-import ContractSection from "./ContractSection";
 import { ChartIcon } from "../icons/ChartIcon";
 import { ClockIcon } from "../icons/ClockIcon";
 import { AlertIcon } from "../icons/AlertIcon";
@@ -41,7 +38,7 @@ const WhatsHappeningSection = ({ data }) => (
       A plain-English snapshot of this project right now
     </p>
 
-    <div className="flex flex-col md:flex-row gap-2.5">
+    <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
       <InsightCard icon="chart" title="Where the money is">
         You've spent about EGP {data.budget.spent}M of your EGP{" "}
         {data.budget.total}M budget — that's {data.budget.percentDone}% done.{" "}
@@ -77,7 +74,7 @@ const KPICard = ({ label, value, sub }) => (
 
 // =================== KPI SECTION ===================
 const KPIMetricsSection = ({ kpis }) => (
-  <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3.5">
+  <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
     {kpis.map((k, i) => (
       <KPICard key={i} {...k} />
     ))}
@@ -95,7 +92,7 @@ const ActivityItem = ({ type, name, action, time, isLast }) => {
   const { bg, color, Icon } = activityCfg[type];
   return (
     <div
-      className={`flex items-center gap-3 py-3.5 ${!isLast ? "border-b border-border" : ""}`}
+      className={`flex items-start gap-3 py-3.5 sm:items-center ${!isLast ? "border-b border-border" : ""}`}
     >
       <div
         className={`w-9 h-9 rounded-lg ${bg} ${color} flex items-center justify-center flex-shrink-0`}
@@ -127,7 +124,7 @@ const RecentActivitySection = ({ activities }) => (
 
 // =================== OVERVIEW SECTION ===================
 export const OverviewSection = ({ data }) => (
-  <div className="flex flex-col gap-3.5">
+  <div className="flex min-w-0 flex-col gap-3.5">
     <WhatsHappeningSection data={data} />
     <KPIMetricsSection kpis={data.kpis} />
     <RecentActivitySection activities={data.activities} />

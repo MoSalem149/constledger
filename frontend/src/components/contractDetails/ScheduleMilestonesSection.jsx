@@ -98,9 +98,9 @@ const TimelinePreview = ({ milestones, startDate, endDate }) => {
         Timeline Preview
       </h2>
 
-      <div className="flex justify-between text-xs text-text-secondary mb-1 px-1">
+      <div className="flex justify-between gap-4 px-1 text-[10px] text-text-secondary sm:text-xs">
         <span>{formatLabel(scaleStart)}</span>
-        <span>{formatLabel(scaleEnd)}</span>
+        <span className="text-right">{formatLabel(scaleEnd)}</span>
       </div>
 
       <div
@@ -161,7 +161,8 @@ const DateFields = ({
           <input
             type="text"
             value={formatDate(value)}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
+            readOnly={readOnly}
             className={`w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
               text-text-primary bg-bg-cards1 outline-none transition-colors ${
                 readOnly ? "cursor-default" : "focus:border-primary"
@@ -182,37 +183,55 @@ const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
 
   return (
     <div
-      className={`grid ${readOnly ? "grid-cols-[1fr_160px]" : "grid-cols-[1fr_160px_44px]"} px-4 py-4 items-center border-b border-gray-100`}
+      className={`grid grid-cols-1 gap-3 rounded-lg border border-border bg-bg-main p-3 md:items-center md:gap-0 md:rounded-none md:border-x-0 md:border-b md:border-t-0 md:border-gray-100 md:bg-transparent md:px-4 md:py-4 ${
+        readOnly
+          ? "md:grid-cols-[minmax(0,1fr)_160px]"
+          : "md:grid-cols-[minmax(0,1fr)_160px_44px]"
+      }`}
     >
-      <input
-        value={local.name}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange({ ...local })}
-        readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
-      />
-      <input
-        value={local.dueDate}
-        onChange={
-          readOnly
-            ? undefined
-            : (e) => setLocal((p) => ({ ...p, dueDate: e.target.value }))
-        }
-        onBlur={readOnly ? undefined : () => onChange({ ...local })}
-        readOnly={readOnly}
-        className={`text-[13.5px] text-text-primary font-medium bg-transparent border-b border-transparent
-          outline-none w-full transition-colors ${readOnly ? "cursor-default" : "focus:border-gray-300"}`}
-      />
+      <label>
+        <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-text-secondary md:hidden">
+          Milestone
+        </span>
+        <input
+          value={local.name}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange({ ...local })}
+          readOnly={readOnly}
+          className={`w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13.5px] text-text-primary outline-none transition-colors md:rounded-none md:border-transparent md:bg-transparent md:px-0 md:py-0 ${
+            readOnly ? "cursor-default" : "focus:border-primary md:focus:border-gray-300"
+          }`}
+        />
+      </label>
+      <label>
+        <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-text-secondary md:hidden">
+          Due Date
+        </span>
+        <input
+          value={local.dueDate}
+          onChange={
+            readOnly
+              ? undefined
+              : (e) => setLocal((p) => ({ ...p, dueDate: e.target.value }))
+          }
+          onBlur={readOnly ? undefined : () => onChange({ ...local })}
+          readOnly={readOnly}
+          className={`w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13.5px] font-medium text-text-primary outline-none transition-colors md:rounded-none md:border-transparent md:bg-transparent md:px-0 md:py-0 ${
+            readOnly ? "cursor-default" : "focus:border-primary md:focus:border-gray-300"
+          }`}
+        />
+      </label>
 
       {!readOnly && (
         <button
+          type="button"
           onClick={onRemove}
-          className="flex justify-center text-text-secondary hover:text-status-risk transition-colors"
+          aria-label="Remove milestone"
+          className="flex justify-end text-text-secondary transition-colors hover:text-status-risk md:justify-center"
         >
           <TrashIcon />
         </button>
@@ -235,20 +254,25 @@ const MilestonesTable = ({ milestones, onRemove, onChange, readOnly }) => (
       </div>
       {!readOnly && (
         <button
+          type="button"
           onClick={() => onChange("add")}
-          className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
+          className="flex w-full items-center justify-center gap-1.5 px-3.5 py-2 shadow rounded-full
             text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
-            self-start whitespace-nowrap"
+            self-start whitespace-nowrap sm:w-auto"
         >
           <PlusIcon /> Add Milestone
         </button>
       )}
     </div>
 
-    <div className="overflow-x-auto">
-      <div className="min-w-[460px] shadow rounded overflow-hidden">
+    <div>
+      <div className="flex flex-col gap-3 overflow-hidden rounded md:block md:shadow">
         <div
-          className={`grid ${readOnly ? "grid-cols-[1fr_160px]" : "grid-cols-[1fr_160px_44px]"} bg-gray-100 px-4 py-4`}
+          className={`hidden bg-gray-100 px-4 py-4 md:grid ${
+            readOnly
+              ? "md:grid-cols-[minmax(0,1fr)_160px]"
+              : "md:grid-cols-[minmax(0,1fr)_160px_44px]"
+          }`}
         >
           <span className="text-[11px] font-semibold text-text-secondary tracking-widest uppercase">
             REPORTING PERIOD
@@ -319,7 +343,7 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
   };
 
   return (
-    <div className="bg-bg-cards1 p-4 shadow rounded">
+    <div className="min-w-0 rounded-lg bg-bg-cards1 p-4 shadow sm:p-5">
       <DateFields
         startDate={startDate}
         endDate={endDate}
@@ -339,11 +363,15 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
         onChange={handleMilestones}
         readOnly={readOnly}
       />
-      <TimelinePreview
-        milestones={milestones}
-        startDate={startDate}
-        endDate={endDate}
-      />
+      <div className="overflow-x-auto">
+        <div className="min-w-[420px]">
+          <TimelinePreview
+            milestones={milestones}
+            startDate={startDate}
+            endDate={endDate}
+          />
+        </div>
+      </div>
     </div>
   );
 };

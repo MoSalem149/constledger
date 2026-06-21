@@ -68,22 +68,20 @@ export default function ContractDetailPage() {
   }
 
   return (
-    <div>
-      <div className="project bg-bg-main pr-10">
-        <Link
-          to="/contracts"
-          className="flex items-center gap-2 text-text-secondary"
-        >
-          <ArrowLeftIcon />
-          <div className="text-sm sm:text-base">All Projects</div>
-        </Link>
+    <div className="project min-w-0 w-full bg-bg-main">
+      <Link
+        to="/contracts"
+        className="inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary sm:text-base"
+      >
+        <ArrowLeftIcon className="h-5 w-5" />
+        <span>All Projects</span>
+      </Link>
 
-        <ContarctCard contractData={mergedData} />
-        <ContarctDetailsSections
-          contractData={mergedData}
-          readOnly={read_only}
-        />
-      </div>
+      <ContarctCard contractData={mergedData} />
+      <ContarctDetailsSections
+        contractData={mergedData}
+        readOnly={read_only}
+      />
     </div>
   );
 }
