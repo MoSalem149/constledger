@@ -204,7 +204,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate, saveContractData],
+    [navigate, setContractData],
   );
 
   const handleBack = useCallback(() => {

@@ -1,3 +1,5 @@
+name: constledger
+
 services:
 
   # ── MongoDB ─────────────────────────────────────────────────────────
@@ -9,6 +11,12 @@ services:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks:
       - cpms-net
 
@@ -23,20 +31,18 @@ services:
     restart: unless-stopped
     env_file: ./backend-core/.env
     environment:
-      NODE_ENV: development
-      MONGODB_URI: mongodb://mongo:27017/cpms
-      PORT: "3000"
-      # JWT_SECRET, JWT_EXPIRES_IN, FRONTEND_URL — set in backend-core/.env
+      NODE_ENV: production
+      PORT: 3000
+      MONGODB_URI: mongodb+srv://mohamedsalemdevofficial_db_user:6eDqJY4jY520illL@cpms-db.ko9ddow.mongodb.net/cpms
+      FRONTEND_URL: http://localhost:5173
+      AI_SERVICE_URL: http://backend-ai:5000
     ports:
       - '3000:3000'
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     networks:
       - cpms-net
-    volumes:
-      # hot-reload in dev — remove for production image
-      - ./backend-core/src:/app/src:ro
-
   # ── AI Backend (Node/Express TS) ─────────────────────────────────────
   # Owns all SRS business APIs: contracts, finance, performance, reports.
   # Verifies JWTs issued by backend-core; never issues them.
@@ -49,19 +55,18 @@ services:
     restart: unless-stopped
     env_file: ./backend-ai/.env
     environment:
-      NODE_ENV: development
-      MONGODB_URI: mongodb://mongo:27017/cpms
-      PORT: "5000"
-      # The following must match their counterparts in backend-core/.env:
-      #   JWT_SECRET        — shared for token verification
-      #   AI_SERVICE_SECRET — shared for internal backend-core → backend-ai calls
-      # All other secrets (OPENAI_API_KEY, AWS_*, S3_*, FRONTEND_URL)
-      # are loaded from backend-ai/.env via env_file above.
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb+srv://mohamedsalemdevofficial_db_user:6eDqJY4jY520illL@cpms-db.ko9ddow.mongodb.net/cpms
+      FRONTEND_URL: http://localhost:5173
+      CORE_SERVICE_URL: http://backend-core:3000
     ports:
       - '5000:5000'
     depends_on:
-      - mongo
-      - backend-core
+      mongo:
+        condition: service_healthy
+      backend-core:
+        condition: service_healthy
     networks:
       - cpms-net
 
