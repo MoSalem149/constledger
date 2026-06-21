@@ -177,6 +177,7 @@ export default function UploadContractPage() {
           navigate(`/contracts/${contract.id}/edit`);
         }
       } catch (err) {
+        console.error("Upload failed:", err);
         if (!mountedRef.current) return;
 
         // Stop any running simulation
@@ -204,7 +205,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate, saveContractData],
+    [navigate, setContractData],
   );
 
   const handleBack = useCallback(() => {
