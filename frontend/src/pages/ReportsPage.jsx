@@ -49,7 +49,9 @@ export default function ReportsPage() {
     <section className="min-h-[calc(100vh-116px)] bg-bg-main pr-0 sm:pr-10">
       {/* Header */}
       <div>
-        <h1 className="text-[24px] font-bold text-text-primary">Reports</h1>
+        <h1 className="text-[24px] font-medium text-text-primary">
+          Available Reports
+        </h1>
 
         <p className="text-[14px] mt-2 text-text-secondary">
           Aggregated views across all projects • export to Excel
@@ -92,7 +94,7 @@ export default function ReportsPage() {
               </div>
 
               {/* Description */}
-                  <p className="mt-6 text-text-secondary leading-8 text-[14px]">
+              <p className="mt-6 text-text-secondary leading-8 text-[14px]">
                 {card.description}
               </p>
             </div>
