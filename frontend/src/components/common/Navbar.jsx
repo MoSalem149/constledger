@@ -24,7 +24,7 @@ function formatRole(role) {
   //   .join(" ");
 }
 
-export default function Navbar({ title }) {
+export default function Navbar({ title, sidebarOpen, onToggleSidebar }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -56,36 +56,30 @@ export default function Navbar({ title }) {
   }
 
   return (
-    <header className="pt-6 flex items-center justify-between pl-5 pr-16">
-      {/* Left — title + search (no functionality just visual)*/}
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-medium text-text-primary font-sans">
+    <header className="pt-6 flex items-center justify-between pl-5 pr-4 lg:pr-16">
+      {/* Left — hamburger + title */}
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Hamburger */}
+        <button
+          onClick={onToggleSidebar}
+          className="lg:hidden w-10 h-10 shrink-0 flex items-center justify-center
+                     text-text-secondary hover:text-text-primary transition-colors"
+          aria-label={sidebarOpen ? "Close menu" : "Open menu"}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        <h1 className="text-2xl font-medium text-text-primary font-sans truncate">
           {title}
         </h1>
-
-        {/* Search placeholder */}
-        {/* <div
-          className="w-[330px] h-10 bg-white rounded-[28px] flex items-center gap-2 px-4 py-[10px]
-                     shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
-        >
-          <SearchIcon className="w-5 h-5 text-text-secondary shrink-0" />
-          <span className="text-xs text-text-placeholder select-none">
-            Search ...
-          </span>
-        </div> */}
       </div>
 
       {/* Right — notification + profile */}
-      <div className="flex items-center gap-3">
-        {/* Notification bell (no action) */}
-        {/* <button
-          className="w-10 h-10 bg-white rounded-lg flex items-center justify-center
-                     shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
-          aria-label="Notifications"
-        >
-          <NotificationIcon className="text-text-secondary w-[18px] h-5" />
-        </button> */}
-
+      <div className="flex items-center gap-3 shrink-0">
         {/* Profile card + dropdown */}
         <div className="relative" ref={profileRef}>
           <button
@@ -101,8 +95,8 @@ export default function Navbar({ title }) {
               <PersonIcon className="text-white w-5 h-5" />
             </div>
 
-            {/* Name + role */}
-            <div className="flex flex-col gap-1 pr-3 font-sans text-left">
+            {/* Name + role — hide on <sm */}
+            <div className="hidden sm:flex flex-col gap-1 pr-3 font-sans text-left">
               <span className="text-xs font-medium text-text-primary leading-none whitespace-nowrap">
                 {user?.name || "User"}
               </span>
