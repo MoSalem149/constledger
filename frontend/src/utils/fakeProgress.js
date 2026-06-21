@@ -86,6 +86,7 @@ export function startSimulation(callbacks) {
     if (!isRunning) return;
     const elapsed = Date.now() - startTime;
 
+    try {
     // Process scheduled events
     while (
       nextEventIndex < scheduledEvents.length &&
@@ -132,6 +133,10 @@ export function startSimulation(callbacks) {
     }
 
     onProgress({ label, percent });
+    } catch (e) {
+      // Silently ignore errors from setInterval callbacks
+      // to prevent unhandled errors in production builds
+    }
   }
 
   // Start tick interval (handles events + progress bar)

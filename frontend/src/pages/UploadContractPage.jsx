@@ -79,8 +79,30 @@ export default function UploadContractPage() {
 
   useEffect(() => {
     mountedRef.current = true;
+
+    // Global error handlers to catch errors that escape the try-catch
+    // (e.g. from setInterval callbacks, unhandled rejections, etc.)
+    const onError = (evt) => {
+      console.error("Global error:", evt.error || evt.message);
+      if (mountedRef.current) {
+        setError(evt.error?.message || evt.message || "Unexpected error");
+        setPageState("idle");
+      }
+    };
+    const onRejection = (evt) => {
+      console.error("Unhandled rejection:", evt.reason);
+      if (mountedRef.current) {
+        setError(evt.reason?.message || String(evt.reason));
+        setPageState("idle");
+      }
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+
     return () => {
       mountedRef.current = false;
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
     };
   }, []);
 
@@ -90,6 +112,7 @@ export default function UploadContractPage() {
 
   const handleFileSelect = useCallback(
     async (file) => {
+      try {
       if (!file) return;
       if (!isValidFile(file)) {
         setError("Only PDF and DOCX files are allowed.");
@@ -112,8 +135,7 @@ export default function UploadContractPage() {
       setProgress({ label: "Uploading file...", percent: 0 });
       setStepStatus(["active", "pending", "pending", "pending"]);
 
-      try {
-        // ── Step 1: Request presigned S3 URL ──────────────────────────
+      // ── Step 1: Request presigned S3 URL ──────────────────────────
         const { uploadUrl, key } = await contractService.signUpload({
           filename: file.name,
           mimeType: file.type,
@@ -160,10 +182,27 @@ export default function UploadContractPage() {
         if (!mountedRef.current) return;
 
         // Stop the simulation
+        if (typeof cleanup !== "function") {
+          throw new Error(
+            `cleanup is ${typeof cleanup} — startSimulation may not have returned a function`,
+          );
+        }
         cleanup();
         cleanupRef.current = null;
 
-        setContractData?.(contract);
+        // Validate callbacks before use (debugs production minification issues)
+        if (typeof setContractData !== "function") {
+          throw new Error(
+            `setContractData is ${typeof setContractData} — context value may be corrupted`,
+          );
+        }
+        if (typeof navigate !== "function") {
+          throw new Error(
+            `navigate is ${typeof navigate} — router hook may be corrupted`,
+          );
+        }
+
+        setContractData(contract);
 
         if (contract.status === "analysis_failed") {
           // AI failed but contract record exists — let user see partial data
