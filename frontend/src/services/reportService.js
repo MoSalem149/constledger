@@ -17,14 +17,23 @@ export const reportService = {
       };
     }),
 
+  getActiveConfirmed: () =>
+    api.get("/reports/contracts/active-confirmed").then((res) => {
+      const data = res.data;
+      return {
+        ...data,
+        contracts: normalizeIdArray(data.contracts),
+      };
+    }),
+
   /**
-   * GET /api/reports/planned-budget
-   * Returns the planned budget report for a specific contract and year.
+   * GET /api/finance/:contractId/plan
+   * Returns the finance plan for a specific contract.
    *
-   * Query params: contractId (required), year (optional)
+   * Path param: contractId (required)
    */
-  getPlannedBudget: (params = {}) =>
-    api.get("/reports/planned-budget", { params }).then((res) => res.data),
+  getPlannedBudget: (contractId) =>
+    api.get(`/finance/${contractId}/plan`).then((res) => res.data),
 
   /**
    * GET /api/reports/planned-budget/export
@@ -32,8 +41,8 @@ export const reportService = {
    *
    * Query params: contractId (required), year (optional)
    */
-  exportPlannedBudget: async (params = {}) => {
-    const response = await api.get("/reports/planned-budget/export", {
+  exportPlannedBudget: async (contractId, params = {}) => {
+    const response = await api.get(`finance/${contractId}/plan/export`, {
       params,
       responseType: "blob",
     });

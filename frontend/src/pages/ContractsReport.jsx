@@ -294,7 +294,7 @@ const ContractsReport = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-bg-main">
+    <div className="min-h-screen bg-bg-main p-10">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="">
         <div className="flex items-start justify-between">

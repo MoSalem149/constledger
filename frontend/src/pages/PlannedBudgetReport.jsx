@@ -82,7 +82,10 @@ function StatCell({ label, value }) {
 
 function ContractRow({ contract }) {
   return (
-    <div className="bg-white rounded overflow-hidden shadow flex min-h-[150px]">
+    <Link
+      to={`/reports/planned-budget/${contract.id}`}
+      className="bg-white rounded overflow-hidden shadow flex min-h-[150px]"
+    >
       {/* ── Image ── */}
       <div className="relative w-[160px] flex-shrink-0 bg-gray-100">
         <img
@@ -126,10 +129,7 @@ function ContractRow({ contract }) {
           {/* Open Report */}
         </div>
       </div>
-      <Link
-        to={`/reports/planned-budget/${contract.id}`}
-        className="flex bg-bg-main w-40 justify-center items-end p-2"
-      >
+      <div className="flex bg-bg-main w-40 justify-center items-end p-2">
         <div
           className="flex justify-center items-center gap-1.5 text-primary text-[13px] font-semibold
              transition-all duration-150 group"
@@ -137,8 +137,8 @@ function ContractRow({ contract }) {
           Open Report
           <IconArrowRight />
         </div>
-      </Link>
-    </div>
+      </div>
+    </Link>
   );
 }
 
@@ -168,14 +168,14 @@ function SkeletonRow() {
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
-const PlannedBudgetReport = ({ onBack, onOpenReport }) => {
+const PlannedBudgetReport = ({ onOpenReport }) => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     reportService
-      .getContracts()
+      .getActiveConfirmed()
       .then(setData)
       .catch(() => setError("Failed to load contracts. Please try again."))
       .finally(() => setLoading(false));
@@ -186,7 +186,7 @@ const PlannedBudgetReport = ({ onBack, onOpenReport }) => {
   const activeContracts = contracts.filter((c) => c.status === "active");
 
   return (
-    <div className="min-h-screen bg-bg-main">
+    <div className="min-h-screen bg-bg-main pr-10">
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -198,14 +198,14 @@ const PlannedBudgetReport = ({ onBack, onOpenReport }) => {
           </p>
         </div>
 
-        <button
-          onClick={onBack}
+        <Link
+          to={"/reports"}
           className="flex items-center gap-1.5 px-4 py-2 rounded-full shadow
               bg-white text-text-primary text-sm font-medium hover:bg-bg-main transition-colors"
         >
           <ArrowLeftIcon />
           Back
-        </button>
+        </Link>
       </div>
 
       {/* ── List ── */}
@@ -223,7 +223,7 @@ const PlannedBudgetReport = ({ onBack, onOpenReport }) => {
               setLoading(true);
               setError(null);
               reportService
-                .getContracts()
+                .getActiveConfirmed()
                 .then(setData)
                 .catch(() =>
                   setError("Failed to load contracts. Please try again."),

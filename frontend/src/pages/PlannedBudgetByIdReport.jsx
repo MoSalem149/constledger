@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { reportService } from "../services/reportService";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import PlanChart from "../components/planning/PlanChart";
@@ -105,9 +105,7 @@ function CalendarIcon() {
 }
 
 /* ------------------------------------------------------------------ */
-// StatCard — kept custom because PlanKpis shows different fields
-// (Peak Cash Period / Allocation Strategy) vs our design
-// (Plan Status / Periods in {year})
+// StatCard
 /* ------------------------------------------------------------------ */
 
 function StatCard({ icon, label, value }) {
@@ -136,86 +134,40 @@ export const PlannedBudgetByIdReport = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  const contractId = searchParams.get("contractId");
-  const year = searchParams.get("year");
+  const { id } = useParams();
 
-  const [data, setData] = useState({
-    plan: {
-      id: "6a36b8432f802d3acd8e6337",
-      contractId: "6a3696e751492d02b0a30d76",
-      strategy: "straight_line",
-      strategyParams: {},
-      totalAmount: 8750000,
-      generatedAt: "2026-06-20T23:57:06.673Z",
-      generatedBy: "6a23632b7be65daa24981fc4",
-      status: "confirmed",
-      warnings: [],
-    },
-    periods: [
-      {
-        id: "6a3728d30933d3872d81de5d",
-        periodLabel: "Biweekly 1",
-        periodStart: "2022-09-26T00:00:00.000Z",
-        periodEnd: "2022-10-10T00:00:00.000Z",
-        plannedAmount: 2187500,
-        cumulativePlanned: 2187500,
-        sortOrder: 0,
-      },
-      {
-        id: "6a3728d30933d3872d81de5e",
-        periodLabel: "Biweekly 2",
-        periodStart: "2022-10-11T00:00:00.000Z",
-        periodEnd: "2022-10-25T00:00:00.000Z",
-        plannedAmount: 2187500,
-        cumulativePlanned: 4375000,
-        sortOrder: 1,
-      },
-      {
-        id: "6a3728d30933d3872d81de5f",
-        periodLabel: "Biweekly 3",
-        periodStart: "2022-10-26T00:00:00.000Z",
-        periodEnd: "2022-11-09T00:00:00.000Z",
-        plannedAmount: 2187500,
-        cumulativePlanned: 6562500,
-        sortOrder: 2,
-      },
-      {
-        id: "6a3728d30933d3872d81de60",
-        periodLabel: "Biweekly 4",
-        periodStart: "2022-11-10T00:00:00.000Z",
-        periodEnd: "2022-11-25T00:00:00.000Z",
-        plannedAmount: 2187500,
-        cumulativePlanned: 8750000,
-        sortOrder: 3,
-      },
-    ],
-    kpis: {
-      peakCash: 8750000,
-      burnRate: 4439166.67,
-    },
-    warnings: [],
-  });
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [exporting, setExporting] = useState(false);
 
-  //   useEffect(() => {
-  //     if (!contractId) {
-  //       setLoading(false);
-  //       return;
-  //     }
-  //     setLoading(true);
-  //     reportService
-  //       .getPlannedBudget({ contractId, year })
-  //       .then(setData)
-  //       .catch(setError)
-  //       .finally(() => setLoading(false));
-  //   }, [contractId, year]);
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      setError("No contract ID provided.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    reportService
+      .getPlannedBudget(id)
+      .then((res) => {
+        setData(res);
+      })
+      .catch((err) => {
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            "Failed to load report.",
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [id]);
 
   const handleExport = async () => {
     setExporting(true);
     try {
-      await reportService.exportPlannedBudget({ contractId, year });
+      await reportService.exportPlannedBudget(id);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -223,44 +175,72 @@ export const PlannedBudgetByIdReport = () => {
     }
   };
 
-  //   /* ── Loading ── */
-  //   if (loading) {
-  //     return (
-  //       <div className="flex items-center justify-center min-h-[400px]">
-  //         <p className="text-text-secondary text-sm">Loading report…</p>
-  //       </div>
-  //     );
-  //   }
-
-  /* ── Error ── */
-  if (error) {
+  /* ── Loading ── */
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-status-risk text-sm">Failed to load report.</p>
+        <p className="text-text-secondary text-sm">Loading report…</p>
       </div>
     );
   }
 
-  if (!data) return null;
+  /* ── Error ── */
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <p className="text-status-risk text-sm">{error}</p>
+        {id && (
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              reportService
+                .getPlannedBudget(id)
+                .then(setData)
+                .catch((err) =>
+                  setError(
+                    err?.response?.data?.message ||
+                      err?.message ||
+                      "Failed to load report.",
+                  ),
+                )
+                .finally(() => setLoading(false));
+            }}
+            className="px-4 py-2 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            Retry
+          </button>
+        )}
+      </div>
+    );
+  }
 
-  const { contract, plan, year: dataYear, periodCount, periods = [] } = data;
+  /* ── No data ── */
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-text-secondary text-sm">No plan data available.</p>
+      </div>
+    );
+  }
+
+  const { plan, periods = [], kpis = {}, warnings = [] } = data;
 
   return (
     <div>
-      <div className="px-6 py-6 space-y-5 bg-bg-main min-h-screen">
+      <div className="pr-10 space-y-5 bg-bg-main min-h-screen">
         {/* ── Header ── */}
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-text-primary">
               Planned Budget
             </h1>
-            <p className="text-sm text-text-secondary mt-1">
-              {contract?.name ?? "—"}&nbsp;.&nbsp;Year {dataYear}
-            </p>
+            <p className="text-sm text-text-secondary mt-1"></p>
           </div>
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors mt-0.5"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full shadow
+              bg-white text-text-primary text-sm font-medium hover:bg-bg-main transition-colors"
           >
             <ArrowLeftIcon className="w-5 h-5" />
             Back
@@ -271,8 +251,8 @@ export const PlannedBudgetByIdReport = () => {
         <div className="flex gap-4">
           <StatCard
             icon={<DollarIcon />}
-            label="Contracts Value"
-            value={`${formatCompact(+contract?.contractValue)} EGP`}
+            label="Contract Value"
+            value={`${formatCompact(plan?.totalAmount ?? 0)} EGP`}
           />
           <StatCard
             icon={<ActivityIcon />}
@@ -292,22 +272,22 @@ export const PlannedBudgetByIdReport = () => {
           />
           <StatCard
             icon={<CalendarIcon />}
-            label={`Periods in ${dataYear}`}
-            value={periodCount ?? "—"}
+            label={"Total Periods"}
+            value={periods.length > 0 ? periods.length : "—"}
           />
         </div>
 
-        {/* ── Chart — reusing PlanChart ── */}
+        {/* ── Chart ── */}
         <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] px-6 pt-6 pb-14">
           <PlanChart periods={periods} strategy={plan?.strategy} />
         </div>
 
-        {/* ── Table — reusing PlanTable ── */}
+        {/* ── Table ── */}
         <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
           <PlanTable
             periods={periods}
-            contractValue={contract?.contractValue ?? 0}
-            currency={contract?.currency ?? "EGP"}
+            contractValue={plan?.totalAmount ?? 0}
+            currency="EGP"
             readOnly
             isConfirmed
             canPlan
