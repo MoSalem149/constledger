@@ -108,8 +108,7 @@ export default function ContractStepper({
               )}
             </div>
           );
-          })}
-        </div>
+        })}
       </div>
 
       {/* Progress bar (only shown during Extract step) */}
