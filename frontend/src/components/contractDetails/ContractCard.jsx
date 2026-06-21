@@ -32,7 +32,7 @@ export const ContarctCard = ({ contractData }) => {
     return num.toLocaleString() + " EGP";
   };
 
-  const nextMilestone = contractData.milestones
+  const nextMilestone = (contractData.milestones ?? [])
     .filter((milestone) => new Date(milestone.dueDate) > new Date())
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 

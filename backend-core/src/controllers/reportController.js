@@ -5,6 +5,7 @@ import {
   createProjectSummaryWorkbook,
 } from "../services/exportService.js";
 import {
+  getActiveConfirmedContractsReport,
   getAllContractsReport,
   getPaymentScheduleReport,
   getPlannedBudgetReport,
@@ -42,6 +43,17 @@ const sendWorkbook = async (res, workbook, filename) => {
 export const allContractsReport = async (req, res, next) => {
   try {
     const report = await getAllContractsReport(req.query.year, req.query.status);
+    return res.json(report);
+  } catch (err) {
+    if (sendReportError(res, err)) return;
+    next(err);
+  }
+};
+
+// GET /api/reports/contracts/active-confirmed
+export const activeConfirmedContractsReport = async (req, res, next) => {
+  try {
+    const report = await getActiveConfirmedContractsReport();
     return res.json(report);
   } catch (err) {
     if (sendReportError(res, err)) return;

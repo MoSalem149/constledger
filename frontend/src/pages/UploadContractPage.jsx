@@ -163,7 +163,7 @@ export default function UploadContractPage() {
         cleanup();
         cleanupRef.current = null;
 
-        setContractData(contract);
+        setContractData?.(contract);
 
         if (contract.status === "analysis_failed") {
           // AI failed but contract record exists — let user see partial data

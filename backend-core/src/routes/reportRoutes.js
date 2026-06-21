@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import {
+  activeConfirmedContractsReport,
   allContractsReport,
   exportAllContractsReport,
   exportPaymentScheduleReport,
@@ -19,6 +20,7 @@ const router = Router();
 router.use(protect);
 
 router.get("/contracts", allContractsReport);
+router.get("/contracts/active-confirmed", activeConfirmedContractsReport);
 router.get("/contracts/export", exportAllContractsReport);
 router.get("/planned-budget", plannedBudgetReport);
 router.get("/planned-budget/export", exportPlannedBudgetReport);

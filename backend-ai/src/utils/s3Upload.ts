@@ -29,16 +29,17 @@ interface BuildObjectKeyInput {
 
 // Key layout: contracts/{resourceId}/original/{uuid}-{name}
 //
-// NOTE: assertUserOwnsS3Key (s3Access.ts) expects the resourceId to be the
-// userId so the ownership check works by prefix alone. Passing a contractId
-// here will produce a key that FAILS the ownership check at /complete time.
-// Treat contractId as a no-op for now and prefer userId.
+// IMPORTANT: assertUserOwnsS3Key (s3Access.ts) checks the key against the
+// prefix `contracts/{userId}/`, so resourceId MUST be the userId whenever
+// one is available. contractId is accepted for backwards compatibility but
+// must never take precedence — doing so produces a key that fails the
+// ownership check at /complete time.
 export function buildObjectKey({
   filename,
   contractId,
   userId,
 }: BuildObjectKeyInput): string {
   const safeName = sanitizeFilename(filename);
-  const resourceId = contractId || userId || uuid();
+  const resourceId = userId || contractId || uuid();
   return `contracts/${resourceId}/original/${uuid()}-${safeName}`;
 }
