@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from "react";
-import { Link } from "react-router-dom";
 import RegenerateIcon from "../icons/RegenerateIcon";
 import PlanChart from "./PlanChart";
 import PlanTable from "./PlanTable";
@@ -77,7 +76,7 @@ export default function PlanningPlanView({
   const isConfirmed = status === "confirmed";
 
   return (
-    <div className="font-sans space-y-6">
+    <div className="min-w-0 space-y-6 font-sans">
       {/* Header */}
       <div className=" flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -92,11 +91,11 @@ export default function PlanningPlanView({
             Current plan
           </p>
         </div>
-        <div className="flex items-center gap-3 self-start">
+        <div className="flex w-full flex-wrap items-center gap-2 self-start sm:w-auto sm:gap-3">
           {isConfirmed && canPlan && (
             <button
               onClick={onExport}
-              className="px-4 py-2 rounded-full border border-gray-200 text-text-primary text-sm font-medium hover:bg-gray-50 transition-colors"
+              className="w-full rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-gray-50 sm:w-auto"
             >
               Export Schedule
             </button>
@@ -105,7 +104,7 @@ export default function PlanningPlanView({
             <>
               <button
                 onClick={onRegenerate}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-3xl border border-gray-200 bg-white text-text-primary text-xs font-normal hover:bg-gray-50 transition-colors"
+                className="flex flex-1 items-center justify-center gap-2 rounded-3xl border border-gray-200 bg-white px-4 py-2.5 text-xs font-normal text-text-primary transition-colors hover:bg-gray-50 sm:flex-none"
               >
                 <RegenerateIcon className="w-5 h-5" />
                 Regenerate
@@ -113,7 +112,7 @@ export default function PlanningPlanView({
               <button
                 onClick={handleConfirm}
                 disabled={confirming || !isBalanced}
-                className="px-4 py-2.5 rounded-3xl bg-primary shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] text-white text-xs font-normal hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 rounded-3xl bg-primary px-4 py-2.5 text-xs font-normal text-white shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
               >
                 {confirming ? "Confirming..." : "Confirm"}
               </button>
@@ -135,12 +134,12 @@ export default function PlanningPlanView({
       />
 
       {/* Chart */}
-      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] px-6 pt-6 pb-14">
+      <div className="min-w-0 rounded-lg bg-bg-cards1 px-3 pb-8 pt-5 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:px-6 sm:pb-14 sm:pt-6">
         <PlanChart periods={localPeriods} strategy={plan?.strategy} />
       </div>
 
       {/* Table */}
-      <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
+      <div className="min-w-0 rounded-lg bg-bg-cards1 p-4 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:p-6">
         <PlanTable
           periods={localPeriods}
           contractValue={contractValue}

@@ -36,11 +36,11 @@ export default function PlanTable({
             budget
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2 self-start">
+        <div className="flex w-full flex-col items-stretch gap-2 self-start sm:w-auto sm:items-end">
           {canPlan && (
             <button
               onClick={onExport}
-              className="px-4 py-2.5 rounded-3xl shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] bg-button-active text-text-light text-xs font-medium hover:opacity-90 transition-opacity"
+              className="w-full rounded-3xl bg-button-active px-4 py-2.5 text-xs font-medium text-text-light shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] transition-opacity hover:opacity-90 sm:w-auto"
             >
               Export Schedule
             </button>
@@ -62,8 +62,8 @@ export default function PlanTable({
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto bg-bg-cards1 mt-6">
-        <table className="table-auto w-full">
+      <div className="-mx-4 mt-6 overflow-x-auto bg-bg-cards1 px-4 sm:mx-0 sm:px-0">
+        <table className="w-full min-w-[900px] table-auto">
           <colgroup>
             <col className="w-1/3" />
             <col />

@@ -3,14 +3,8 @@ import { formatDate } from "../../utils/formatDate";
 import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 
 export const ContarctCard = ({ contractData }) => {
-  const paymentProgress = contractData.paymentProgress ?? {
-    frequency: 0,
-    basis: "—",
-    dueTo: "—",
-  };
-
   const formatBudget = (value) => {
-    const num = +value;
+    const num = Number(value) || 0;
     if (num >= 1_000_000_000)
       return (
         (num / 1_000_000_000).toFixed(1).replace(/\.0$/, "") +
@@ -29,10 +23,10 @@ export const ContarctCard = ({ contractData }) => {
         "K " +
         contractData.currency
       );
-    return num.toLocaleString() + " EGP";
+    return `${num.toLocaleString()} ${contractData.currency ?? "EGP"}`;
   };
 
-  const nextMilestone = contractData.milestones
+  const nextMilestone = (contractData.milestones ?? [])
     .filter((milestone) => new Date(milestone.dueDate) > new Date())
     .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
@@ -70,43 +64,47 @@ export const ContarctCard = ({ contractData }) => {
   ];
 
   return (
-    <div className="ProjectooMainCard rounded-lg overflow-hidden w-full mt-5 shadow">
-      <div className="image relative w-full">
+    <div className="ProjectooMainCard mt-5 w-full min-w-0 overflow-hidden rounded-xl shadow">
+      <div className="image relative h-40 w-full sm:h-52 lg:h-64">
         <img
-          className="w-full object-cover max-h-64 sm:max-h-80 md:max-h-none"
+          className="h-full w-full object-cover"
           src={ProjectImage}
           alt="projectImage"
         />
       </div>
 
-      <div className="content flex flex-col md:flex-row w-full h-full">
-        <div className="left bg-bg-cards1 w-full md:w-9/12">
-          <div className="top text-sm pt-5 px-5">
-            <span className="text-text-secondary mr-4 sm:mr-10">
+      <div className="content grid w-full md:grid-cols-[minmax(0,3fr)_minmax(220px,1fr)]">
+        <div className="left min-w-0 bg-bg-cards1">
+          <div className="top flex flex-wrap items-center gap-2 px-4 pt-4 text-xs sm:px-5 sm:pt-5 sm:text-sm">
+            <span className="break-all text-text-secondary">
               {contractData.contractNumber}
-            </span>{" "}
-            <span className="text-primary bg-bg-cards2/15 px-2 rounded-full">
+            </span>
+            <span className="rounded-full bg-bg-cards2/15 px-2 py-0.5 text-primary">
               Contract Analysis Complete
             </span>
           </div>
-          <div className="middle px-5 border-b pb-4">
-            <h2 className="text-xl sm:text-2xl my-4">{contractData.name}</h2>
-            <p className="text-text-secondary text-sm">
+          <div className="middle border-b px-4 pb-4 sm:px-5">
+            <h2 className="my-3 break-words text-lg font-medium text-text-primary sm:my-4 sm:text-2xl">
+              {contractData.name}
+            </h2>
+            <p className="text-xs text-text-secondary sm:text-sm">
               NREA contracting{" "}
               <span className="text-text-primary">
-                {
-                  contractData.parties.find((p) => p.role === "main_contractor")
-                    ?.name
-                }
+                {(contractData.parties ?? []).find(
+                  (p) => p.role === "main_contractor",
+                )?.name ?? "—"}
               </span>
             </p>
           </div>
 
-          <div className="bottom p-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:flex sm:justify-between sm:items-start">
+          <div className="bottom grid grid-cols-1 gap-4 p-4 min-[420px]:grid-cols-2 sm:p-5 xl:grid-cols-4">
             {cardBottomData.map((d, index) => (
-              <div key={index} className="item text-text-secondary text-sm">
-                <p>{d.title}</p>
-                <p className="text-text-primary">
+              <div
+                key={index}
+                className="item min-w-0 text-xs text-text-secondary sm:text-sm"
+              >
+                <p className="mb-1">{d.title}</p>
+                <p className="break-words font-medium text-text-primary">
                   {d.format ? d.format(d.data) : d.data}{" "}
                 </p>
                 <p>
@@ -119,7 +117,7 @@ export const ContarctCard = ({ contractData }) => {
           </div>
         </div>
 
-        <div className="right w-full md:w-3/12 bg-bg-main min-h-[10rem] md:h-full">
+        <div className="right min-h-[12rem] w-full bg-bg-main">
           <CircularProgress value={0} />
         </div>
       </div>

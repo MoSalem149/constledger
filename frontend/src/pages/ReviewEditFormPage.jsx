@@ -1,9 +1,8 @@
-import { useContext, useEffect } from "react";
+import { useContext } from "react";
 import { ContarctDetailsSections } from "../components/contractDetails/ContarctDetailsSections";
 import { ContarctCard } from "../components/contractDetails/ContractCard";
 
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
-import { contractService } from "../services/contractService";
 import { Link } from "react-router-dom";
 import { UContractContext } from "../context/UploadedContractContext";
 import { ContractContext } from "../context/EditContaractContext";
@@ -28,20 +27,17 @@ export default function ReviewEditFormPage() {
   };
 
   return (
-    <div>
-      <div className="project bg-bg-main pr-10">
-        <Link
-          to="/contracts"
-          className="flex items-center gap-2 text-text-secondary"
-        >
-          <ArrowLeftIcon />
+    <div className="project min-w-0 w-full bg-bg-main">
+      <Link
+        to="/contracts"
+        className="inline-flex items-center gap-2 text-sm text-text-secondary transition-colors hover:text-primary sm:text-base"
+      >
+        <ArrowLeftIcon className="h-5 w-5" />
+        <span>All Projects</span>
+      </Link>
 
-          <div className="text-sm sm:text-base">All Projects</div>
-        </Link>
-
-        <ContarctCard contractData={mergedData} />
-        <ContarctDetailsSections contractData={mergedData} readOnly={false} />
-      </div>
+      <ContarctCard contractData={mergedData} />
+      <ContarctDetailsSections contractData={mergedData} readOnly={false} />
     </div>
   );
 }

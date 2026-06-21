@@ -1,26 +1,34 @@
+import { useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
-/**
- * DashboardLayout — shared app shell for all authenticated pages.
- *
- * Renders a sidebar (Figma SideBar design) + top bar (Figma NavBar design) +
- * an <Outlet /> where the matched page component renders.
- */
 export default function DashboardLayout() {
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-bg-main font-sans">
-      <Sidebar />
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col overflow-auto">
-        <Navbar title={getPageTitle(location.pathname)} />
+      <div className="flex-1 flex flex-col overflow-auto min-w-0 lg:ml-[195px]">
+        <Navbar
+          title={getPageTitle(location.pathname)}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        />
 
         {/* Page content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

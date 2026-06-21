@@ -121,26 +121,60 @@ export const listContracts = async (
     const year = req.query.year as string | undefined;
     const name = req.query.name as string | undefined;
     const search = req.query.search as string | undefined;
-    const limit = req.query.limit ? Number(req.query.limit) : 10;
-    const skip = req.query.skip ? Number(req.query.skip) : 0;
+    const paginated = req.query.paginated === "true";
+    const requestedLimit = Number(req.query.limit ?? 10);
+    const requestedSkip = Number(req.query.skip ?? 0);
+    const limit = Number.isFinite(requestedLimit)
+      ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 100)
+      : 10;
+    const skip = Number.isFinite(requestedSkip)
+      ? Math.max(Math.trunc(requestedSkip), 0)
+      : 0;
 
     const filter: Record<string, unknown> = {};
     if (status) filter.status = status;
+    else if (typeof req.query.excludeStatuses === "string") {
+      const excludedStatuses = req.query.excludeStatuses
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+      if (excludedStatuses.length > 0) {
+        filter.status = { $nin: excludedStatuses };
+      }
+    }
     // start_date is stored as a YYYY-MM-DD string; a year filter just regexes the prefix
     if (year) filter.start_date = { $regex: `^${year}` };
 
     // `name` and `search` are aliases — both do a case-insensitive substring match
     const nameToSearch = name || search;
-    if (nameToSearch) filter.name = { $regex: nameToSearch, $options: "i" };
+    if (nameToSearch) {
+      const escapedSearch = nameToSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.$or = [
+        { name: { $regex: escapedSearch, $options: "i" } },
+        {
+          $expr: {
+            $regexMatch: {
+              input: { $toString: "$_id" },
+              regex: escapedSearch,
+              options: "i",
+            },
+          },
+        },
+      ];
+    }
 
-    const rawContracts = await ContractModel.find(filter)
-      .select(
-        "name status contract_value currency start_date end_date contractNumber parties milestones",
-      )
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const [rawContracts, total] = await Promise.all([
+      ContractModel.find(filter)
+        .select(
+          "name status contract_value currency start_date end_date contractNumber parties milestones",
+        )
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      ContractModel.countDocuments(filter),
+    ]);
 
     // Reshape into the API response shape — flatten _id and rename snake_case fields
     const contracts = rawContracts.map((c) => ({
@@ -159,6 +193,20 @@ export const listContracts = async (
         value: m.value,
       })),
     }));
+
+    if (paginated) {
+      res.json({
+        contracts,
+        pagination: {
+          total,
+          limit,
+          skip,
+          page: Math.floor(skip / limit) + 1,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+      return;
+    }
 
     res.json(contracts);
   } catch (err) {
@@ -259,6 +307,39 @@ export const updateContract = async (
       message: "Successfully updated contract",
       id: contract._id,
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// DELETE /api/contracts/:id — permanently removes a contract.
+//
+// Role note: the route for this (see contractRoutes.ts) is locked to
+// contract_manager ONLY — unlike the other mutations on this resource
+// (upload, analyze, update) which also allow 'pmo'. That's intentional,
+// not an oversight — don't "fix" it to match the others.
+export const deleteContract = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const contract = await ContractModel.findById(req.params.id);
+    if (!contract) {
+      res.status(404).json({ message: "Contract not found" });
+      return;
+    }
+
+    // The linked UploadJob can only ever back this one contract (see the
+    // 409 check in uploadContract), so it has no value once the contract
+    // is gone — clean it up too rather than leaving an orphaned record.
+    if (contract.contractDocId) {
+      await UploadJobModel.findByIdAndDelete(contract.contractDocId);
+    }
+
+    await ContractModel.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "Contract deleted", id: req.params.id });
   } catch (err) {
     next(err);
   }

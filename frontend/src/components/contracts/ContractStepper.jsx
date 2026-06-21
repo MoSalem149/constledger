@@ -54,10 +54,11 @@ export default function ContractStepper({
   progress,
 }) {
   return (
-    <div className="flex flex-col w-full bg-bg-cards1 p-4 rounded shadow">
+    <div className="flex w-full min-w-0 flex-col overflow-hidden rounded-lg bg-bg-cards1 p-3 shadow sm:p-4">
       {/* Stepper row */}
-      <div className="flex items-center justify-center gap-0">
-        {steps.map((step, index) => {
+      <div className="overflow-x-auto">
+        <div className="flex min-w-[620px] items-center justify-center gap-0 px-2">
+          {steps.map((step, index) => {
           const status = stepStatus[index] || "pending";
           const isLast = index === STEP_COUNT - 1;
 
@@ -87,7 +88,7 @@ export default function ContractStepper({
               {/* Connector line */}
               {!isLast && (
                 <div
-                  className="mx-3 w-[72px] h-0.5 rounded-2xl bg-gray-100 data-[completed=true]:bg-status-track"
+                  className="mx-3 h-0.5 w-[52px] rounded-2xl bg-gray-100 data-[completed=true]:bg-status-track lg:w-[72px]"
                   data-completed={status === "completed"}
                   style={
                     status === "completed" ? { backgroundColor: "#007D0F" } : {}
@@ -96,7 +97,8 @@ export default function ContractStepper({
               )}
             </div>
           );
-        })}
+          })}
+        </div>
       </div>
 
       {/* Progress bar (only shown during Extract step) */}

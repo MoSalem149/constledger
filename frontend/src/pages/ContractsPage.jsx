@@ -10,6 +10,8 @@ import projectImage from "../assets/projectImage.png";
 import { contractService } from "../services/contractService";
 import FullPageSpinner from "../components/common/FullPageSpinner";
 
+const PAGE_SIZE = 8;
+
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
   if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M ${currency}`;
@@ -188,12 +190,98 @@ const SearchBar = ({ value, onChange }) => (
   </div>
 );
 
+// =================== PAGINATION ===================
+const getVisiblePages = (currentPage, totalPages) => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) return [1, 2, 3, 4, totalPages];
+  if (currentPage >= totalPages - 2) {
+    return [
+      1,
+      totalPages - 3,
+      totalPages - 2,
+      totalPages - 1,
+      totalPages,
+    ];
+  }
+
+  return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+
+  return (
+    <nav
+      aria-label="Contracts pagination"
+      className="mt-8 flex items-center justify-center gap-2"
+    >
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <span aria-hidden="true">←</span>
+        Previous
+      </button>
+
+      {visiblePages.map((page, index) => {
+        const previousPage = visiblePages[index - 1];
+        const hasGap = previousPage && page - previousPage > 1;
+
+        return (
+          <div key={page} className="flex items-center gap-2">
+            {hasGap && (
+              <span className="px-1 text-sm text-text-placeholder">...</span>
+            )}
+            <button
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-label={`Go to page ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`h-9 min-w-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                page === currentPage
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-bg-cards1 text-text-secondary hover:border-primary hover:text-primary"
+              }`}
+            >
+              {page}
+            </button>
+          </div>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+        <span aria-hidden="true">→</span>
+      </button>
+    </nav>
+  );
+};
+
 // =================== PAGE ===================
 const ContractsPage = () => {
   const navigate = useNavigate();
   const [search, setSearch] = useState({ searchValue: "", active: false });
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+  });
 
   const handleSearch = (searchVal) => {
+    setCurrentPage(1);
     if (searchVal.length > 0)
       setSearch((prev) => ({ ...prev, searchValue: searchVal, active: true }));
     else setSearch((prev) => ({ ...prev, searchValue: "", active: false }));
@@ -203,26 +291,51 @@ const ContractsPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearch(search.searchValue.trim());
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [search.searchValue]);
+
+  useEffect(() => {
+    let isCurrentRequest = true;
+
     async function fetchContract() {
+      setLoading(true);
+
       try {
-        const data = await contractService.getContracts();
-        setContracts(data);
+        const data = await contractService.getContracts({
+          limit: PAGE_SIZE,
+          skip: (currentPage - 1) * PAGE_SIZE,
+          search: debouncedSearch || undefined,
+          excludeStatuses: "analysis_failed,processing",
+          paginated: true,
+        });
+
+        if (!isCurrentRequest) return;
+
+        setContracts(data.contracts);
+        setPagination(data.pagination);
       } catch (err) {
         console.log(err);
       } finally {
-        setLoading(false);
+        if (isCurrentRequest) setLoading(false);
       }
     }
-    fetchContract();
-  }, []);
 
-  const filtered = contracts.filter(
-    (c) =>
-      (c.name.toLowerCase().includes(search.searchValue.toLowerCase()) ||
-        c.id.toLowerCase().includes(search.searchValue.toLowerCase())) &&
-      c.status !== "analysis_failed" &&
-      c.status !== "processing",
-  );
+    fetchContract();
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [currentPage, debouncedSearch]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
@@ -238,7 +351,7 @@ const ContractsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {filtered.map((contract) => (
+        {contracts.map((contract) => (
           <ContractCard
             key={contract.id}
             contract={contract}
@@ -248,7 +361,7 @@ const ContractsPage = () => {
         {!search.searchValue && <AddNewCard />}
       </div>
 
-      {filtered.length === 0 && search.active && (
+      {contracts.length === 0 && search.active && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <EmptyIcon />
           <p className="text-[14px] text-text-secondary mt-3">
@@ -256,6 +369,12 @@ const ContractsPage = () => {
           </p>
         </div>
       )}
+
+      <Pagination
+        currentPage={currentPage}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 };
