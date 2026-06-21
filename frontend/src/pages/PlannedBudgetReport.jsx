@@ -186,7 +186,7 @@ const PlannedBudgetReport = ({ onOpenReport }) => {
   const activeContracts = contracts.filter((c) => c.status === "active");
 
   return (
-    <div className="min-h-screen bg-bg-main pr-10">
+    <div className="min-h-screen bg-bg-main lg:pr-10 pr-0 ">
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-8">
         <div>

@@ -198,13 +198,7 @@ const getVisiblePages = (currentPage, totalPages) => {
 
   if (currentPage <= 3) return [1, 2, 3, 4, totalPages];
   if (currentPage >= totalPages - 2) {
-    return [
-      1,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
+    return [1, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
   }
 
   return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
@@ -338,14 +332,14 @@ const ContractsPage = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
+      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] lg:pr-10 pr-0 ">
         <FullPageSpinner />
       </div>
     );
   }
 
   return (
-    <div className="bg-bg-main min-h-[calc(100vh-116px)]  pr-10">
+    <div className="bg-bg-main min-h-[calc(100vh-116px)]  lg:pr-10 pr-0 ">
       <div className="mb-6">
         <SearchBar value={search.searchValue} onChange={handleSearch} />
       </div>

@@ -41,10 +41,10 @@ const DashboardHeader = ({ projectCount, userName }) => {
 
       <Link
         to="/contracts/upload"
-        className="inline-flex  bg-button-active shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] text-text-light text-sm font-medium px-4 py-2.5  rounded-3xl hover:opacity-90 transition-opacity "
+        className="inline-flex  bg-button-active shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] text-text-light text-sm font-medium md:px-4 px-2.5 py-2.5  rounded-3xl hover:opacity-90 transition-opacity mt-7 md:mt-0"
       >
-        <PlusIcon className="mr-2" size={14} />
-        Add Project
+        <PlusIcon className="md:mr-2" size={14} />
+        <span className="hidden md:inline">Add Project</span>
       </Link>
     </div>
   );
