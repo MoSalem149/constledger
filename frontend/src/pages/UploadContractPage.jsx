@@ -160,8 +160,25 @@ export default function UploadContractPage() {
         if (!mountedRef.current) return;
 
         // Stop the simulation
+        if (typeof cleanup !== "function") {
+          throw new Error(
+            `cleanup is ${typeof cleanup} — startSimulation may not have returned a function`,
+          );
+        }
         cleanup();
         cleanupRef.current = null;
+
+        // Validate callbacks before use (debugs production minification issues)
+        if (typeof setContractData !== "function") {
+          throw new Error(
+            `setContractData is ${typeof setContractData} — context value may be corrupted`,
+          );
+        }
+        if (typeof navigate !== "function") {
+          throw new Error(
+            `navigate is ${typeof navigate} — router hook may be corrupted`,
+          );
+        }
 
         setContractData(contract);
 
@@ -177,6 +194,7 @@ export default function UploadContractPage() {
           navigate(`/contracts/${contract.id}/edit`);
         }
       } catch (err) {
+        console.error("Upload failed:", err);
         if (!mountedRef.current) return;
 
         // Stop any running simulation
@@ -204,7 +222,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate, saveContractData],
+    [navigate, setContractData],
   );
 
   const handleBack = useCallback(() => {
