@@ -252,6 +252,31 @@ export const getAllContractsReport = async (yearInput, statusInput) => {
   return buildAllContractsReport(contracts, { year, status });
 };
 
+// Contracts available to report-selection pages: the contract must be active
+// and its one finance plan must already be confirmed. The response intentionally
+// uses the same contract rows and summary shape as the all-contracts report.
+export const getActiveConfirmedContractsReport = async () => {
+  const confirmedPlans = await FinancePlan.find({ status: "confirmed" })
+    .select("contractId")
+    .lean();
+  const contractIds = confirmedPlans.map((plan) => plan.contractId);
+
+  const contracts = await Contract.find({
+    _id: { $in: contractIds },
+    status: "active",
+  })
+    .select(
+      "_id contractNumber name contract_value currency status parties start_date end_date duration_days reporting_period",
+    )
+    .sort({ start_date: 1, name: 1 })
+    .lean();
+
+  return buildAllContractsReport(contracts, {
+    year: null,
+    status: "active",
+  });
+};
+
 // Common loader — validate contract id, load the contract & its CONFIRMED
 // plan, and load the ordered period rows. Used by payment schedule and
 // project summary reports.
