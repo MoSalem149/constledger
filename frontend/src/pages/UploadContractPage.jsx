@@ -85,14 +85,14 @@ export default function UploadContractPage() {
     const onError = (evt) => {
       console.error("Global error:", evt.error || evt.message);
       if (mountedRef.current) {
-        setError(evt.error?.message || evt.message || "Unexpected error");
+        setError(`[Global] ${evt.error?.message || evt.message || "Unexpected error"}`);
         setPageState("idle");
       }
     };
     const onRejection = (evt) => {
       console.error("Unhandled rejection:", evt.reason);
       if (mountedRef.current) {
-        setError(evt.reason?.message || String(evt.reason));
+        setError(`[UnhandledRejection] ${evt.reason?.message || String(evt.reason)}`);
         setPageState("idle");
       }
     };
@@ -140,10 +140,11 @@ export default function UploadContractPage() {
           filename: file.name,
           mimeType: file.type,
           size: file.size,
-        });
+        }).catch((err) => { throw new Error(`[Step 1: signUpload] ${err?.message || err}`); });
 
         // ── Step 2: Upload file directly to S3 ───────────────────────
-        await putFileToS3(uploadUrl, file);
+        await putFileToS3(uploadUrl, file)
+          .catch((err) => { throw new Error(`[Step 2: putFileToS3] ${err?.message || err}`); });
 
         // ── Step 3: Notify backend upload is complete ─────────────────
         const { uploadId } = await contractService.completeUpload({
@@ -151,7 +152,7 @@ export default function UploadContractPage() {
           fileName: file.name,
           mimeType: file.type,
           size: file.size,
-        });
+        }).catch((err) => { throw new Error(`[Step 3: completeUpload] ${err?.message || err}`); });
 
         // ── Step 4: Create contract record (returns 202 immediately) ──
         // The backend kicks off AI analysis in the background and responds
@@ -172,11 +173,12 @@ export default function UploadContractPage() {
         const { id: contractId } = await contractService.createContract(
           file.name,
           uploadId,
-        );
+        ).catch((err) => { throw new Error(`[Step 4: createContract] ${err?.message || err}`); });
 
         // ── Step 5: Poll until analysis finishes ──────────────────────
         // GET /api/contracts/:id every 4s until status !== 'processing'
-        const contract = await contractService.pollContractReady(contractId);
+        const contract = await contractService.pollContractReady(contractId)
+          .catch((err) => { throw new Error(`[Step 5: pollContractReady] ${err?.message || err}`); });
 
         // Guard: don't update state if the user navigated away
         if (!mountedRef.current) return;
@@ -228,17 +230,19 @@ export default function UploadContractPage() {
         const status = err?.response?.status;
         const data = err?.response?.data;
 
+        // Build a diagnostic error message that includes the stack trace
+        // so we can identify the exact source of the error in production
+        const rawMsg = data?.message || err?.message || "Upload failed. Please check your connection and try again.";
+        const stack = err?.stack ? ` | STACK: ${err.stack}` : "";
+        const diagMsg = `[catch] ${rawMsg}${stack}`;
+
         if (status === 409) {
           setError(
             data?.message ||
               "This file is already linked to a contract. Please upload a different file.",
           );
         } else {
-          setError(
-            data?.message ||
-              err?.message ||
-              "Upload failed. Please check your connection and try again.",
-          );
+          setError(diagMsg);
         }
 
         setPageState("idle");
