@@ -37,12 +37,12 @@ export default function ProcessingCard({
     <div className="w-full bg-white rounded-lg shadow-[0_2px_8px_rgba(136,136,136,0.1)] p-6">
       <div className="flex flex-col gap-6">
         {/* File info row */}
-        <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-gray-100">
           {/* Left: file name + size */}
-          <div className="flex items-center gap-4">
-            <FileDocIcon className="text-text-secondary w-6 h-7" />
-            <div className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-text-primary truncate max-w-[300px]">
+          <div className="flex items-center gap-4 min-w-0">
+            <FileDocIcon className="text-text-secondary w-6 h-7 shrink-0" />
+            <div className="flex flex-col gap-2 min-w-0">
+              <span className="text-sm font-medium text-text-primary truncate max-w-[200px] sm:max-w-[400px]">
                 {fileName}
               </span>
               <span className="text-xs text-text-placeholder">{fileSize}</span>
