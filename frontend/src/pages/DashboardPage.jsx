@@ -65,14 +65,8 @@ export default function DashboardPage() {
         </p>
       </div>
 
-<<<<<<< HEAD
-      {/* Empty State — vertically centered in remaining space */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center">
-        {/* Icon + decorative dot */}
-=======
       {/* Empty State */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
->>>>>>> 727088cc66ce3d692acd24a8c3308e6f9ae32b99
         <div className="relative mb-5">
           <div className="w-14 h-14 rounded-xl border border-gray-200 bg-bg-cards1 flex items-center justify-center text-text-secondary shadow-sm">
             <DocIcon />
