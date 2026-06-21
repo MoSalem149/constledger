@@ -26,7 +26,7 @@ const DashboardHeader = ({ projectCount, userName }) => {
   const date = getFormattedDate();
 
   return (
-    <div className="flex items-start font-sans justify-between">
+    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 font-sans">
       <div>
         <p className="text-xs tracking-widest font-normal text-gray-300 mb-3">
           OVERVIEW . {date}

@@ -35,7 +35,7 @@ export default function DashboardPage() {
   // Populated state — contracts exist
   if (hasContracts) {
     return (
-      <div className="min-h-[calc(100vh-116px)] pr-10 flex flex-col gap-6">
+      <div className="min-h-[calc(100vh-116px)] pr-0 sm:pr-10 flex flex-col gap-6">
         <DashboardHeader projectCount={contracts.length} userName={userName} />
         <OverviewCards
           contracts={contracts}
@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   // Empty state — no contracts yet
   return (
-    <div className="min-h-[calc(100vh-116px)] pr-10 font-sans flex flex-col">
+    <div className="min-h-[calc(100vh-116px)] pr-0 sm:pr-10 font-sans flex flex-col">
       {/* Header */}
       <div>
         <p className="text-xs tracking-widest font-normal text-gray-300 mb-3">

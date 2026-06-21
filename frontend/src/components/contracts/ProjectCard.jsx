@@ -3,9 +3,10 @@ import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 
 // =================== HELPERS ===================
 export const formatValue = (val, currency) => {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M ${currency}`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K ${currency}`;
-  return `${val} ${currency}`;
+  const c = currency ? ` ${currency}` : "";
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M${c}`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K${c}`;
+  return `${val}${c}`;
 };
 
 export const formatDate = (d) => {

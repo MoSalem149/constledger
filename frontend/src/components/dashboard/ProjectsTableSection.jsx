@@ -2,9 +2,11 @@ import { Link } from "react-router-dom";
 import { ArrowRightIcon } from "../icons/ArrowRightIcon";
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M ${currency}`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K ${currency}`;
-  return `${val} ${currency}`;
+  const c = currency ? ` ${currency}` : "";
+  if (!Number(val)) return "—";
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M${c}`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K${c}`;
+  return `${val}${c}`;
 };
 
 const getMainContractor = (parties) => {
