@@ -112,102 +112,132 @@ export default function UploadContractPage() {
 
   const handleFileSelect = useCallback(
     async (file) => {
+      let cleanup = null;
+  
       try {
-      if (!file) return;
-      if (!isValidFile(file)) {
-        setError("Only PDF and DOCX files are allowed.");
-        return;
-      }
-      if (file.size > 50 * 1024 * 1024) {
-        setError("File size exceeds 50 MB limit.");
-        return;
-      }
-
-      setError(null);
-      setFileInfo({ name: file.name, size: formatFileSize(file.size) });
-      setPageState("processing");
-      setActivityLog([
-        {
-          timestamp: getTimestamp(),
-          message: "Uploading file to secure storage...",
-        },
-      ]);
-      setProgress({ label: "Uploading file...", percent: 0 });
-      setStepStatus(["active", "pending", "pending", "pending"]);
-
-      // ── Step 1: Request presigned S3 URL ──────────────────────────
-        const { uploadUrl, key } = await contractService.signUpload({
-          filename: file.name,
-          mimeType: file.type,
-          size: file.size,
-        }).catch((err) => { throw new Error(`[Step 1: signUpload] ${err?.message || err}`); });
-
-        // ── Step 2: Upload file directly to S3 ───────────────────────
-        await putFileToS3(uploadUrl, file)
-          .catch((err) => { throw new Error(`[Step 2: putFileToS3] ${err?.message || err}`); });
-
-        // ── Step 3: Notify backend upload is complete ─────────────────
-        const { uploadId } = await contractService.completeUpload({
-          s3Key: key,
-          fileName: file.name,
-          mimeType: file.type,
-          size: file.size,
-        }).catch((err) => { throw new Error(`[Step 3: completeUpload] ${err?.message || err}`); });
-
-        // ── Step 4: Create contract record (returns 202 immediately) ──
-        // The backend kicks off AI analysis in the background and responds
-        // in <1s with { id, name, status: 'processing' }.
-        //
-        // Hand off from Upload step to Read step. fakeProgress starts at the
-        // read phase and will immediately mark Upload completed + Read active.
-        setStepStatus(["completed", "active", "pending", "pending"]);
-
-        // Start the fake progress simulation while we wait for AI
-        const cleanup = startSimulation({
-          onStepChange: setStepStatus,
-          onProgress: setProgress,
-          onEvent: (evt) => setActivityLog((prev) => [...prev, evt]),
+        if (!file) return;
+  
+        if (!isValidFile(file)) {
+          setError("Only PDF and DOCX files are allowed.");
+          return;
+        }
+  
+        if (file.size > 50 * 1024 * 1024) {
+          setError("File size exceeds 50 MB limit.");
+          return;
+        }
+  
+        setError(null);
+        setFileInfo({
+          name: file.name,
+          size: formatFileSize(file.size),
         });
-        cleanupRef.current = cleanup;
-
-        const { id: contractId } = await contractService.createContract(
-          file.name,
-          uploadId,
-        ).catch((err) => { throw new Error(`[Step 4: createContract] ${err?.message || err}`); });
-
-        // ── Step 5: Poll until analysis finishes ──────────────────────
-        // GET /api/contracts/:id every 4s until status !== 'processing'
-        const contract = await contractService.pollContractReady(contractId)
-          .catch((err) => { throw new Error(`[Step 5: pollContractReady] ${err?.message || err}`); });
-
-        // Guard: don't update state if the user navigated away
-        if (!mountedRef.current) return;
-
-        // Stop the simulation
+  
+        setPageState("processing");
+        setActivityLog([
+          {
+            timestamp: getTimestamp(),
+            message: "Uploading file to secure storage...",
+          },
+        ]);
+        setProgress({ label: "Uploading file...", percent: 0 });
+        setStepStatus(["active", "pending", "pending", "pending"]);
+  
+        const { uploadUrl, key } = await contractService
+          .signUpload({
+            filename: file.name,
+            mimeType: file.type,
+            size: file.size,
+          })
+          .catch((err) => {
+            throw new Error(`[Step 1: signUpload] ${err?.message || err}`);
+          });
+  
+        await putFileToS3(uploadUrl, file).catch((err) => {
+          throw new Error(`[Step 2: putFileToS3] ${err?.message || err}`);
+        });
+  
+        const { uploadId } = await contractService
+          .completeUpload({
+            s3Key: key,
+            fileName: file.name,
+            mimeType: file.type,
+            size: file.size,
+          })
+          .catch((err) => {
+            throw new Error(`[Step 3: completeUpload] ${err?.message || err}`);
+          });
+  
+        setStepStatus(["completed", "active", "pending", "pending"]);
+  
+        cleanup = startSimulation({
+          onStepChange: (nextStepStatus) => {
+            if (!mountedRef.current) return;
+            setStepStatus(nextStepStatus);
+          },
+          onProgress: (nextProgress) => {
+            if (!mountedRef.current) return;
+            setProgress(nextProgress);
+          },
+          onEvent: (evt) => {
+            if (!mountedRef.current) return;
+            setActivityLog((prev) => [...prev, evt]);
+          },
+          onError: (simError) => {
+            console.error("Simulation error:", simError);
+  
+            if (!mountedRef.current) return;
+  
+            setError(
+              `[Simulation] ${simError?.message || "Unexpected processing error"}`
+            );
+            setPageState("idle");
+          },
+        });
+  
         if (typeof cleanup !== "function") {
           throw new Error(
-            `cleanup is ${typeof cleanup} — startSimulation may not have returned a function`,
+            `cleanup is ${typeof cleanup} — startSimulation did not return a function`
           );
         }
-        cleanup();
+  
+        cleanupRef.current = cleanup;
+  
+        const { id: contractId } = await contractService
+          .createContract(file.name, uploadId)
+          .catch((err) => {
+            throw new Error(`[Step 4: createContract] ${err?.message || err}`);
+          });
+  
+        const contract = await contractService
+          .pollContractReady(contractId)
+          .catch((err) => {
+            throw new Error(`[Step 5: pollContractReady] ${err?.message || err}`);
+          });
+  
+        if (!mountedRef.current) return;
+  
+        if (typeof cleanupRef.current === "function") {
+          cleanupRef.current();
+        }
         cleanupRef.current = null;
-
-        // Validate callbacks before use (debugs production minification issues)
+        cleanup = null;
+  
         if (typeof setContractData !== "function") {
           throw new Error(
-            `setContractData is ${typeof setContractData} — context value may be corrupted`,
+            `setContractData is ${typeof setContractData} — context value may be corrupted`
           );
         }
+  
         if (typeof navigate !== "function") {
           throw new Error(
-            `navigate is ${typeof navigate} — router hook may be corrupted`,
+            `navigate is ${typeof navigate} — router hook may be corrupted`
           );
         }
-
+  
         setContractData(contract);
-
+  
         if (contract.status === "analysis_failed") {
-          // AI failed but contract record exists — let user see partial data
           navigate(`/contracts/${contract.id}/edit`, {
             state: {
               analysisError: "AI analysis failed. Some fields may be missing.",
@@ -219,43 +249,49 @@ export default function UploadContractPage() {
         }
       } catch (err) {
         console.error("Upload failed:", err);
+  
         if (!mountedRef.current) return;
-
-        // Stop any running simulation
-        if (cleanupRef.current) {
-          cleanupRef.current();
-          cleanupRef.current = null;
+  
+        if (typeof cleanup === "function") {
+          cleanup();
         }
-
+  
+        if (typeof cleanupRef.current === "function") {
+          cleanupRef.current();
+        }
+  
+        cleanupRef.current = null;
+  
         const status = err?.response?.status;
         const data = err?.response?.data;
-
-        // Build a diagnostic error message that includes the stack trace
-        // so we can identify the exact source of the error in production
-        const rawMsg = data?.message || err?.message || "Upload failed. Please check your connection and try again.";
+        const rawMsg =
+          data?.message ||
+          err?.message ||
+          "Upload failed. Please check your connection and try again.";
         const stack = err?.stack ? ` | STACK: ${err.stack}` : "";
         const diagMsg = `[catch] ${rawMsg}${stack}`;
-
+  
         if (status === 409) {
           setError(
             data?.message ||
-              "This file is already linked to a contract. Please upload a different file.",
+              "This file is already linked to a contract. Please upload a different file."
           );
         } else {
           setError(diagMsg);
         }
-
+  
         setPageState("idle");
       }
     },
-    [navigate, setContractData],
+    [navigate, setContractData]
   );
 
   const handleBack = useCallback(() => {
-    if (cleanupRef.current) {
+    if (typeof cleanupRef.current === "function") {
       cleanupRef.current();
-      cleanupRef.current = null;
     }
+  
+    cleanupRef.current = null;
     navigate("/contracts");
   }, [navigate]);
 
@@ -265,10 +301,11 @@ export default function UploadContractPage() {
 
   useEffect(() => {
     return () => {
-      if (cleanupRef.current) {
+      if (typeof cleanupRef.current === "function") {
         cleanupRef.current();
-        cleanupRef.current = null;
       }
+  
+      cleanupRef.current = null;
     };
   }, []);
 

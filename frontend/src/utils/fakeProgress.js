@@ -49,27 +49,53 @@ function getTimestamp() {
 /**
  * Start a frontend-simulated progress animation.
  *
- * This is pure eye candy — no polling. The caller is responsible for
- * stopping the simulation when the real work (e.g., `createContract`) is done.
- *
- * @param {Object} callbacks — { onStepChange, onProgress, onEvent }
- * @returns {function} cleanup — call to stop all timers
+ * @param {Object} callbacks
+ * @param {Function} callbacks.onStepChange
+ * @param {Function} callbacks.onProgress
+ * @param {Function} callbacks.onEvent
+ * @param {Function} [callbacks.onError]
+ * @returns {Function} cleanup
  */
-export function startSimulation(callbacks) {
-  const { onStepChange, onProgress, onEvent } = callbacks;
+export function startSimulation(callbacks = {}) {
+  const { onStepChange, onProgress, onEvent, onError } = callbacks;
+
+  if (typeof onStepChange !== "function") {
+    throw new Error(
+      `startSimulation: onStepChange must be a function, got ${typeof onStepChange}`
+    );
+  }
+
+  if (typeof onProgress !== "function") {
+    throw new Error(
+      `startSimulation: onProgress must be a function, got ${typeof onProgress}`
+    );
+  }
+
+  if (typeof onEvent !== "function") {
+    throw new Error(
+      `startSimulation: onEvent must be a function, got ${typeof onEvent}`
+    );
+  }
+
+  if (onError != null && typeof onError !== "function") {
+    throw new Error(
+      `startSimulation: onError must be a function, got ${typeof onError}`
+    );
+  }
 
   const startTime = Date.now();
   let isRunning = true;
   let tickInterval = null;
 
-  // Flatten all scheduled events from phases
   const scheduledEvents = [];
+
   PHASES.forEach((phase) => {
     scheduledEvents.push({
       at: phase.at,
       type: "step",
       stepStatus: phase.stepStatus,
     });
+
     phase.events.forEach((evt) => {
       scheduledEvents.push({
         at: evt.at,
@@ -78,73 +104,94 @@ export function startSimulation(callbacks) {
       });
     });
   });
+
   scheduledEvents.sort((a, b) => a.at - b.at);
 
   let nextEventIndex = 0;
 
+  function stopWithError(error) {
+    isRunning = false;
+
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
+
+    if (typeof onError === "function") {
+      onError(error);
+      return;
+    }
+
+    throw error;
+  }
+
   function tick() {
     if (!isRunning) return;
+
     const elapsed = Date.now() - startTime;
 
     try {
-    // Process scheduled events
-    while (
-      nextEventIndex < scheduledEvents.length &&
-      scheduledEvents[nextEventIndex].at <= elapsed
-    ) {
-      const event = scheduledEvents[nextEventIndex++];
-      if (event.type === "step") {
-        onStepChange(event.stepStatus);
-      } else if (event.type === "event") {
-        onEvent({ timestamp: getTimestamp(), message: event.message });
+      while (
+        nextEventIndex < scheduledEvents.length &&
+        scheduledEvents[nextEventIndex].at <= elapsed
+      ) {
+        const event = scheduledEvents[nextEventIndex++];
+
+        if (event.type === "step") {
+          onStepChange(event.stepStatus);
+        } else if (event.type === "event") {
+          onEvent({
+            timestamp: getTimestamp(),
+            message: event.message,
+          });
+        }
       }
-    }
 
-    // Calculate progress bar (visible from the start)
-    const readDuration = 8000;
-    const extractDuration = 15000;
-    const holdDuration = 10000;
+      const readDuration = 8000;
+      const extractDuration = 15000;
+      const holdDuration = 10000;
 
-    let percent;
-    let label;
+      let percent;
+      let label;
 
-    if (elapsed < readDuration) {
-      // 0% → 5% over 8s (linear start — document reading)
-      const ratio = elapsed / readDuration;
-      percent = Math.round(5 * ratio);
-      label = "Reading document...";
-    } else if (elapsed < readDuration + extractDuration) {
-      // 5% → 92% over 15s (ease-out cubic — AI extracting)
-      const extractElapsed = elapsed - readDuration;
-      const ratio = extractElapsed / extractDuration;
-      const eased = 1 - Math.pow(1 - ratio, 3);
-      percent = Math.round(5 + (92 - 5) * eased);
-      label = "AI Analyzing Contract Structure...";
-    } else if (elapsed < readDuration + extractDuration + holdDuration) {
-      // 92% → 99% over 10s (ease-out quadratic — slow creep)
-      const holdElapsed = elapsed - readDuration - extractDuration;
-      const ratio = holdElapsed / holdDuration;
-      const eased = 1 - Math.pow(1 - ratio, 2);
-      percent = Math.round(92 + (99 - 92) * eased);
-      label = "AI Analyzing Contract Structure...";
-    } else {
-      percent = 99;
-      label = "AI Analyzing Contract Structure...";
-    }
+      if (elapsed < readDuration) {
+        const ratio = elapsed / readDuration;
+        percent = Math.round(5 * ratio);
+        label = "Reading document...";
+      } else if (elapsed < readDuration + extractDuration) {
+        const extractElapsed = elapsed - readDuration;
+        const ratio = extractElapsed / extractDuration;
+        const eased = 1 - Math.pow(1 - ratio, 3);
+        percent = Math.round(5 + (92 - 5) * eased);
+        label = "AI Analyzing Contract Structure...";
+      } else if (elapsed < readDuration + extractDuration + holdDuration) {
+        const holdElapsed = elapsed - readDuration - extractDuration;
+        const ratio = holdElapsed / holdDuration;
+        const eased = 1 - Math.pow(1 - ratio, 2);
+        percent = Math.round(92 + (99 - 92) * eased);
+        label = "AI Analyzing Contract Structure...";
+      } else {
+        percent = 99;
+        label = "AI Analyzing Contract Structure...";
+      }
 
-    onProgress({ label, percent });
-    } catch (e) {
-      // Silently ignore errors from setInterval callbacks
-      // to prevent unhandled errors in production builds
+      onProgress({ label, percent });
+    } catch (error) {
+      console.error("startSimulation tick failed:", error);
+      stopWithError(error);
     }
   }
 
-  // Start tick interval (handles events + progress bar)
   tickInterval = setInterval(tick, TICK_MS);
+  tick();
 
   function cleanup() {
     isRunning = false;
-    if (tickInterval) clearInterval(tickInterval);
+
+    if (tickInterval) {
+      clearInterval(tickInterval);
+      tickInterval = null;
+    }
   }
 
   return cleanup;
