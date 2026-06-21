@@ -1,83 +1,187 @@
-import { useState } from "react";
 import {
-  StraightLineGlyph,
-  SCurveGlyph,
-  MilestoneGlyph,
-} from "../icons/StrategyGlyphs";
+  formatDate,
+  formatCompact,
+  formatPct,
+  formatShortEGP,
+} from "../../utils/format";
 
-const STRATEGIES = [
-  {
-    key: "straight_line",
-    title: "Straight Line",
-    subtitle: "Equal amount every period",
-    Glyph: StraightLineGlyph,
-  },
-  {
-    key: "s_curve",
-    title: "S-curve",
-    subtitle: "Slow start, peak middle, taper-end",
-    Glyph: SCurveGlyph,
-  },
-  {
-    key: "milestone_weighted",
-    title: "Milestone-weighted",
-    subtitle: "More money in milestone periods",
-    Glyph: MilestoneGlyph,
-  },
-];
-
-export default function PlanningStrategyPicker({ onSelect, loading, canPlan }) {
-  const [selected, setSelected] = useState(null);
+export default function PlanTable({
+  periods,
+  contractValue,
+  readOnly,
+  onChange,
+  isConfirmed,
+  canPlan,
+  onExport,
+  isBalanced,
+  remaining,
+  currency,
+}) {
+  const totalPlanned = periods.reduce(
+    (sum, p) => sum + (Number(p.plannedAmount) || 0),
+    0,
+  );
+  const totalPct = contractValue > 0 ? totalPlanned / contractValue : 0;
 
   return (
-    <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6 sm:p-8">
-      <div className="mb-6">
-        <h2 className="text-lg font-medium text-text-primary mb-2">
-          Choose an Allocation Strategy
-        </h2>
-        <p className="text-xs text-text-placeholder ">
-          How the contract value is spread across the reporting periods
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        {STRATEGIES.map((s) => {
-          const isSelected = selected === s.key;
-          return (
+    <div>
+      {/* Header */}
+      <div className="flex flex-col font-sans sm:flex-row sm:items-start sm:justify-between gap-3 mb-6">
+        <div>
+          <h3 className="text-lg font-medium text-text-primary">
+            Planned Amount by Period
+          </h3>
+          <p className="text-xs font-normal text-text-placeholder mt-2">
+            Track planned project progress, period allocations, and cumulative
+            budget
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-2 self-start">
+          {canPlan && (
             <button
-              key={s.key}
-              onClick={() => canPlan && setSelected(s.key)}
-              disabled={!canPlan}
-              className={`relative text-left rounded-lg border px-4 pt-4 pb-6 transition-all duration-200 ${
-                isSelected
-                  ? "border-primary bg-bg-mainColor shadow-sm"
-                  : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm"
-              } ${!canPlan ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
+              onClick={onExport}
+              className="px-4 py-2.5 rounded-3xl shadow-[0px_0px_4px_0px_rgba(255,72,0,1.00)] bg-button-active text-text-light text-xs font-medium hover:opacity-90 transition-opacity"
             >
-              <h3
-                className={`text-sm font-medium mb-1 pr-6 ${
-                  isSelected ? "text-primary" : "text-text-primary"
-                }`}
-              >
-                {s.title}
-              </h3>
-              <p className="text-xs text-text-secondary mb-4 leading-relaxed">
-                {s.subtitle}
-              </p>
-              <s.Glyph className="w-full h-20" selected={isSelected} />
+              Export Schedule
             </button>
-          );
-        })}
+          )}
+          {!isConfirmed && canPlan && (
+            <div
+              className={`text-xs font-medium px-3 py-1.5 rounded-full ${
+                isBalanced
+                  ? "bg-status-track/10 text-status-track"
+                  : "bg-status-risk/10 text-status-risk"
+              }`}
+            >
+              {isBalanced
+                ? `Balanced — total equals ${formatShortEGP(contractValue)} ${currency}`
+                : `Remaining: ${formatShortEGP(remaining)} ${currency}`}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={() => selected && onSelect(selected)}
-          disabled={!selected || loading || !canPlan}
-          className="px-6 py-2.5 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Generating..." : "Generate Plan"}
-        </button>
+      {/* Table */}
+      <div className="overflow-x-auto bg-bg-cards1 mt-6">
+        <table className="table-auto w-full">
+          <colgroup>
+            <col className="w-1/3" />
+            <col />
+            <col />
+            <col />
+            <col />
+            <col />
+          </colgroup>
+          <thead>
+            <tr className="bg-text-light">
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period Start
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7">
+                Period End
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                Planned
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                Cumulative
+              </th>
+              <th className="text-left text-text-secondary text-xs font-normal uppercase px-6 py-7 ">
+                % of Contract
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {periods.map((period, idx) => {
+              const pct =
+                contractValue > 0
+                  ? (Number(period.plannedAmount) || 0) / contractValue
+                  : 0;
+              return (
+                <tr
+                  key={period.id || idx}
+                  className="border-b border-gray-100 hover:bg-gray-50/50"
+                >
+                  <td className="px-6 py-7 font-medium text-text-primary text-sm">
+                    <div className="flex items-center gap-4">
+                      <div>{period.periodLabel}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
+                    {formatDate(period.periodStart)}
+                  </td>
+                  <td className="px-6 py-7 text-text-placeholder font-medium text-sm">
+                    {formatDate(period.periodEnd)}
+                  </td>
+                  <td className="px-6 py-7 text-left">
+                    {readOnly ? (
+                      <span className="text-text-primary font-medium text-sm">
+                        {formatCompact(period.plannedAmount)}
+                      </span>
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={period.plannedAmount ?? ""}
+                        onChange={(e) => onChange(idx, e.target.value)}
+                        className="w-32 text-right px-2 py-1 rounded border border-gray-200 text-text-primary text-sm focus:outline-none focus:border-primary"
+                      />
+                    )}
+                  </td>
+                  <td className="px-6 py-7 text-left text-text-secondary font-medium text-sm">
+                    {formatCompact(period.cumulativePlanned)}
+                  </td>
+                  <td className="px-6 py-7 text-left">
+                    <div className="flex items-center justify-start gap-2">
+                      <div className="w-28 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${Math.min(pct * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-text-secondary font-bold text-xs w-8 ">
+                        {formatPct(pct)}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="bg-text-primary text-text-light ">
+              <td
+                className="px-6 py-6 font-medium rounded-bl-lg text-lg"
+                colSpan={3}
+              >
+                Total planned
+              </td>
+              <td className="px-6 py-6 text-left  font-medium text-lg">
+                {formatCompact(totalPlanned)}
+              </td>
+              <td className="px-6 py-6 text-left  font-medium text-lg">
+                {formatCompact(totalPlanned)}
+              </td>
+              <td className="px-6 py-6 rounded-br-lg">
+                <div className="flex items-center justify-start gap-2">
+                  <div className="w-28 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${Math.min(totalPct * 100, 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-bold w-8 text-left">
+                    {formatPct(totalPct)}
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
       </div>
     </div>
   );
