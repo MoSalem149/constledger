@@ -9,6 +9,7 @@ export default defineConfig({
     // in the deployed bundle shows up as e.g. "e is not a function" with no
     // way to trace it back to real file/line/variable names.
     sourcemap: true,
+    chunkSizeWarningLimit: 1500,
   },
   server: {
     port: 5173,
