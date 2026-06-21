@@ -12,6 +12,12 @@ router.use(jwtAuth);
 router.get('/', c.listContracts);
 router.post('/upload', authorize('contract_manager', 'pmo'), c.uploadContract);
 router.post('/:id/analyze', authorize('contract_manager', 'pmo'), c.reanalyzeContract);
-router.route('/:id').get(c.getContract).put(authorize('contract_manager', 'pmo'), c.updateContract);
+router.route('/:id')
+  .get(c.getContract)
+  .put(authorize('contract_manager', 'pmo'), c.updateContract)
+  // Delete is intentionally contract_manager ONLY — not 'pmo' like the
+  // other mutations on this route. Do not widen this without a product
+  // decision to do so.
+  .delete(authorize('contract_manager'), c.deleteContract);
 
 export default router;

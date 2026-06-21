@@ -17,6 +17,8 @@ export default function ProcessingCard({
   stepStatus,
   progress,
   activityLog,
+  onCancel,
+  cancelling,
 }) {
   const steps = [
     { key: "upload", label: "Upload", subLabel: "File Received" },
@@ -49,13 +51,27 @@ export default function ProcessingCard({
             </div>
           </div>
 
-          {/* Right: status badge */}
-          <div className="bg-bg-mainColor rounded-[28px] px-2.5 py-[3px] flex items-center justify-center">
-            <span className="text-xs font-medium text-primary">
-              {["Uploading…", "Reading…", "Extracting…", "Reviewing…"][
-                currentStep
-              ] ?? "Processing…"}
-            </span>
+          {/* Right: status badge + cancel */}
+          <div className="flex items-center gap-3">
+            <div className="bg-bg-mainColor rounded-[28px] px-2.5 py-[3px] flex items-center justify-center">
+              <span className="text-xs font-medium text-primary">
+                {["Uploading…", "Reading…", "Extracting…", "Reviewing…"][
+                  currentStep
+                ] ?? "Processing…"}
+              </span>
+            </div>
+
+            {typeof onCancel === "function" && (
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={cancelling}
+                className="h-8 px-3 rounded-[28px] border border-gray-200 text-xs font-normal text-text-secondary
+                           hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cancelling ? "Cancelling…" : "Cancel"}
+              </button>
+            )}
           </div>
         </div>
 

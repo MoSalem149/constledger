@@ -1,10 +1,11 @@
 import { v4 as uuid } from 'uuid';
 
-// Only PDF and Word documents are accepted for contract uploads.
+// Only PDF is accepted for contract uploads for now.
+// TODO: re-enable Word docs (application/msword,
+// application/vnd.openxmlformats-officedocument.wordprocessingml.document)
+// once that path is ready.
 export const ALLOWED_MIME = new Set([
   'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
 // 50 MB default. Override via S3_MAX_FILE_SIZE env var.
