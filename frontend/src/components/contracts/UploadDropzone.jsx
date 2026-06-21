@@ -1,11 +1,15 @@
 import { useRef, useState, useCallback } from "react";
 import UploadArrowIcon from "../icons/UploadArrowIcon";
-import { isValidFile } from "../../utils/fileValidation";
+import {
+  isValidFile,
+  getFileTypeErrorMessage,
+} from "../../utils/fileValidation";
 
-export default function UploadDropzone({ onFileSelect }) {
+export default function UploadDropzone({ onFileSelect, onError }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragError, setDragError] = useState(false);
+  const [invalidMessage, setInvalidMessage] = useState(null);
 
   const safeSelect = useCallback(
     (file) => {
@@ -15,6 +19,7 @@ export default function UploadDropzone({ onFileSelect }) {
         );
       }
 
+      setInvalidMessage(null);
       onFileSelect(file);
     },
     [onFileSelect],
@@ -46,14 +51,17 @@ export default function UploadDropzone({ onFileSelect }) {
       const file = files[0];
 
       if (!isValidFile(file)) {
+        const message = getFileTypeErrorMessage(file);
         setDragError(true);
+        setInvalidMessage(message);
         setTimeout(() => setDragError(false), 1000);
+        onError?.(message);
         return;
       }
 
       safeSelect(file);
     },
-    [safeSelect],
+    [safeSelect, onError],
   );
 
   const handleInputChange = useCallback(
@@ -62,8 +70,11 @@ export default function UploadDropzone({ onFileSelect }) {
       if (!file) return;
 
       if (!isValidFile(file)) {
+        const message = getFileTypeErrorMessage(file);
         setDragError(true);
+        setInvalidMessage(message);
         setTimeout(() => setDragError(false), 1000);
+        onError?.(message);
         e.target.value = "";
         return;
       }
@@ -91,7 +102,7 @@ export default function UploadDropzone({ onFileSelect }) {
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.docx"
+        accept=".pdf,application/pdf"
         className="hidden"
         onChange={handleInputChange}
       />
@@ -104,8 +115,13 @@ export default function UploadDropzone({ onFileSelect }) {
             Drag and Drop Your Contract Here
           </p>
           <p className="text-xs text-text-secondary">
-            or click to browse (max 50 MB)
+            or click to browse (PDF only, max 50 MB)
           </p>
+          {invalidMessage && (
+            <p className="text-xs text-status-risk mt-2 max-w-[420px] mx-auto">
+              {invalidMessage}
+            </p>
+          )}
         </div>
 
         <button
@@ -121,8 +137,8 @@ export default function UploadDropzone({ onFileSelect }) {
         </button>
 
         <p className="text-xs text-text-secondary text-center">
-          Your files are encrypted and secure. The original PDF/DOCX never
-          leaves your workspace.
+          Your files are encrypted and secure. The original PDF never leaves
+          your workspace.
         </p>
       </div>
     </div>

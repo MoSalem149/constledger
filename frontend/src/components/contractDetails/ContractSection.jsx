@@ -8,7 +8,6 @@ import ContractStepper from "../contracts/ContractStepper";
 import { contractService } from "../../services/contractService";
 import { ContractContext } from "../../context/EditContaractContext";
 import { useNavigate } from "react-router-dom";
-import ArrowLeftIcon from "../icons/ArrowLeftIcon";
 
 const steps = [
   { key: "upload", label: "Upload" },
@@ -53,10 +52,10 @@ const ContractHeader = ({ contractData, readOnly }) => {
 
       {/* Only show action buttons in edit mode */}
       {!readOnly && (
-        <div className="flex gap-2.5 flex-wrap">
+        <div className="flex w-full flex-wrap gap-2.5 sm:w-auto">
           <button
             onClick={confirmContract}
-            className="px-4 py-2 rounded-full text-[13px] text-white bg-primary font-medium whitespace-nowrap"
+            className="w-full whitespace-nowrap rounded-full bg-primary px-4 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90 sm:w-auto"
           >
             Confirm Contract
           </button>
@@ -68,20 +67,23 @@ const ContractHeader = ({ contractData, readOnly }) => {
 
 // =================== INNER TABS ===================
 const ContractInnerTabs = ({ tabs, active, onSelect }) => (
-  <div className="bg-bg-cards1 rounded mb-5 relative overflow-x-auto px-4 sm:px-6 py-2.5 flex gap-4 sm:gap-5 min-w-max sm:min-w-0">
-    {tabs.map((tab) => (
-      <button
-        key={tab}
-        onClick={() => onSelect(tab)}
-        className={`flex items-center gap-1.5 pb-3 text-[13.5px] whitespace-nowrap relative transition-colors
-            ${active === tab ? "font-medium text-text-primary" : "text-text-secondary"}`}
-      >
-        {tab}
-        {active === tab && (
-          <span className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-bg-cards2 rounded-full" />
-        )}
-      </button>
-    ))}
+  <div className="relative mb-5 rounded-xl bg-bg-cards1 p-2 shadow-sm sm:p-2.5">
+    <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      {tabs.map((tab) => (
+        <button
+          type="button"
+          key={tab}
+          onClick={() => onSelect(tab)}
+          className={`min-h-11 rounded-lg px-2 py-2 text-center text-[11px] leading-tight transition-colors sm:px-3 sm:text-[13px] ${
+            active === tab
+              ? "bg-primary font-medium text-white shadow-sm"
+              : "bg-bg-main text-text-secondary hover:bg-bg-mainColor hover:text-primary"
+          }`}
+        >
+          {tab}
+        </button>
+      ))}
+    </div>
   </div>
 );
 
@@ -108,7 +110,7 @@ const ContractSection = ({ contractData, readOnly }) => {
   ];
 
   return (
-    <div className="bg-bg-main min-h-screen">
+    <div className="min-w-0 bg-bg-main">
       <ContractHeader contractData={contractData} readOnly={readOnly} />
       {!readOnly && (
         <ContractStepper
@@ -118,13 +120,13 @@ const ContractSection = ({ contractData, readOnly }) => {
           progress={null}
         />
       )}
-      <div className="pt-4 ">
+      <div className="min-w-0 pt-4">
         <ContractInnerTabs
           tabs={innerTabs}
           active={activeTab}
           onSelect={setActiveTab}
         />
-        {sections[activeTab] ?? null}
+        <div className="min-w-0">{sections[activeTab] ?? null}</div>
       </div>
     </div>
   );

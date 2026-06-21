@@ -6,9 +6,12 @@ import { ArrowRightIcon } from "../components/icons/ArrowRightIcon";
 import { PlusIcon } from "../components/icons/PlusIcon";
 import SpinnerIcon from "../components/icons/SpinnerIcon";
 import { EmptyIcon } from "../components/icons/EmptyIcon";
+import { TrashIcon } from "../components/icons/TrashIcon";
 import projectImage from "../assets/projectImage.png";
 import { contractService } from "../services/contractService";
 import FullPageSpinner from "../components/common/FullPageSpinner";
+import DeleteContractModal from "../components/contracts/DeleteContractModal";
+import { useAuth } from "../context/AuthContext";
 
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
@@ -73,7 +76,7 @@ const StatusBadge = ({ status }) => {
 };
 
 // =================== CONTRACT CARD ===================
-const ContractCard = ({ contract, onClick }) => {
+const ContractCard = ({ contract, onClick, canDelete, onDelete }) => {
   const { status } = contract;
 
   return (
@@ -96,8 +99,21 @@ const ContractCard = ({ contract, onClick }) => {
             {contract.id.slice(-8).toUpperCase()}
           </span>
         </div>
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5">
           <StatusBadge status={status} />
+          {canDelete && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(contract);
+              }}
+              aria-label="Delete project"
+              className="w-6 h-6 rounded-full bg-black/50 hover:bg-status-risk flex items-center justify-center transition-colors"
+            >
+              <TrashIcon className="w-3.5 h-3.5 text-white" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -193,7 +209,10 @@ const SearchBar = ({ value, onChange }) => (
 // =================== PAGE ===================
 const ContractsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const canDelete = user?.role === "contract_manager";
   const [search, setSearch] = useState({ searchValue: "", active: false });
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const handleSearch = (searchVal) => {
     if (searchVal.length > 0)
@@ -217,6 +236,11 @@ const ContractsPage = () => {
     }
     fetchContract();
   }, []);
+
+  const handleDeleted = (deleted) => {
+    setContracts((prev) => prev.filter((c) => c.id !== deleted.id));
+    setDeleteTarget(null);
+  };
 
   const filtered = contracts.filter(
     (c) =>
@@ -245,6 +269,8 @@ const ContractsPage = () => {
             key={contract.id}
             contract={contract}
             onClick={() => navigate(`/contracts/${contract.id}`)}
+            canDelete={canDelete}
+            onDelete={(c) => setDeleteTarget(c)}
           />
         ))}
         {!search.searchValue && <AddNewCard />}
@@ -257,6 +283,14 @@ const ContractsPage = () => {
             No contracts match "<strong>{search.searchValue}</strong>"
           </p>
         </div>
+      )}
+
+      {deleteTarget && (
+        <DeleteContractModal
+          contract={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          onDeleted={handleDeleted}
+        />
       )}
     </div>
   );

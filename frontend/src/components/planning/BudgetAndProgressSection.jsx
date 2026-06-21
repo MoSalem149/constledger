@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { financeService } from "../../services/financeService";
-import ArrowLeftIcon from "../icons/ArrowLeftIcon";
 import PlanningStrategyPicker from "./PlanningStrategyPicker";
 import PlanningPlanView from "./PlanningPlanView";
 
@@ -148,14 +146,14 @@ export const BudgetAndProgressSection = ({ contractData }) => {
 
   if (state === "no_plan" || state === "picking") {
     return (
-      <div className="space-y-6 font-sans">
+      <div className="min-w-0 space-y-6 font-sans">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <p className="text-[11px] text-text-placeholder tracking-widest mb-4">
               {contractData?.contractNumber} · FINANCE
             </p>
-            <h2 className="text-2xl font-medium text-text-primary mb-4">
+            <h2 className="mb-4 text-xl font-medium text-text-primary sm:text-2xl">
               Project Plan
             </h2>
             <p className="text-xs text-text-secondary">

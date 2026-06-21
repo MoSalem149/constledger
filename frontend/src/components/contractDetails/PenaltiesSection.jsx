@@ -40,8 +40,8 @@ const ClauseCard = ({
     value,
     textColor = "text-text-secondary",
   ) => (
-    <div className="flex flex-col sm:flex-row sm:items-start sm:gap-8 gap-1">
-      <div className="sm:w-44 flex-shrink-0 pl-4 sm:pl-0">
+    <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-[176px_minmax(0,1fr)] sm:items-start sm:gap-8">
+      <div className="flex-shrink-0">
         <span className="text-[10.5px] font-semibold text-text-secondary tracking-widest uppercase">
           {label}
         </span>
@@ -54,9 +54,9 @@ const ClauseCard = ({
         }
         onBlur={readOnly ? undefined : handleBlur}
         readOnly={readOnly}
-        className={`text-[13.5px] ${textColor} pl-4 sm:pl-0 bg-transparent border-b border-transparent
-        outline-none w-full transition-colors ${
-          readOnly ? "cursor-default" : "focus:border-gray-300"
+        className={`w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13.5px] ${textColor}
+        outline-none transition-colors sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b-transparent sm:bg-transparent sm:px-0 sm:py-0 ${
+          readOnly ? "cursor-default" : "focus:border-primary sm:focus:border-gray-300"
         }`}
       />
     </div>
@@ -75,7 +75,7 @@ const ClauseCard = ({
         )}
 
         {/* CONDITION */}
-        <div className="flex flex-col sm:flex-row sm:items-start sm:gap-8 gap-1 mb-3">
+        <div className="mb-3 grid grid-cols-1 gap-1.5 sm:grid-cols-[176px_minmax(0,1fr)] sm:items-start sm:gap-8">
           <div className="flex items-center gap-2 sm:w-44 flex-shrink-0">
             <span className="text-[10.5px] font-semibold text-text-secondary tracking-widest uppercase">
               Condition
@@ -92,9 +92,9 @@ const ClauseCard = ({
             onBlur={readOnly ? undefined : handleBlur}
             readOnly={readOnly}
             rows={3}
-            className={`text-[13.5px] text-text-primary overflow-hidden pl-4 sm:pl-0 bg-transparent border-b border-transparent
-            outline-none w-full resize-none transition-colors ${
-              readOnly ? "cursor-default" : "focus:border-gray-300"
+            className={`w-full resize-none overflow-hidden rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13.5px] text-text-primary
+            outline-none transition-colors sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b-transparent sm:bg-transparent sm:px-0 sm:py-0 ${
+              readOnly ? "cursor-default" : "focus:border-primary sm:focus:border-gray-300"
             }`}
           />
         </div>
@@ -176,7 +176,7 @@ const PenaltiesSection = ({ data, readOnly }) => {
   };
 
   return (
-    <div className="bg-bg-cards1 p-4 shadow rounded-xl">
+    <div className="min-w-0 rounded-xl bg-bg-cards1 p-4 shadow sm:p-5">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div>
           <h2 className="text-[17px] font-medium text-text-primary">
@@ -190,10 +190,11 @@ const PenaltiesSection = ({ data, readOnly }) => {
 
         {!readOnly && (
           <button
+            type="button"
             onClick={handleAdd}
-            className="flex items-center gap-1.5 px-3.5 py-2 shadow rounded-full
+            className="flex w-full items-center justify-center gap-1.5 px-3.5 py-2 shadow rounded-full
             text-[13px] text-text-primary bg-bg-cards1 hover:bg-gray-100 transition-colors
-            self-start whitespace-nowrap"
+            self-start whitespace-nowrap sm:w-auto"
           >
             <PlusIcon />
             Add Clause

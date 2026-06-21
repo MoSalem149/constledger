@@ -30,7 +30,7 @@ export default function PlanningStrategyPicker({ onSelect, loading, canPlan }) {
   const [selected, setSelected] = useState(null);
 
   return (
-    <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6 sm:p-8">
+    <div className="min-w-0 rounded-lg bg-bg-cards1 p-4 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:p-8">
       <div className="mb-6">
         <h2 className="text-lg font-medium text-text-primary mb-2">
           Choose an Allocation Strategy
@@ -70,11 +70,11 @@ export default function PlanningStrategyPicker({ onSelect, loading, canPlan }) {
         })}
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-stretch sm:justify-end">
         <button
           onClick={() => selected && onSelect(selected)}
           disabled={!selected || loading || !canPlan}
-          className="px-6 py-2.5 rounded-full bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-full bg-primary px-6 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {loading ? "Generating..." : "Generate Plan"}
         </button>

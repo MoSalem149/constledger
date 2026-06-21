@@ -86,7 +86,7 @@ export default function UploadContractPage() {
       console.error("Global error:", evt.error || evt.message);
       if (mountedRef.current) {
         setError(
-          `[Global] ${evt.error?.message || evt.message || "Unexpected error"}`,
+          "Something went wrong while uploading your contract. Please try again.",
         );
         setPageState("idle");
       }
@@ -147,6 +147,10 @@ export default function UploadContractPage() {
         setProgress({ label: "Uploading file...", percent: 0 });
         setStepStatus(["active", "pending", "pending", "pending"]);
 
+        const fileHash = await hashFile(file).catch((err) => {
+          throw new Error(`[Step 0: hashFile] ${err?.message || err}`);
+        });
+
         const { uploadUrl, key } = await contractService
           .signUpload({
             filename: file.name,
@@ -161,6 +165,8 @@ export default function UploadContractPage() {
           throw new Error(`[Step 2: putFileToS3] ${err?.message || err}`);
         });
 
+        if (cancelledRef.current) return;
+
         const { uploadId } = await contractService
           .completeUpload({
             s3Key: key,
@@ -173,6 +179,8 @@ export default function UploadContractPage() {
           });
 
         setStepStatus(["completed", "active", "pending", "pending"]);
+
+        if (cancelledRef.current) return;
 
         cleanup = startSimulation({
           onStepChange: (nextStepStatus) => {
@@ -193,7 +201,7 @@ export default function UploadContractPage() {
             if (!mountedRef.current) return;
 
             setError(
-              `[Simulation] ${simError?.message || "Unexpected processing error"}`,
+              "Something went wrong while analyzing your document. Please try again.",
             );
             setPageState("idle");
           },
@@ -213,6 +221,15 @@ export default function UploadContractPage() {
             throw new Error(`[Step 4: createContract] ${err?.message || err}`);
           });
 
+        contractIdRef.current = contractId;
+
+        if (cancelledRef.current) {
+          // User cancelled while the contract was being created — clean it
+          // up best-effort so we don't leave an orphaned "processing" record.
+          contractService.deleteContract(contractId).catch(() => {});
+          return;
+        }
+
         const contract = await contractService
           .pollContractReady(contractId)
           .catch((err) => {
@@ -222,6 +239,11 @@ export default function UploadContractPage() {
           });
 
         if (!mountedRef.current) return;
+
+        if (cancelledRef.current) {
+          contractService.deleteContract(contractId).catch(() => {});
+          return;
+        }
 
         if (typeof cleanupRef.current === "function") {
           cleanupRef.current();
@@ -270,22 +292,34 @@ export default function UploadContractPage() {
 
         const status = err?.response?.status;
         const data = err?.response?.data;
-        const rawMsg =
-          data?.message ||
-          err?.message ||
-          "Upload failed. Please check your connection and try again.";
-        const stack = err?.stack ? ` | STACK: ${err.stack}` : "";
-        const diagMsg = `[catch] ${rawMsg}${stack}`;
 
-        if (status === 409) {
-          setError(
+        let friendlyMessage;
+
+        if (err?.isUserFacing) {
+          // Errors we deliberately threw with an end-user-ready message
+          // (e.g. "this file was already uploaded") — show as-is.
+          friendlyMessage = err.message;
+        } else if (status === 409) {
+          friendlyMessage =
             data?.message ||
-              "This file is already linked to a contract. Please upload a different file.",
-          );
+            "This file is already linked to a contract. Please upload a different file.";
+        } else if (status === 413) {
+          friendlyMessage =
+            "This file is too large to upload. Please try a smaller file.";
+        } else if (status >= 500) {
+          friendlyMessage =
+            "Our servers had trouble processing this upload. Please try again in a moment.";
+        } else if (
+          typeof navigator !== "undefined" &&
+          navigator.onLine === false
+        ) {
+          friendlyMessage =
+            "You appear to be offline. Please check your connection and try again.";
         } else {
           setError(diagMsg);
         }
 
+        setError(friendlyMessage);
         setPageState("idle");
       }
     },
@@ -373,7 +407,7 @@ export default function UploadContractPage() {
       {/* Content area */}
       {pageState === "idle" && (
         <div className="flex flex-col lg:flex-row gap-4">
-          <UploadDropzone onFileSelect={handleFileSelect} />
+          <UploadDropzone onFileSelect={handleFileSelect} onError={setError} />
           <AIExtractsPanel />
         </div>
       )}

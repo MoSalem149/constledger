@@ -1,22 +1,22 @@
 import { useState } from "react";
 import { overviewData } from "../../data/projectData";
 
-import { ApprovalsSection } from "./ApprovalsSection";
 import { BudgetAndProgressSection } from "../planning/BudgetAndProgressSection";
 import ContractSection from "./ContractSection";
 import { OverviewSection } from "./OverviewSection";
 
 // =================== TABS ===================
-const TABS = ["Overview", "Contract", "Planned Progress", "Approvals"];
+const TABS = ["Overview", "Contract", "Planned Progress"];
 
 const TabNavigation = ({ active, onSelect }) => (
-  <div className=" mb-5 overflow-x-auto">
-    <div className="flex gap-4 sm:gap-6 min-w-max sm:min-w-0">
+  <div className="mb-5 overflow-x-auto border-b border-border">
+    <div className="flex min-w-max gap-5 sm:gap-7">
       {TABS.map((tab) => (
         <button
+          type="button"
           key={tab}
           onClick={() => onSelect(tab)}
-          className={`pb-3 text-sm whitespace-nowrap relative transition-colors ${
+          className={`relative pb-3 text-xs whitespace-nowrap transition-colors sm:text-sm ${
             active === tab
               ? "font-medium text-text-primary"
               : "text-text-secondary hover:text-text-primary"
@@ -75,11 +75,10 @@ export const ContarctDetailsSections = ({ contractData, readOnly }) => {
     "Planned Progress": (
       <BudgetAndProgressSection contractData={contractData} />
     ),
-    Approvals: <ApprovalsSection />,
   };
 
   return (
-    <div className="min-h-calc(100vh-685px) py-6 sm:py-10">
+    <div className="min-w-0 py-6 sm:py-8 lg:py-10">
       {isFailed && <AnalysisFailedBanner contractData={contractData} />}
       <TabNavigation active={activeTab} onSelect={setActiveTab} />
       {sections[activeTab]}

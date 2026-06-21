@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { reportService } from "../services/reportService";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import PlanChart from "../components/planning/PlanChart";
@@ -110,15 +110,18 @@ function CalendarIcon() {
 
 function StatCard({ icon, label, value }) {
   return (
-    <div className="flex-1 bg-white rounded-xl shadow flex items-center gap-3.5 px-5 py-4">
-      <div className="w-10 h-10 rounded-lg bg-bg-mainColor text-primary flex items-center justify-center shrink-0">
+    <div className="flex min-w-0 items-center gap-3.5 rounded-xl bg-bg-cards1 px-4 py-4 shadow sm:px-5">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-bg-mainColor text-primary">
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-text-secondary font-normal truncate">
+        <p className="truncate text-xs font-normal text-text-secondary">
           {label}
         </p>
-        <p className="text-[22px] font-semibold text-text-primary leading-tight mt-0.5 truncate">
+        <p
+          className="mt-0.5 break-words text-lg font-semibold leading-tight text-text-primary sm:text-[22px]"
+          title={String(value)}
+        >
           {value}
         </p>
       </div>
@@ -131,7 +134,6 @@ function StatCard({ icon, label, value }) {
 /* ------------------------------------------------------------------ */
 
 export const PlannedBudgetByIdReport = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const { id } = useParams();
@@ -139,7 +141,6 @@ export const PlannedBudgetByIdReport = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -165,13 +166,10 @@ export const PlannedBudgetByIdReport = () => {
   }, [id]);
 
   const handleExport = async () => {
-    setExporting(true);
     try {
       await reportService.exportPlannedBudget(id);
     } catch (err) {
       console.error("Export failed:", err);
-    } finally {
-      setExporting(false);
     }
   };
 
@@ -224,23 +222,26 @@ export const PlannedBudgetByIdReport = () => {
     );
   }
 
-  const { plan, periods = [], kpis = {}, warnings = [] } = data;
+  const { plan, periods = [] } = data;
 
   return (
-    <div>
-      <div className="pr-10 space-y-5 bg-bg-main min-h-screen">
+    <div className="min-h-full min-w-0 bg-bg-main">
+      <div className="min-w-0 space-y-5">
         {/* ── Header ── */}
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-text-primary">
+        <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl font-semibold text-text-primary sm:text-2xl">
               Planned Budget
             </h1>
-            <p className="text-sm text-text-secondary mt-1"></p>
+            <p className="mt-1 text-xs text-text-secondary sm:text-sm">
+              Review the contract allocation strategy and planned spend by
+              period.
+            </p>
           </div>
           <button
+            type="button"
             onClick={() => navigate(-1)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full shadow
-              bg-white text-text-primary text-sm font-medium hover:bg-bg-main transition-colors"
+            className="flex w-fit items-center gap-1.5 rounded-full bg-bg-cards1 px-4 py-2 text-sm font-medium text-text-primary shadow transition-colors hover:bg-bg-main"
           >
             <ArrowLeftIcon className="w-5 h-5" />
             Back
@@ -248,7 +249,7 @@ export const PlannedBudgetByIdReport = () => {
         </div>
 
         {/* ── Stat cards ── */}
-        <div className="flex gap-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:gap-4">
           <StatCard
             icon={<DollarIcon />}
             label="Contract Value"
@@ -278,12 +279,12 @@ export const PlannedBudgetByIdReport = () => {
         </div>
 
         {/* ── Chart ── */}
-        <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] px-6 pt-6 pb-14">
+        <div className="min-w-0 rounded-lg bg-bg-cards1 px-3 pb-8 pt-5 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:px-6 sm:pb-14 sm:pt-6">
           <PlanChart periods={periods} strategy={plan?.strategy} />
         </div>
 
         {/* ── Table ── */}
-        <div className="bg-bg-cards1 rounded-lg shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] p-6">
+        <div className="min-w-0 rounded-lg bg-bg-cards1 p-4 shadow-[0px_2px_8px_0px_rgba(136,135,135,0.10)] sm:p-6">
           <PlanTable
             periods={periods}
             contractValue={plan?.totalAmount ?? 0}
