@@ -11,13 +11,13 @@ export default function UploadDropzone({ onFileSelect }) {
     (file) => {
       if (typeof onFileSelect !== "function") {
         throw new Error(
-          `UploadDropzone: onFileSelect must be a function, got ${typeof onFileSelect}`
+          `UploadDropzone: onFileSelect must be a function, got ${typeof onFileSelect}`,
         );
       }
 
       onFileSelect(file);
     },
-    [onFileSelect]
+    [onFileSelect],
   );
 
   const handleClick = useCallback(() => {
@@ -53,7 +53,7 @@ export default function UploadDropzone({ onFileSelect }) {
 
       safeSelect(file);
     },
-    [safeSelect]
+    [safeSelect],
   );
 
   const handleInputChange = useCallback(
@@ -71,17 +71,17 @@ export default function UploadDropzone({ onFileSelect }) {
       safeSelect(file);
       e.target.value = "";
     },
-    [safeSelect]
+    [safeSelect],
   );
 
   return (
     <div
-      className={`w-3/4 h-[428px] bg-bg-cards1 rounded-lg flex flex-col items-center justify-center border border-dashed transition-colors cursor-pointer font-sans ${
+      className={`w-full lg:w-3/4 h-auto min-h-[250px] lg:min-h-[428px] p-1 bg-bg-cards1 rounded-lg flex flex-col items-center justify-center border border-dashed transition-colors cursor-pointer font-sans ${
         isDragging
           ? "border-primary bg-bg-mainColor30"
           : dragError
-          ? "border-status-risk bg-bg-atRisk20030"
-          : "border-gray-200 shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
+            ? "border-status-risk bg-bg-atRisk20030"
+            : "border-gray-200 shadow-[0_2px_8px_rgba(136,136,136,0.1)]"
       }`}
       onClick={handleClick}
       onDragOver={handleDragOver}
@@ -96,7 +96,7 @@ export default function UploadDropzone({ onFileSelect }) {
         onChange={handleInputChange}
       />
 
-      <div className="flex flex-col items-center gap-6 w-[540px]">
+      <div className="flex flex-col items-center gap-6 w-full max-w-[400px] lg:max-w-[540px] px-4">
         <UploadArrowIcon className="w-12 h-12 text-primary" />
 
         <div className="text-center">
