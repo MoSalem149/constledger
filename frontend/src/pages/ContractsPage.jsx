@@ -12,9 +12,11 @@ import FullPageSpinner from "../components/common/FullPageSpinner";
 
 // =================== HELPERS ===================
 const formatValue = (val, currency) => {
-  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M ${currency}`;
-  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K ${currency}`;
-  return `${val} ${currency}`;
+  const c = currency ? ` ${currency}` : "";
+  if (!Number(val)) return "—";
+  if (val >= 1_000_000) return `${(val / 1_000_000).toFixed(1)}M${c}`;
+  if (val >= 1_000) return `${(val / 1_000).toFixed(1)}K${c}`;
+  return `${val}${c}`;
 };
 const formatDate = (d) => {
   if (!d) return "—";
@@ -225,14 +227,14 @@ const ContractsPage = () => {
   );
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-10">
+      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-0 sm:pr-10">
         <FullPageSpinner />
       </div>
     );
   }
 
   return (
-    <div className="bg-bg-main min-h-[calc(100vh-116px)]  pr-10">
+    <div className="bg-bg-main min-h-[calc(100vh-116px)]  pr-0 sm:pr-10">
       <div className="mb-6">
         <SearchBar value={search.searchValue} onChange={handleSearch} />
       </div>
