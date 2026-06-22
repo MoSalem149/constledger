@@ -52,6 +52,13 @@ function getTimestamp() {
   });
 }
 
+function resolveMimeType(file) {
+  if (file.type) return file.type;
+  const ext = (file.name?.split(".").pop() || "").toLowerCase();
+  const mimeMap = { pdf: "application/pdf" };
+  return mimeMap[ext] || "application/pdf";
+}
+
 /* ------------------------------------------------------------------ */
 // Page
 /* ------------------------------------------------------------------ */
@@ -164,7 +171,7 @@ export default function UploadContractPage() {
         const { uploadUrl, key } = await contractService
           .signUpload({
             filename: file.name,
-            mimeType: file.type,
+            mimeType: resolveMimeType(file),
             size: file.size,
             fileHash,
           })
@@ -189,7 +196,7 @@ export default function UploadContractPage() {
           .completeUpload({
             s3Key: key,
             fileName: file.name,
-            mimeType: file.type,
+            mimeType: resolveMimeType(file),
             size: file.size,
             fileHash,
           })
