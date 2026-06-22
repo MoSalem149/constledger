@@ -29,9 +29,10 @@ import UploadDropzone from "../components/contracts/UploadDropzone";
 import AIExtractsPanel from "../components/contracts/AIExtractsPanel";
 import ProcessingCard from "../components/contracts/ProcessingCard";
 import { contractService } from "../services/contractService";
-import { isValidFile } from "../utils/fileValidation";
+import { isValidFile, getFileTypeErrorMessage } from "../utils/fileValidation";
 import { startSimulation } from "../utils/fakeProgress";
 import { putFileToS3 } from "../utils/s3Upload";
+import { hashFile } from "../utils/hashFile";
 import { UContractContext } from "../context/UploadedContractContext";
 
 /* ------------------------------------------------------------------ */
@@ -76,6 +77,12 @@ export default function UploadContractPage() {
   const cleanupRef = useRef(null);
   // Track whether the component is still mounted to avoid state updates after unmount
   const mountedRef = useRef(true);
+  // Set to true when the user clicks Cancel — checked between async steps so
+  // we stop acting on results that arrive after cancellation.
+  const cancelledRef = useRef(false);
+  // Tracks the contract created by createContract() so Cancel can clean it up.
+  const contractIdRef = useRef(null);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -95,7 +102,7 @@ export default function UploadContractPage() {
       console.error("Unhandled rejection:", evt.reason);
       if (mountedRef.current) {
         setError(
-          `[UnhandledRejection] ${evt.reason?.message || String(evt.reason)}`,
+          "Something went wrong while uploading your contract. Please try again.",
         );
         setPageState("idle");
       }
@@ -122,7 +129,7 @@ export default function UploadContractPage() {
         if (!file) return;
 
         if (!isValidFile(file)) {
-          setError("Only PDF and DOCX files are allowed.");
+          setError(getFileTypeErrorMessage(file));
           return;
         }
 
@@ -132,6 +139,9 @@ export default function UploadContractPage() {
         }
 
         setError(null);
+        cancelledRef.current = false;
+        contractIdRef.current = null;
+        setCancelling(false);
         setFileInfo({
           name: file.name,
           size: formatFileSize(file.size),
@@ -156,8 +166,16 @@ export default function UploadContractPage() {
             filename: file.name,
             mimeType: file.type,
             size: file.size,
+            fileHash,
           })
           .catch((err) => {
+            if (err?.response?.status === 409) {
+              const dupErr = new Error(
+                "This file has already been uploaded. Please choose a different file or check your existing projects.",
+              );
+              dupErr.isUserFacing = true;
+              throw dupErr;
+            }
             throw new Error(`[Step 1: signUpload] ${err?.message || err}`);
           });
 
@@ -173,8 +191,16 @@ export default function UploadContractPage() {
             fileName: file.name,
             mimeType: file.type,
             size: file.size,
+            fileHash,
           })
           .catch((err) => {
+            if (err?.response?.status === 409) {
+              const dupErr = new Error(
+                "This file has already been uploaded. Please choose a different file or check your existing projects.",
+              );
+              dupErr.isUserFacing = true;
+              throw dupErr;
+            }
             throw new Error(`[Step 3: completeUpload] ${err?.message || err}`);
           });
 
@@ -276,6 +302,8 @@ export default function UploadContractPage() {
           navigate(`/contracts/${contract.id}/edit`);
         }
       } catch (err) {
+        // Log the full error (with stack) for debugging — the banner the
+        // user sees should only ever contain a short, friendly message.
         console.error("Upload failed:", err);
 
         if (!mountedRef.current) return;
@@ -316,7 +344,8 @@ export default function UploadContractPage() {
           friendlyMessage =
             "You appear to be offline. Please check your connection and try again.";
         } else {
-          setError(diagMsg);
+          friendlyMessage =
+            "Something went wrong while uploading your contract. Please try again, and contact support if the problem continues.";
         }
 
         setError(friendlyMessage);
@@ -333,6 +362,32 @@ export default function UploadContractPage() {
 
     cleanupRef.current = null;
     navigate("/contracts");
+  }, [navigate]);
+
+  /* ---------------------------------------------------------------- */
+  // Cancel — stops the active upload/extract flow, cleans up any
+  // partially-created contract, and returns to the contracts list.
+  /* ---------------------------------------------------------------- */
+
+  const handleCancel = useCallback(() => {
+    cancelledRef.current = true;
+    setCancelling(true);
+
+    if (typeof cleanupRef.current === "function") {
+      cleanupRef.current();
+    }
+    cleanupRef.current = null;
+
+    const cleanupContract = contractIdRef.current
+      ? contractService.deleteContract(contractIdRef.current).catch(() => {})
+      : Promise.resolve();
+
+    cleanupContract.finally(() => {
+      if (!mountedRef.current) return;
+      setPageState("idle");
+      setCancelling(false);
+      navigate("/contracts");
+    });
   }, [navigate]);
 
   /* ---------------------------------------------------------------- */
@@ -365,9 +420,9 @@ export default function UploadContractPage() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="flex flex-col gap-6 pr-10">
+    <div className="flex flex-col gap-6">
       {/* Header row */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+      <div className="flex items-center justify-between mr-10">
         {/* Left: breadcrumb + title + subtitle */}
         <div className="flex flex-col gap-3 max-w-[750px]">
           <span className="text-xs font-normal text-text-placeholder leading-[18px] font-sans">
@@ -406,7 +461,7 @@ export default function UploadContractPage() {
 
       {/* Content area */}
       {pageState === "idle" && (
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex gap-4 mr-10">
           <UploadDropzone onFileSelect={handleFileSelect} onError={setError} />
           <AIExtractsPanel />
         </div>
@@ -419,6 +474,8 @@ export default function UploadContractPage() {
           stepStatus={stepStatus}
           progress={progress}
           activityLog={activityLog}
+          onCancel={handleCancel}
+          cancelling={cancelling}
         />
       )}
     </div>
