@@ -5,10 +5,12 @@ import { normalizeId } from "../utils/normalizeId";
  * Contract API calls — thin wrappers around the backend contract endpoints.
  *
  * The upload flow is a 4-step S3 presigned URL process:
- *   1. signUpload({ filename, mimeType, size }) → POST /api/uploads/sign
+ *   1. signUpload({ filename, mimeType, size, fileHash }) → POST /api/uploads/sign
+ *      fileHash is a SHA-256 hex digest of the file (see utils/hashFile.js),
+ *      used by the backend to reject duplicate content before issuing a URL.
  *      Returns { uploadUrl, key, expiresIn }
  *   2. PUT file to uploadUrl (direct to S3, no auth headers)
- *   3. completeUpload({ s3Key, fileName, mimeType, size }) → POST /api/uploads/complete
+ *   3. completeUpload({ s3Key, fileName, mimeType, size, fileHash }) → POST /api/uploads/complete
  *      Returns { uploadId, s3Key, status }
  *   4. createContract(name, uploadId) → POST /api/contracts/upload
  *      Sends JSON { name, uploadId }. Backend starts AI analysis in background.
@@ -26,18 +28,18 @@ export const contractService = {
    * POST /api/uploads/sign
    * Request a presigned S3 URL for file upload.
    */
-  signUpload: ({ filename, mimeType, size }) =>
+  signUpload: ({ filename, mimeType, size, fileHash }) =>
     api
-      .post("/uploads/sign", { filename, mimeType, size })
+      .post("/uploads/sign", { filename, mimeType, size, fileHash })
       .then((res) => res.data),
 
   /**
    * POST /api/uploads/complete
    * Notify the backend that the file has been uploaded to S3.
    */
-  completeUpload: ({ s3Key, fileName, mimeType, size }) =>
+  completeUpload: ({ s3Key, fileName, mimeType, size, fileHash }) =>
     api
-      .post("/uploads/complete", { s3Key, fileName, mimeType, size })
+      .post("/uploads/complete", { s3Key, fileName, mimeType, size, fileHash })
       .then((res) => res.data),
 
   /**
@@ -145,4 +147,13 @@ export const contractService = {
    */
   getContractTimeline: (id) =>
     api.get(`/contracts/${id}/timeline`).then((res) => res.data),
+
+  /**
+   * DELETE /api/contracts/:id
+   * Permanently delete a contract (and its linked upload document).
+   * Backend restricts this to the contract_manager role.
+   * Returns { message, id }
+   */
+  deleteContract: (id) =>
+    api.delete(`/contracts/${id}`).then((res) => res.data),
 };

@@ -36,7 +36,7 @@ const DonutChart = ({ data }) => {
   });
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex flex-col items-center gap-6">
       {/* SVG Donut */}
       <div className="relative w-[180px] h-[180px] shrink-0">
         <svg

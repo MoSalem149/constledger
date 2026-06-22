@@ -53,7 +53,8 @@ export default function DashboardPage() {
 
   // Empty state — no contracts yet
   return (
-    <div className="min-h-[calc(100vh-116px)] lg:pr-10 pr-0  font-sans flex flex-col">
+    <div className="min-h-[calc(100vh-116px)] lg:pr-10 pr-0 font-sans flex flex-col">
+
       {/* Header */}
       <div>
         <p className="text-xs tracking-widest font-normal text-gray-300 mb-3">

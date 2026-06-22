@@ -140,10 +140,10 @@ export default function LoginPage() {
         <div className="w-full max-w-[614px]">
           {/* Header */}
           <div className="mb-8">
-            <h2 className="text-text-primary font-sans text-5xl font-medium mb-4">
+            <h2 className="text-text-primary font-sans text-3xl sm:text-4xl lg:text-5xl font-medium mb-4">
               Welcome Back
             </h2>
-            <p className="text-text-secondary font-sans text-base font-medium">
+            <p className="text-text-secondary font-sans text-sm sm:text-base font-medium">
               Everything you need to track contracts, budgets, and project
               performance
             </p>
@@ -227,7 +227,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full h-[60px] rounded-full bg-primary text-white font-sans text-2xl font-medium flex items-center justify-center gap-3 hover:bg-primary/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+              className="w-full h-[60px] rounded-full bg-primary text-white font-sans text-lg sm:text-xl lg:text-2xl font-medium flex items-center justify-center gap-3 hover:bg-primary/90 transition-colors disabled:opacity-70 disabled:cursor-not-allowed mt-2"
             >
               {submitting ? (
                 <>

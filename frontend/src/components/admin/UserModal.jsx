@@ -241,7 +241,7 @@ export default function UserModal({
             </p>
           )}
 
-          <div className="flex gap-3 pt-9 px-14 pb-11">
+          <div className="flex gap-3 pt-9 px-6 sm:px-14 pb-11">
             <button
               type="button"
               onClick={handleClose}

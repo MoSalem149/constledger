@@ -54,51 +54,61 @@ export default function ContractStepper({
   progress,
 }) {
   return (
-    <div className="flex w-full min-w-0 flex-col overflow-hidden rounded-lg bg-bg-cards1 p-3 shadow sm:p-4">
-      {/* Stepper row */}
-      <div className="overflow-x-auto">
-        <div className="flex min-w-[620px] items-center justify-center gap-0 px-2">
-          {steps.map((step, index) => {
+    <div className="flex flex-col w-full bg-bg-cards1 p-5 rounded shadow">
+      {/* Stepper row — mobile: just circles + step text below */}
+      <div className="flex items-center justify-center gap-2 lg:hidden">
+        {steps.map((step, index) => (
+          <StepCircle
+            key={step.key}
+            status={stepStatus[index] || "pending"}
+            stepIndex={index}
+          />
+        ))}
+      </div>
+
+      <div className="text-center lg:hidden">
+        <span className="text-xs font-medium text-text-primary">
+          {steps[currentStep]?.label}
+        </span>
+        {steps[currentStep]?.subLabel && (
+          <span className="text-xs text-text-placeholder ml-1">
+            · {steps[currentStep]?.subLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Stepper row — desktop: full labels + connectors */}
+      <div className="hidden lg:flex p-2 lg:items-center lg:justify-center lg:gap-0 overflow-x-auto">
+        {steps.map((step, index) => {
           const status = stepStatus[index] || "pending";
           const isLast = index === STEP_COUNT - 1;
 
           return (
             <div key={step.key} className="flex items-center">
-              {/* Step node */}
               <div className="flex items-center gap-4">
                 <StepCircle status={status} stepIndex={index} />
                 <div className="flex flex-col justify-center h-10">
-                  <span
-                    className={`text-sm font-medium ${
-                      status === "pending"
-                        ? "text-text-secondary"
-                        : "text-text-primary"
-                    }`}
-                  >
+                  <span className="text-sm font-medium leading-tight text-text-primary">
                     {step.label}
                   </span>
                   {step.subLabel && (
-                    <span className="text-xs font-medium text-text-placeholder">
+                    <span className="text-xs leading-tight text-text-placeholder mt-0.5">
                       {step.subLabel}
                     </span>
                   )}
                 </div>
               </div>
 
-              {/* Connector line */}
               {!isLast && (
                 <div
-                  className="mx-3 h-0.5 w-[52px] rounded-2xl bg-gray-100 data-[completed=true]:bg-status-track lg:w-[72px]"
-                  data-completed={status === "completed"}
-                  style={
-                    status === "completed" ? { backgroundColor: "#007D0F" } : {}
-                  }
+                  className={`mx-3 w-[72px] h-0.5 rounded-2xl ${
+                    status === "completed" ? "bg-status-track" : "bg-gray-100"
+                  }`}
                 />
               )}
             </div>
           );
-          })}
-        </div>
+        })}
       </div>
 
       {/* Progress bar (only shown during Extract step) */}

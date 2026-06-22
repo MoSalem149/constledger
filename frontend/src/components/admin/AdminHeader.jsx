@@ -2,7 +2,7 @@ import { PlusIcon } from "../icons/PlusIcon";
 
 export default function AdminHeader({ onAddUser }) {
   return (
-    <div className="flex font-sans items-center justify-between mb-6 mr-10">
+    <div className="flex font-sans items-center justify-between mb-6 mr-0 sm:mr-10">
       <div>
         <h1 className="text-2xl font-medium font-sans text-text-primary">
           Admin Table

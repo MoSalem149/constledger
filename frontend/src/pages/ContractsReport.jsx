@@ -154,11 +154,11 @@ function StatCard({ icon, label, value, loading }) {
         <span className="w-9 h-9 flex items-center justify-center rounded-lg bg-bg-mainColor text-primary flex-shrink-0">
           {icon}
         </span>
-        <span className="text-xs text-text-secondary font-medium leading-tight">
+        <span className="text-xs text-text-secondary font-medium leading-tight min-w-0">
           {label}
         </span>
       </div>
-      <p className="text-xl font-bold text-text-primary tracking-tight">
+      <p className="text-lg sm:text-xl font-bold text-text-primary tracking-tight break-words">
         {loading ? (
           <span className="text-gray-200 animate-pulse">———</span>
         ) : (
@@ -294,10 +294,10 @@ const ContractsReport = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-bg-main p-10">
+    <div className="min-h-screen bg-bg-main p-4 sm:p-6 lg:p-10">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="">
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           {/* Title */}
           <div>
             <h1 className="text-[22px] font-bold text-text-primary tracking-tight leading-tight">
@@ -309,7 +309,7 @@ const ContractsReport = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <Link
               to={"/reports"}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 bg-white text-text-primary text-sm font-medium hover:bg-bg-main transition-colors"
@@ -346,7 +346,7 @@ const ContractsReport = () => {
       {/* ── Body ───────────────────────────────────────────────────────────── */}
       <div className="">
         {/* ── Stat Cards ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <StatCard
             icon={<DollarIcon />}
             label="Total Contracts Value"
@@ -374,92 +374,94 @@ const ContractsReport = () => {
         </div>
 
         {/* ── Table ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded shadow overflow-hidden p-6">
-          {loading ? (
-            /* Loading skeleton rows */
-            <table className="w-full">
-              <thead>
-                <TableHead />
-              </thead>
-              <tbody>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100">
-                    {Array.from({ length: 6 }).map((_, j) => (
-                      <td key={j} className="px-6 py-5">
-                        <div
-                          className="h-3.5 rounded bg-gray-100 animate-pulse"
-                          style={{
-                            width: j === 0 ? "60%" : j === 5 ? "50%" : "70%",
-                          }}
-                        />
+        <div className="bg-white rounded shadow p-6">
+          <div className="overflow-x-auto">
+            {loading ? (
+              /* Loading skeleton rows */
+              <table className="w-full">
+                <thead>
+                  <TableHead />
+                </thead>
+                <tbody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="border-b border-gray-100">
+                      {Array.from({ length: 6 }).map((_, j) => (
+                        <td key={j} className="px-6 py-5">
+                          <div
+                            className="h-3.5 rounded bg-gray-100 animate-pulse"
+                            style={{
+                              width: j === 0 ? "60%" : j === 5 ? "50%" : "70%",
+                            }}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <p className="text-status-risk text-sm">{error}</p>
+                <button
+                  onClick={fetchData}
+                  className="text-xs text-primary underline underline-offset-2"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : contracts.length === 0 ? (
+              <div className="flex items-center justify-center py-20 text-text-secondary text-sm">
+                No contracts match the selected filters.
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <TableHead />
+                </thead>
+                <tbody>
+                  {contracts.map((contract, idx) => (
+                    <tr
+                      key={contract.id ?? idx}
+                      className="border-b border-gray-100 last:border-0 hover:bg-bg-main transition-colors cursor-default"
+                    >
+                      {/* Project */}
+                      <td className="px-6 py-5 text-sm  text-text-primary">
+                        {contract.projectName ??
+                          contract.project?.name ??
+                          contract.name ??
+                          "—"}
                       </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-3">
-              <p className="text-status-risk text-sm">{error}</p>
-              <button
-                onClick={fetchData}
-                className="text-xs text-primary underline underline-offset-2"
-              >
-                Try again
-              </button>
-            </div>
-          ) : contracts.length === 0 ? (
-            <div className="flex items-center justify-center py-20 text-text-secondary text-sm">
-              No contracts match the selected filters.
-            </div>
-          ) : (
-            <table className="w-full">
-              <thead>
-                <TableHead />
-              </thead>
-              <tbody>
-                {contracts.map((contract, idx) => (
-                  <tr
-                    key={contract.id ?? idx}
-                    className="border-b border-gray-100 last:border-0 hover:bg-bg-main transition-colors cursor-default"
-                  >
-                    {/* Project */}
-                    <td className="px-6 py-5 text-sm  text-text-primary">
-                      {contract.projectName ??
-                        contract.project?.name ??
-                        contract.name ??
-                        "—"}
-                    </td>
 
-                    {/* Party */}
-                    <td className="px-6 py-5 text-sm text-text-secondary">
-                      {getPartyName(contract.parties)}
-                    </td>
+                      {/* Party */}
+                      <td className="px-6 py-5 text-sm text-text-secondary">
+                        {getPartyName(contract.parties)}
+                      </td>
 
-                    {/* Value */}
-                    <td className="px-6 py-5 text-sm text-text-primary font-medium">
-                      {formatShort(contract.contractValue)}
-                    </td>
+                      {/* Value */}
+                      <td className="px-6 py-5 text-sm text-text-primary font-medium">
+                        {formatShort(contract.contractValue)}
+                      </td>
 
-                    {/* Start */}
-                    <td className="px-6 py-5 text-sm text-text-secondary">
-                      {formatDate(contract.startDate)}
-                    </td>
+                      {/* Start */}
+                      <td className="px-6 py-5 text-sm text-text-secondary">
+                        {formatDate(contract.startDate)}
+                      </td>
 
-                    {/* End */}
-                    <td className="px-6 py-5 text-sm text-text-secondary">
-                      {formatDate(contract.endDate)}
-                    </td>
+                      {/* End */}
+                      <td className="px-6 py-5 text-sm text-text-secondary">
+                        {formatDate(contract.endDate)}
+                      </td>
 
-                    {/* Status */}
-                    <td className="px-6 py-5 text-right">
-                      <StatusBadge status={contract.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                      {/* Status */}
+                      <td className="px-6 py-5 text-right">
+                        <StatusBadge status={contract.status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -51,7 +51,7 @@ export default function AIExtractsPanel() {
         p-6 flex flex-col justify-center items-center
       "
     >
-      <div className="w-[381px] flex flex-col font-sans gap-4">
+      <div className="w-full max-w-[381px] flex flex-col font-sans gap-4">
         {/* Title */}
         <h3 className="text-lg  font-medium text-text-primary leading-5">
           What AI Extracts
