@@ -206,6 +206,79 @@ const SearchBar = ({ value, onChange }) => (
   </div>
 );
 
+// =================== PAGINATION ===================
+const getVisiblePages = (currentPage, totalPages) => {
+  if (totalPages <= 5) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  if (currentPage <= 3) return [1, 2, 3, 4, totalPages];
+  if (currentPage >= totalPages - 2) {
+    return [1, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  }
+
+  return [1, currentPage - 1, currentPage, currentPage + 1, totalPages];
+};
+
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+  if (totalPages <= 1) return null;
+
+  const visiblePages = getVisiblePages(currentPage, totalPages);
+
+  return (
+    <nav
+      aria-label="Contracts pagination"
+      className="mt-8 flex items-center justify-center gap-2"
+    >
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <span aria-hidden="true">←</span>
+        Previous
+      </button>
+
+      {visiblePages.map((page, index) => {
+        const previousPage = visiblePages[index - 1];
+        const hasGap = previousPage && page - previousPage > 1;
+
+        return (
+          <div key={page} className="flex items-center gap-2">
+            {hasGap && (
+              <span className="px-1 text-sm text-text-placeholder">...</span>
+            )}
+            <button
+              type="button"
+              onClick={() => onPageChange(page)}
+              aria-label={`Go to page ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
+              className={`h-9 min-w-9 rounded-full border px-3 text-xs font-medium transition-colors ${
+                page === currentPage
+                  ? "border-primary bg-primary text-white"
+                  : "border-border bg-bg-cards1 text-text-secondary hover:border-primary hover:text-primary"
+              }`}
+            >
+              {page}
+            </button>
+          </div>
+        );
+      })}
+
+      <button
+        type="button"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="flex h-9 items-center gap-1 rounded-full border border-border bg-bg-cards1 px-3 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Next
+        <span aria-hidden="true">→</span>
+      </button>
+    </nav>
+  );
+};
+
 // =================== PAGE ===================
 const ContractsPage = () => {
   const navigate = useNavigate();
@@ -251,14 +324,14 @@ const ContractsPage = () => {
   );
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] pr-0 sm:pr-10">
+      <div className="flex items-center justify-center min-h-[calc(100vh-116px)] lg:pr-10 pr-0 ">
         <FullPageSpinner />
       </div>
     );
   }
 
   return (
-    <div className="bg-bg-main min-h-[calc(100vh-116px)]  pr-0 sm:pr-10">
+    <div className="bg-bg-main min-h-[calc(100vh-116px)]  lg:pr-10 pr-0 ">
       <div className="mb-6">
         <SearchBar value={search.searchValue} onChange={handleSearch} />
       </div>

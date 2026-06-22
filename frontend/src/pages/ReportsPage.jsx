@@ -46,7 +46,7 @@ export default function ReportsPage() {
   ];
 
   return (
-    <section className="min-h-[calc(100vh-116px)] bg-bg-main pr-0 sm:pr-10">
+    <section className="min-h-[calc(100vh-116px)] bg-bg-main lg:pr-10 pr-0 ">
       {/* Header */}
       <div>
         <h1 className="text-[24px] font-medium text-text-primary">
