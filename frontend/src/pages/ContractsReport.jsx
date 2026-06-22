@@ -188,10 +188,11 @@ function FilterDropdown({ placeholder, value, options, onChange }) {
   const displayLabel = selected ? selected.label : placeholder;
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full sm:w-auto">
       <button
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-gray-200 bg-white text-text-primary text-sm font-medium hover:border-gray-300 transition-colors select-none"
+        className="flex w-full select-none items-center justify-between gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:border-gray-300 sm:w-auto"
       >
         <span
           className={selected ? "text-text-primary" : "text-text-secondary"}
@@ -202,9 +203,10 @@ function FilterDropdown({ placeholder, value, options, onChange }) {
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+6px)] left-0 z-20 min-w-[170px] bg-white border border-gray-100 rounded-xl shadow-DEFAULT py-1 overflow-hidden">
+        <div className="absolute left-0 top-[calc(100%+6px)] z-20 w-full min-w-[170px] overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-DEFAULT sm:w-auto">
           {options.map((opt) => (
             <button
+              type="button"
               key={opt.value}
               onClick={() => {
                 onChange(opt.value);
@@ -239,6 +241,53 @@ const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
   { value: "pending_review", label: "Pending" },
 ];
+
+function ContractMobileCard({ contract }) {
+  const projectName =
+    contract.projectName ?? contract.project?.name ?? contract.name ?? "—";
+
+  return (
+    <article className="rounded-xl border border-border bg-bg-cards1 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="break-words text-sm font-medium text-text-primary">
+            {projectName}
+          </p>
+          <p className="mt-1 break-words text-xs text-text-secondary">
+            {getPartyName(contract.parties)}
+          </p>
+        </div>
+        <StatusBadge status={contract.status} />
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-3 border-t border-border pt-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-placeholder">
+            Value
+          </p>
+          <p className="mt-1 text-sm font-medium text-text-primary">
+            {formatShort(contract.contractValue)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-placeholder">
+            Start
+          </p>
+          <p className="mt-1 text-xs text-text-secondary">
+            {formatDate(contract.startDate)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-placeholder">
+            End
+          </p>
+          <p className="mt-1 text-xs text-text-secondary">
+            {formatDate(contract.endDate)}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
@@ -294,10 +343,10 @@ const ContractsReport = () => {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-bg-main p-4 sm:p-6 lg:p-10">
+    <div className="min-h-full min-w-0 bg-bg-main">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="">
-        <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
           {/* Title */}
           <div>
             <h1 className="text-[22px] font-bold text-text-primary tracking-tight leading-tight">
@@ -309,17 +358,18 @@ const ContractsReport = () => {
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:gap-3">
             <Link
               to={"/reports"}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-200 bg-white text-text-primary text-sm font-medium hover:bg-bg-main transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-text-primary transition-colors hover:bg-bg-main sm:px-4 sm:text-sm"
             >
               <ArrowLeftIcon />
               Back
             </Link>
             <button
+              type="button"
               onClick={handleExport}
-              className="flex items-center gap-2 px-5 py-2 rounded-full bg-primary text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="flex items-center justify-center gap-2 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90 sm:px-5 sm:text-sm"
             >
               Export Excel
             </button>
@@ -327,7 +377,7 @@ const ContractsReport = () => {
         </div>
 
         {/* ── Filters ──────────────────────────────────────────────────────── */}
-        <div className="flex items-center gap-3 mt-5 mb-6">
+        <div className="mb-6 mt-5 grid grid-cols-1 gap-3 sm:flex sm:items-center">
           <FilterDropdown
             placeholder="Filter by year"
             value={year}
@@ -346,7 +396,7 @@ const ContractsReport = () => {
       {/* ── Body ───────────────────────────────────────────────────────────── */}
       <div className="">
         {/* ── Stat Cards ─────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4 xl:gap-4">
           <StatCard
             icon={<DollarIcon />}
             label="Total Contracts Value"
@@ -374,11 +424,49 @@ const ContractsReport = () => {
         </div>
 
         {/* ── Table ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded shadow p-6">
-          <div className="overflow-x-auto">
+        <div className="rounded-lg bg-white p-3 shadow sm:p-4 lg:p-6">
+          <div className="min-w-0">
+            <div className="md:hidden">
+              {loading ? (
+                <div className="grid gap-3">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-36 animate-pulse rounded-xl bg-gray-100"
+                    />
+                  ))}
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                  <p className="text-sm text-status-risk">{error}</p>
+                  <button
+                    type="button"
+                    onClick={fetchData}
+                    className="text-xs text-primary underline underline-offset-2"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : contracts.length === 0 ? (
+                <div className="flex items-center justify-center py-16 text-center text-sm text-text-secondary">
+                  No contracts match the selected filters.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {contracts.map((contract, idx) => (
+                    <ContractMobileCard
+                      key={contract.id ?? idx}
+                      contract={contract}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
             {loading ? (
               /* Loading skeleton rows */
-              <table className="w-full">
+              <table className="w-full min-w-[820px]">
                 <thead>
                   <TableHead />
                 </thead>
@@ -403,6 +491,7 @@ const ContractsReport = () => {
               <div className="flex flex-col items-center justify-center py-20 gap-3">
                 <p className="text-status-risk text-sm">{error}</p>
                 <button
+                  type="button"
                   onClick={fetchData}
                   className="text-xs text-primary underline underline-offset-2"
                 >
@@ -414,7 +503,7 @@ const ContractsReport = () => {
                 No contracts match the selected filters.
               </div>
             ) : (
-              <table className="w-full">
+              <table className="w-full min-w-[820px]">
                 <thead>
                   <TableHead />
                 </thead>
@@ -461,6 +550,7 @@ const ContractsReport = () => {
                 </tbody>
               </table>
             )}
+            </div>
           </div>
         </div>
       </div>
