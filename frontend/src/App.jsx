@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import PrivateRoute from "./components/common/PrivateRoute";
@@ -8,20 +9,36 @@ import RoleGuard from "./components/common/RoleGuard";
 // Pages — all stubs initially, built out per sprint
 /* ------------------------------------------------------------------ */
 
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import UploadContractPage from "./pages/UploadContractPage";
-import ContractDetailPage from "./pages/ContractDetailPage";
-import ReviewEditFormPage from "./pages/ReviewEditFormPage";
-import ReportsPage from "./pages/ReportsPage";
-import AdminPage from "./pages/AdminPage";
-import NotFoundPage from "./components/common/NotFoundPage";
-import ContractsPage from "./pages/ContractsPage";
 import EditContractContext from "./context/EditContaractContext";
 import UploadedContractContext from "./context/UploadedContractContext";
-import ContractsReport from "./pages/ContractsReport";
-import PlannedBudgetReport from "./pages/PlannedBudgetReport";
-import { PlannedBudgetByIdReport } from "./pages/PlannedBudgetByIdReport";
+
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const UploadContractPage = lazy(() => import("./pages/UploadContractPage"));
+const ContractDetailPage = lazy(() => import("./pages/ContractDetailPage"));
+const ReviewEditFormPage = lazy(() => import("./pages/ReviewEditFormPage"));
+const ReportsPage = lazy(() => import("./pages/ReportsPage"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const NotFoundPage = lazy(() => import("./components/common/NotFoundPage"));
+const ContractsPage = lazy(() => import("./pages/ContractsPage"));
+const ContractsReport = lazy(() => import("./pages/ContractsReport"));
+const PlannedBudgetReport = lazy(() => import("./pages/PlannedBudgetReport"));
+const PlannedBudgetByIdReport = lazy(() =>
+  import("./pages/PlannedBudgetByIdReport").then((module) => ({
+    default: module.PlannedBudgetByIdReport,
+  })),
+);
+
+function RouteFallback() {
+  return (
+    <div className="flex min-h-[240px] items-center justify-center bg-bg-main">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+        <p className="text-sm text-text-secondary">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function App() {
   return (
@@ -35,7 +52,8 @@ function App() {
       <BrowserRouter>
         <UploadedContractContext>
           <EditContractContext>
-            <Routes>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               {/* ---------------------------------------------------------- */}
@@ -138,7 +156,8 @@ function App() {
                   <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Route>
-            </Routes>
+              </Routes>
+            </Suspense>
           </EditContractContext>
         </UploadedContractContext>
       </BrowserRouter>

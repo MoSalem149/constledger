@@ -87,7 +87,7 @@ export default function UploadDropzone({ onFileSelect, onError }) {
 
   return (
     <div
-      className={`w-full lg:w-3/4 h-auto min-h-[250px] lg:min-h-[428px] p-1 bg-bg-cards1 rounded-lg flex flex-col items-center justify-center border border-dashed transition-colors cursor-pointer font-sans ${
+      className={`flex min-h-[240px] w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed bg-bg-cards1 px-3 py-8 font-sans transition-colors sm:min-h-[280px] sm:px-1 sm:py-1 lg:min-h-[428px] ${
         isDragging
           ? "border-primary bg-bg-mainColor30"
           : dragError
@@ -107,11 +107,11 @@ export default function UploadDropzone({ onFileSelect, onError }) {
         onChange={handleInputChange}
       />
 
-      <div className="flex flex-col items-center gap-6 w-full max-w-[400px] lg:max-w-[540px] px-4">
-        <UploadArrowIcon className="w-12 h-12 text-primary" />
+      <div className="flex w-full max-w-[540px] flex-col items-center gap-5 px-2 sm:gap-6 sm:px-4">
+        <UploadArrowIcon className="h-10 w-10 text-primary sm:h-12 sm:w-12" />
 
         <div className="text-center">
-          <p className="text-lg font-medium text-text-primary leading-5 mb-6">
+          <p className="mb-3 text-base font-medium leading-snug text-text-primary sm:mb-6 sm:text-lg">
             Drag and Drop Your Contract Here
           </p>
           <p className="text-xs text-text-secondary">
@@ -130,7 +130,7 @@ export default function UploadDropzone({ onFileSelect, onError }) {
             e.stopPropagation();
             handleClick();
           }}
-          className="h-10 px-4 bg-primary rounded-[28px] shadow-[0_2px_8px_rgba(136,136,136,0.1)] flex items-center gap-2 text-xs text-text-light font-normal hover:opacity-90 transition-opacity"
+          className="flex h-9 w-auto items-center justify-center gap-2 rounded-[28px] bg-primary px-5 text-xs font-normal text-text-light shadow-[0_2px_8px_rgba(136,136,136,0.1)] transition-opacity hover:opacity-90 sm:h-10 sm:px-4"
         >
           <UploadArrowIcon className="w-5 h-5 text-text-light" noBackground />
           Browse Files

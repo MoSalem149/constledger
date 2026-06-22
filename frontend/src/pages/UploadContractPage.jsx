@@ -427,15 +427,15 @@ export default function UploadContractPage() {
   /* ---------------------------------------------------------------- */
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-5 sm:gap-6 md:pr-10 pr-0">
       {/* Header row */}
-      <div className="flex items-center justify-between mr-10">
+      <div className="flex flex-col-reverse gap-4 sm:flex-row sm:items-start sm:justify-between">
         {/* Left: breadcrumb + title + subtitle */}
-        <div className="flex flex-col gap-3 max-w-[750px]">
+        <div className="flex min-w-0 max-w-[750px] flex-col gap-3">
           <span className="text-xs font-normal text-text-placeholder leading-[18px] font-sans">
             PROJECTS . NEW
           </span>
-          <h1 className="text-2xl font-medium font-sans text-text-primary leading-5">
+          <h1 className="font-sans text-xl font-medium leading-tight text-text-primary sm:text-2xl">
             Add a New Project
           </h1>
           <p className="text-xs text-text-secondary leading-[18px] font-sans">
@@ -445,9 +445,10 @@ export default function UploadContractPage() {
 
         {/* Right: Back button */}
         <button
+          type="button"
           onClick={handleBack}
           className="
-            h-10 px-4 bg-white rounded-[28px]
+            h-10 w-fit px-4 bg-white rounded-[28px]
             shadow-[0_2px_8px_rgba(136,136,136,0.1)]
             flex items-center gap-2
             text-xs text-text-primary font-normal
@@ -461,14 +462,14 @@ export default function UploadContractPage() {
 
       {/* Error banner */}
       {error && (
-        <div className="bg-bg-atRisk200 text-status-risk px-4 py-3 rounded-lg text-sm">
+        <div className="break-words rounded-lg bg-bg-atRisk200 px-4 py-3 text-xs text-status-risk sm:text-sm">
           {error}
         </div>
       )}
 
       {/* Content area */}
       {pageState === "idle" && (
-        <div className="flex gap-4 mr-10">
+        <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)]">
           <UploadDropzone onFileSelect={handleFileSelect} onError={setError} />
           <AIExtractsPanel />
         </div>

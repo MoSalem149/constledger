@@ -6,6 +6,7 @@ import Navbar from "./Navbar";
 export default function DashboardLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex h-screen bg-bg-main font-sans">
@@ -17,10 +18,19 @@ export default function DashboardLayout() {
         />
       )}
 
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((collapsed) => !collapsed)}
+      />
 
       {/* Main area */}
-      <div className="flex-1 flex flex-col overflow-auto min-w-0 lg:ml-[195px]">
+      <div
+        className={`flex min-w-0 flex-1 flex-col overflow-auto transition-[margin] duration-300 ${
+          sidebarCollapsed ? "lg:ml-[72px]" : "lg:ml-[195px]"
+        }`}
+      >
         <Navbar
           title={getPageTitle(location.pathname)}
           sidebarOpen={sidebarOpen}

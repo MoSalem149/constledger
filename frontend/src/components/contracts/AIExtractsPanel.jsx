@@ -46,23 +46,23 @@ export default function AIExtractsPanel() {
   return (
     <div
       className="
-        min-h-[428px] bg-bg-cards1 rounded-lg
+        min-h-0 bg-bg-cards1 rounded-lg
         shadow-[0_2px_8px_rgba(136,136,136,0.1)]
-        p-6 flex flex-col justify-center items-center
+        p-4 sm:p-6 flex flex-col justify-center items-center lg:min-h-[428px]
       "
     >
-      <div className="w-full max-w-[381px] flex flex-col font-sans gap-4">
+      <div className="flex w-full max-w-[381px] flex-col gap-4 font-sans">
         {/* Title */}
         <h3 className="text-lg  font-medium text-text-primary leading-5">
           What AI Extracts
         </h3>
 
         {/* Items list */}
-        <div className="flex flex-col gap-4 pb-4 border-b border-gray-100">
+        <div className="grid grid-cols-1 gap-3 border-b border-gray-100 pb-4 sm:grid-cols-2 xl:grid-cols-1 xl:gap-4">
           {extractItems.map((item) => {
             const Icon = item.Icon;
             return (
-              <div key={item.key} className="flex items-center gap-6">
+              <div key={item.key} className="flex items-center gap-3 sm:gap-4 xl:gap-6">
                 {/* Icon container */}
                 <div className="w-10 h-10 rounded-lg bg-bg-grey flex items-center justify-center shrink-0">
                   <Icon className="text-text-secondary" />

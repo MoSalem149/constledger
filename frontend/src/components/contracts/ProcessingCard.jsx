@@ -36,7 +36,7 @@ export default function ProcessingCard({
     currentStepIndex >= 0 ? currentStepIndex : stepStatus.length - 1;
 
   return (
-    <div className="w-full bg-white rounded-lg shadow-[0_2px_8px_rgba(136,136,136,0.1)] p-6">
+    <div className="w-full min-w-0 rounded-lg bg-bg-cards1 p-4 shadow-[0_2px_8px_rgba(136,136,136,0.1)] sm:p-6">
       <div className="flex flex-col gap-6">
         {/* File info row */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4 border-b border-gray-100">
@@ -52,7 +52,7 @@ export default function ProcessingCard({
           </div>
 
           {/* Right: status badge + cancel */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="bg-bg-mainColor rounded-[28px] px-2.5 py-[3px] flex items-center justify-center">
               <span className="text-xs font-medium text-primary">
                 {["Uploading…", "Reading…", "Extracting…", "Reviewing…"][
