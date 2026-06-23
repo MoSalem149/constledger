@@ -144,6 +144,7 @@ JWTs are issued as **httpOnly cookies** named `token` and default to an 8-hour l
 |---|---|
 | `pmo` | Full access to `/api/users` + all finance and reporting endpoints |
 | `contract_manager` | Generate / edit / confirm / export plans |
+| `finance_team` | Read finance + reports |
 | `top_management` | Read finance + reports |
 
 Every authenticated user can read finance and reporting data; only `contract_manager` and `pmo` can mutate plans.

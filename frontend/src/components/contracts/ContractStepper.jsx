@@ -3,7 +3,7 @@
  *
  * Used on:
  *   - UploadContractPage  (steps: Upload → Read → Extract → Review)
- *   - ReviewEditFormPage  (steps: Upload → Read → Extract → Review, where Review is active-review)
+ *   - ContractDetailPage  (pending_review: Review step active via ContractSection)
  */
 import CheckCircleIcon from "../icons/CheckCircleIcon";
 import SpinnerIcon from "../icons/SpinnerIcon";

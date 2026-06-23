@@ -163,7 +163,12 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   id="email"
+                  name="email"
                   type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  maxLength={254}
+                  required
                   value={email}
                   onChange={(e) => handleEmailChange(e.target.value)}
                   placeholder="User@gmail.com"
@@ -189,7 +194,12 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   id="password"
+                  name="password"
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  minLength={8}
+                  maxLength={128}
+                  required
                   value={password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
                   placeholder="********"

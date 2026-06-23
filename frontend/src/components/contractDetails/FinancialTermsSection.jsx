@@ -3,6 +3,36 @@ import { ContractContext } from "../../context/EditContaractContext";
 import { TrashIcon } from "../icons/TrashIcon";
 import { PlusIcon } from "../icons/PlusIcon";
 import { formatDate } from "../../utils/formatDate";
+import { validateUnitPriceRowFields } from "../../utils/contractValidation";
+
+const ITEM_NAME_MAX = 200;
+const UNIT_MAX = 30;
+const QUANTITY_MAX = 9_999_999;
+const UNIT_PRICE_MAX = 999_999_999_999;
+const PAYMENT_TYPE_MAX = 50;
+const DATE_INPUT_MAX = 24;
+
+// Same shape as BasicInfoContent — strip non-numeric, allow one decimal, cap digits.
+const sanitizeDecimal = (raw, { maxIntDigits = 12 } = {}) => {
+  if (raw == null) return "";
+  let s = String(raw).replace(/[^0-9.]/g, "");
+  const firstDot = s.indexOf(".");
+  if (firstDot !== -1) {
+    s = s.slice(0, firstDot + 1) + s.slice(firstDot + 1).replace(/\./g, "");
+  }
+  const [intPart = "", decPart = ""] = s.split(".");
+  const cappedInt = intPart.replace(/^0+(?=\d)/, "").slice(0, maxIntDigits);
+  if (firstDot === -1) return cappedInt;
+  return `${cappedInt}.${decPart.slice(0, 2)}`;
+};
+
+const sanitizeInteger = (raw, { max = Number.MAX_SAFE_INTEGER } = {}) => {
+  if (raw == null) return "";
+  const digits = String(raw).replace(/[^0-9]/g, "").replace(/^0+(?=\d)/, "");
+  if (!digits) return "";
+  const n = Number(digits);
+  return n > max ? String(max) : digits;
+};
 
 const AddBtn = ({ label, onClick }) => (
   <button
@@ -25,13 +55,39 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
     quantity: row.quantity ?? 0,
     unit_price: row.unit_price ?? 0,
   });
+  const [errors, setErrors] = useState({
+    name: null,
+    unit: null,
+    quantity: null,
+    unit_price: null,
+  });
 
   const total = Number(local.quantity) * Number(local.unit_price);
 
-  const inputCls = (extra = "") =>
-    `w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13px]
+  const rowForValidation = (fields) => ({
+    name: fields.name ?? local.name,
+    unit: fields.unit ?? local.unit,
+    quantity: fields.quantity ?? local.quantity,
+    unit_price: fields.unit_price ?? local.unit_price,
+  });
+
+  const blurField = (fields = local) => {
+    const fieldErrors = validateUnitPriceRowFields(rowForValidation(fields));
+    setErrors({
+      name: fieldErrors.name ?? null,
+      unit: fieldErrors.unit ?? null,
+      quantity: fieldErrors.quantity ?? null,
+      unit_price: fieldErrors.unit_price ?? null,
+    });
+    onChange(fields);
+  };
+
+  const inputCls = (extra = "", hasError = false) =>
+    `w-full rounded-lg border bg-bg-cards1 px-3 py-2 text-[13px]
      text-text-primary outline-none transition-colors lg:rounded-none lg:border-x-0
      lg:border-t-0 lg:border-b-transparent lg:bg-transparent lg:px-0 lg:py-0 lg:text-[13.5px] ${
+       hasError ? "border-status-risk" : "border-border"
+     } ${
        readOnly
          ? "cursor-default"
          : "focus:border-primary lg:focus:border-gray-300"
@@ -51,16 +107,29 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
       <div className="group relative col-span-2 min-w-0 lg:col-span-1">
         <MobileLabel>Item</MobileLabel>
         <input
+          type="text"
+          maxLength={ITEM_NAME_MAX}
+          aria-label="Unit price item"
           value={local.name}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+              : (e) => {
+                  const name = e.target.value.slice(0, ITEM_NAME_MAX);
+                  setLocal((p) => ({ ...p, name }));
+                  if (errors.name) setErrors((p) => ({ ...p, name: null }));
+                }
           }
-          onBlur={readOnly ? undefined : () => onChange(local)}
+          onBlur={readOnly ? undefined : () => blurField(local)}
           readOnly={readOnly}
-          className={inputCls("truncate")}
+          aria-invalid={!!errors.name}
+          className={inputCls("truncate", !!errors.name)}
         />
+        {errors.name && (
+          <p className="mt-1 text-[11px] text-status-risk lg:mt-0.5">
+            {errors.name}
+          </p>
+        )}
         {local.name && (
           <div
             className="
@@ -79,44 +148,101 @@ const UnitPriceRow = ({ row, onRemove, onChange, readOnly }) => {
       <div>
         <MobileLabel>Unit</MobileLabel>
         <input
+          type="text"
+          maxLength={UNIT_MAX}
+          aria-label="Unit"
           value={local.unit}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, unit: e.target.value }))
+              : (e) => {
+                  const unit = e.target.value.slice(0, UNIT_MAX);
+                  setLocal((p) => ({ ...p, unit }));
+                  if (errors.unit) setErrors((p) => ({ ...p, unit: null }));
+                }
           }
-          onBlur={readOnly ? undefined : () => onChange(local)}
+          onBlur={readOnly ? undefined : () => blurField(local)}
           readOnly={readOnly}
-          className={inputCls("text-text-secondary text-left")}
+          aria-invalid={!!errors.unit}
+          className={inputCls("text-text-secondary text-left", !!errors.unit)}
         />
+        {errors.unit && (
+          <p className="mt-1 text-[11px] text-status-risk lg:mt-0.5">
+            {errors.unit}
+          </p>
+        )}
       </div>
       <div>
         <MobileLabel>Quantity</MobileLabel>
         <input
+          type="text"
+          inputMode="numeric"
+          maxLength={7}
+          aria-label="Quantity"
           value={local.quantity}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, quantity: e.target.value }))
+              : (e) => {
+                  const quantity = sanitizeInteger(e.target.value, {
+                    max: QUANTITY_MAX,
+                  });
+                  setLocal((p) => ({ ...p, quantity }));
+                  if (errors.quantity) {
+                    setErrors((p) => ({ ...p, quantity: null }));
+                  }
+                }
           }
-          onBlur={readOnly ? undefined : () => onChange(local)}
+          onBlur={
+            readOnly
+              ? undefined
+              : () => blurField(local)
+          }
           readOnly={readOnly}
-          className={inputCls("text-left")}
+          aria-invalid={!!errors.quantity}
+          className={inputCls("text-left", !!errors.quantity)}
         />
+        {errors.quantity && (
+          <p className="mt-1 text-[11px] text-status-risk lg:mt-0.5">
+            {errors.quantity}
+          </p>
+        )}
       </div>
       <div>
         <MobileLabel>Unit Price (EGP)</MobileLabel>
         <input
+          type="text"
+          inputMode="decimal"
+          maxLength={18}
+          aria-label="Unit price"
           value={local.unit_price}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, unit_price: e.target.value }))
+              : (e) => {
+                  const unit_price = sanitizeDecimal(e.target.value, {
+                    maxIntDigits: 12,
+                  });
+                  setLocal((p) => ({ ...p, unit_price }));
+                  if (errors.unit_price) {
+                    setErrors((p) => ({ ...p, unit_price: null }));
+                  }
+                }
           }
-          onBlur={readOnly ? undefined : () => onChange(local)}
+          onBlur={
+            readOnly
+              ? undefined
+              : () => blurField(local)
+          }
           readOnly={readOnly}
-          className={inputCls("text-left")}
+          aria-invalid={!!errors.unit_price}
+          className={inputCls("text-left", !!errors.unit_price)}
         />
+        {errors.unit_price && (
+          <p className="mt-1 text-[11px] text-status-risk lg:mt-0.5">
+            {errors.unit_price}
+          </p>
+        )}
       </div>
       <div>
         <MobileLabel>Total (EGP)</MobileLabel>
@@ -317,33 +443,55 @@ const PaymentRow = ({ payment, onRemove, onChange, readOnly }) => {
       className={`grid ${SCHED_COLS} px-4 py-4 items-center border-t border-gray-100`}
     >
       <input
+        type="text"
+        maxLength={DATE_INPUT_MAX}
+        aria-label="Payment date"
         value={local.date}
         onChange={
           readOnly
             ? undefined
-            : (e) => setLocal((p) => ({ ...p, date: e.target.value }))
+            : (e) =>
+                setLocal((p) => ({
+                  ...p,
+                  date: e.target.value.slice(0, DATE_INPUT_MAX),
+                }))
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
         className={inputCls()}
       />
       <input
+        type="text"
+        inputMode="decimal"
+        maxLength={18}
+        aria-label="Payment amount"
         value={local.amount}
         onChange={
           readOnly
             ? undefined
-            : (e) => setLocal((p) => ({ ...p, amount: e.target.value }))
+            : (e) =>
+                setLocal((p) => ({
+                  ...p,
+                  amount: sanitizeDecimal(e.target.value, { maxIntDigits: 12 }),
+                }))
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}
         className={inputCls("font-medium")}
       />
       <input
+        type="text"
+        maxLength={PAYMENT_TYPE_MAX}
+        aria-label="Payment type"
         value={local.type}
         onChange={
           readOnly
             ? undefined
-            : (e) => setLocal((p) => ({ ...p, type: e.target.value }))
+            : (e) =>
+                setLocal((p) => ({
+                  ...p,
+                  type: e.target.value.slice(0, PAYMENT_TYPE_MAX),
+                }))
         }
         onBlur={readOnly ? undefined : () => onChange(local)}
         readOnly={readOnly}

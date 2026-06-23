@@ -1,5 +1,77 @@
 import api from "./api";
 import { normalizeId } from "../utils/normalizeId";
+import { normalizeReportingPeriod } from "../utils/contractValidation";
+
+/** Fields the PUT /api/contracts/:id endpoint accepts — excludes populated refs. */
+const CONTRACT_UPDATE_FIELDS = [
+  "contractNumber",
+  "name",
+  "parties",
+  "contract_value",
+  "currency",
+  "unit_prices",
+  "paymentProgress",
+  "payment_terms",
+  "payment_schedule",
+  "start_date",
+  "end_date",
+  "duration_days",
+  "reporting_period",
+  "milestones",
+  "penalties",
+  "status",
+];
+
+/**
+ * Strip read-only / populated API fields before PUT.
+ * GET responses include uploadedBy { id, name, email }, document, etc.
+ * Sending those back causes Mongoose CastError on ObjectId fields.
+ */
+export function buildContractUpdatePayload(source, overrides = {}) {
+  const payload = { ...overrides };
+
+  for (const key of CONTRACT_UPDATE_FIELDS) {
+    if (source?.[key] !== undefined) {
+      payload[key] = source[key];
+    }
+  }
+
+  if (payload.reporting_period != null && payload.reporting_period !== "") {
+    const normalized = normalizeReportingPeriod(payload.reporting_period);
+    if (normalized) payload.reporting_period = normalized;
+  }
+
+  if (payload.contract_value != null && payload.contract_value !== "") {
+    payload.contract_value = Number(
+      String(payload.contract_value).replace(/,/g, ""),
+    );
+  }
+
+  if (payload.duration_days != null && payload.duration_days !== "") {
+    payload.duration_days = Number(payload.duration_days);
+  }
+
+  if (Array.isArray(payload.payment_terms)) {
+    payload.payment_terms = payload.payment_terms.map((term) => ({
+      ...term,
+      percentage:
+        term.percentage === "" || term.percentage == null
+          ? null
+          : Number(term.percentage),
+    }));
+  }
+
+  if (Array.isArray(payload.milestones)) {
+    payload.milestones = payload.milestones.map(
+      ({ dueDate, due_date, ...rest }) => ({
+        ...rest,
+        due_date: due_date ?? dueDate ?? "",
+      }),
+    );
+  }
+
+  return payload;
+}
 
 /**
  * Contract API calls — thin wrappers around the backend contract endpoints.
@@ -109,9 +181,9 @@ export const contractService = {
     api.get(`/contracts/${id}`).then((res) => normalizeId(res.data)),
 
   EditContractById: (id, data) =>
-    api.put(`/contracts/${id}`, data).then((res) => {
-      return normalizeId(res.data);
-    }),
+    api
+      .put(`/contracts/${id}`, buildContractUpdatePayload(data))
+      .then((res) => normalizeId(res.data)),
 
   /**
    * GET /api/contracts
@@ -130,7 +202,9 @@ export const contractService = {
    * Response: { message, id }
    */
   updateContract: (id, data) =>
-    api.put(`/contracts/${id}`, data).then((res) => res.data),
+    api
+      .put(`/contracts/${id}`, buildContractUpdatePayload(data))
+      .then((res) => res.data),
 
   /**
    * POST /api/contracts/:id/analyze

@@ -9,13 +9,16 @@ import Spinner from "../components/common/Spinner";
 import { useAuth } from "../context/AuthContext";
 
 /**
- * ContractDetailPage — contract view.
+ * ContractDetailPage — single contract view and review/edit form.
  *
- * Fetches contract by :id from the URL.
- * Contract Manager sees editable fields for pending_review contracts;
- * Top Management always sees read-only (can't confirm/edit).
+ * Fetches contract by :id from the URL (reload-safe).
+ * EditContractContext holds unsaved in-session edits until Confirm.
  *
- * Path: /contracts/:id
+ * - pending_review + contract_manager → editable, Confirm + upload stepper
+ * - active → read-only for everyone
+ * - top_management → always read-only
+ *
+ * Path: /contracts/:id  (/contracts/:id/edit redirects here)
  * Roles: contract_manager (full), top_management (read-only)
  */
 export default function ContractDetailPage() {
@@ -24,7 +27,7 @@ export default function ContractDetailPage() {
   const [contractData, setContractData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [read_only, set_read_only] = useState(false);
+  const [readOnly, setReadOnly] = useState(false);
 
   const { data: editedData } = useContext(ContractContext);
 
@@ -37,8 +40,11 @@ export default function ContractDetailPage() {
     async function fetchContract() {
       try {
         setLoading(true);
+        setError(null);
         const data = await contractService.getContractById(id);
-        set_read_only(data.status === "active" || user?.role === "top_management");
+        setReadOnly(
+          data.status === "active" || user?.role === "top_management",
+        );
         setContractData(data);
       } catch (err) {
         console.error(err);
@@ -49,11 +55,11 @@ export default function ContractDetailPage() {
     }
 
     if (id) fetchContract();
-  }, [id]);
+  }, [id, user?.role]);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-bg-main">
+      <div className="flex min-h-screen items-center justify-center bg-bg-main">
         <Spinner size="lg" label="Loading contract..." />
       </div>
     );
@@ -61,8 +67,8 @@ export default function ContractDetailPage() {
 
   if (error || !contractData) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-bg-main">
-        <p className="text-status-risk text-sm">
+      <div className="flex min-h-screen items-center justify-center bg-bg-main">
+        <p className="text-sm text-status-risk">
           {error ?? "Contract not found."}
         </p>
       </div>
@@ -80,10 +86,7 @@ export default function ContractDetailPage() {
       </Link>
 
       <ContarctCard contractData={mergedData} />
-      <ContarctDetailsSections
-        contractData={mergedData}
-        readOnly={read_only}
-      />
+      <ContarctDetailsSections contractData={mergedData} readOnly={readOnly} />
     </div>
   );
 }

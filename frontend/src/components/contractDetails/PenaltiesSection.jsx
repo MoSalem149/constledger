@@ -3,6 +3,9 @@ import { ContractContext } from "../../context/EditContaractContext";
 import { PlusIcon } from "../icons/PlusIcon";
 import { TrashIcon } from "../icons/TrashIcon";
 
+const CONDITION_MAX = 2000;
+const PENALTY_FIELD_MAX = 500;
+
 const ClauseCard = ({
   condition,
   penalty,
@@ -48,9 +51,18 @@ const ClauseCard = ({
       </div>
 
       <input
+        type="text"
+        maxLength={PENALTY_FIELD_MAX}
+        aria-label={label}
         value={value}
         onChange={
-          readOnly ? undefined : (e) => handleFieldChange(key, e.target.value)
+          readOnly
+            ? undefined
+            : (e) =>
+                handleFieldChange(
+                  key,
+                  e.target.value.slice(0, PENALTY_FIELD_MAX),
+                )
         }
         onBlur={readOnly ? undefined : handleBlur}
         readOnly={readOnly}
@@ -83,11 +95,17 @@ const ClauseCard = ({
           </div>
 
           <textarea
+            maxLength={CONDITION_MAX}
+            aria-label="Penalty condition"
             value={local.condition}
             onChange={
               readOnly
                 ? undefined
-                : (e) => handleFieldChange("condition", e.target.value)
+                : (e) =>
+                    handleFieldChange(
+                      "condition",
+                      e.target.value.slice(0, CONDITION_MAX),
+                    )
             }
             onBlur={readOnly ? undefined : handleBlur}
             readOnly={readOnly}

@@ -125,9 +125,25 @@ export default function PlanTable({
                       <input
                         type="number"
                         min="0"
+                        max={contractValue || undefined}
                         step="0.01"
+                        inputMode="decimal"
+                        aria-label={`Planned amount for ${period.periodLabel}`}
                         value={period.plannedAmount ?? ""}
-                        onChange={(e) => onChange(idx, e.target.value)}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          if (raw === "") {
+                            onChange(idx, "");
+                            return;
+                          }
+                          const n = Number(raw);
+                          if (Number.isNaN(n) || n < 0) return;
+                          const capped =
+                            contractValue > 0 && n > contractValue
+                              ? contractValue
+                              : n;
+                          onChange(idx, String(capped));
+                        }}
                         className="w-32 text-right px-2 py-1 rounded border border-gray-200 text-text-primary text-sm focus:outline-none focus:border-primary"
                       />
                     )}

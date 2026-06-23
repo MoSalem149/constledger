@@ -195,10 +195,12 @@ const SearchBar = ({ value, onChange }) => (
       <SearchIcon />
     </span>
     <input
-      type="text"
+      type="search"
       placeholder="Search by name or ID ..."
       value={value}
-      onChange={(e) => onChange(e.target.value)}
+      onChange={(e) => onChange(e.target.value.slice(0, 128))}
+      maxLength={128}
+      aria-label="Search contracts"
       className="w-full pl-9 pr-4 py-2.5 bg-bg-cards1 border border-border rounded-full
         text-[13px] text-text-primary placeholder:text-text-secondary
         outline-none focus:border-primary transition-colors shadow-sm"

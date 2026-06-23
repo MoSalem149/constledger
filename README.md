@@ -96,6 +96,7 @@ backend-ai  ───┘
 | ------------------ | ----------------------------------------------------------- |
 | `contract_manager` | Upload contracts, review AI extractions, edit contract data |
 | `pmo`              | Everything above + manage users and all finance operations  |
+| `finance_team`     | Read finance plans and reports                              |
 | `top_management`   | Read finance plans and reports                              |
 
 ---

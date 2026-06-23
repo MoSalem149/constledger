@@ -22,7 +22,7 @@
  *
  * Role: contract_manager only (enforced by RoleGuard in App.jsx).
  */
-import { useState, useEffect, useRef, useCallback, useContext } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ArrowLeftIcon from "../components/icons/ArrowLeftIcon";
 import UploadDropzone from "../components/contracts/UploadDropzone";
@@ -33,8 +33,6 @@ import { isValidFile, getFileTypeErrorMessage } from "../utils/fileValidation";
 import { startSimulation } from "../utils/fakeProgress";
 import { putFileToS3 } from "../utils/s3Upload";
 import { hashFile } from "../utils/hashFile";
-import { UContractContext } from "../context/UploadedContractContext";
-
 /* ------------------------------------------------------------------ */
 // Helpers
 /* ------------------------------------------------------------------ */
@@ -64,7 +62,6 @@ function resolveMimeType(file) {
 /* ------------------------------------------------------------------ */
 
 export default function UploadContractPage() {
-  const { setContractData } = useContext(UContractContext);
   const navigate = useNavigate();
   const [pageState, setPageState] = useState("idle");
   const [error, setError] = useState(null);
@@ -284,30 +281,13 @@ export default function UploadContractPage() {
         cleanupRef.current = null;
         cleanup = null;
 
-        if (typeof setContractData !== "function") {
-          throw new Error(
-            `setContractData is ${typeof setContractData} — context value may be corrupted`,
-          );
-        }
-
         if (typeof navigate !== "function") {
           throw new Error(
             `navigate is ${typeof navigate} — router hook may be corrupted`,
           );
         }
 
-        setContractData(contract);
-
-        if (contract.status === "analysis_failed") {
-          navigate(`/contracts/${contract.id}/edit`, {
-            state: {
-              analysisError: "AI analysis failed. Some fields may be missing.",
-              partialData: true,
-            },
-          });
-        } else {
-          navigate(`/contracts/${contract.id}/edit`);
-        }
+        navigate(`/contracts/${contract.id}`);
       } catch (err) {
         // Log the full error (with stack) for debugging — the banner the
         // user sees should only ever contain a short, friendly message.
@@ -359,7 +339,7 @@ export default function UploadContractPage() {
         setPageState("idle");
       }
     },
-    [navigate, setContractData],
+    [navigate],
   );
 
   const handleBack = useCallback(() => {

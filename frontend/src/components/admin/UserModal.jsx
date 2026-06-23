@@ -15,6 +15,12 @@ const ROLES = [
 ];
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Letters (incl. Arabic), spaces, hyphens, apostrophes, periods. No digits / special chars.
+const NAME_REGEX = /^[A-Za-z\u0600-\u06FF][A-Za-z\u0600-\u06FF\s'.-]*$/;
+const NAME_MAX = 100;
+const EMAIL_MAX = 254;
+const PASSWORD_MIN = 8;
+const PASSWORD_MAX = 128;
 
 export default function UserModal({
   onClose,
@@ -34,13 +40,28 @@ export default function UserModal({
 
   function validate() {
     const next = {};
-    if (!name.trim()) next.name = "Name is required";
-    if (!email.trim()) next.email = "Email is required";
-    else if (!EMAIL_REGEX.test(email.trim()))
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim();
+    if (!trimmedName) next.name = "Name is required";
+    else if (trimmedName.length < 2)
+      next.name = "Name must be at least 2 characters";
+    else if (trimmedName.length > NAME_MAX)
+      next.name = `Name must be at most ${NAME_MAX} characters`;
+    else if (!NAME_REGEX.test(trimmedName))
+      next.name = "Name may only contain letters, spaces, hyphens, apostrophes and periods";
+
+    if (!trimmedEmail) next.email = "Email is required";
+    else if (trimmedEmail.length > EMAIL_MAX)
+      next.email = `Email must be at most ${EMAIL_MAX} characters`;
+    else if (!EMAIL_REGEX.test(trimmedEmail))
       next.email = "Enter a valid email address";
+
     if (!isEditMode && !password) next.password = "Password is required";
-    else if (password && password.length < 8)
-      next.password = "Password must be at least 8 characters";
+    else if (password && password.length < PASSWORD_MIN)
+      next.password = `Password must be at least ${PASSWORD_MIN} characters`;
+    else if (password && password.length > PASSWORD_MAX)
+      next.password = `Password must be at most ${PASSWORD_MAX} characters`;
+
     if (!role) next.role = "Select a role";
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -140,6 +161,10 @@ export default function UserModal({
             </label>
             <input
               type="text"
+              name="name"
+              autoComplete="name"
+              maxLength={NAME_MAX}
+              required
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
@@ -160,6 +185,11 @@ export default function UserModal({
             </label>
             <input
               type="email"
+              name="email"
+              autoComplete="email"
+              inputMode="email"
+              maxLength={EMAIL_MAX}
+              required
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -186,6 +216,11 @@ export default function UserModal({
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete={isEditMode ? "new-password" : "new-password"}
+                minLength={PASSWORD_MIN}
+                maxLength={PASSWORD_MAX}
+                required={!isEditMode}
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);

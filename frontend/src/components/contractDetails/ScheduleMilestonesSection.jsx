@@ -1,8 +1,18 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { ContractContext } from "../../context/EditContaractContext";
 import { TrashIcon } from "../icons/TrashIcon";
 import { PlusIcon } from "../icons/PlusIcon";
 import { formatDate } from "../../utils/formatDate";
+import { computeEndDateFromDuration, computeDurationFromDates } from "../../utils/contractDates";
+
+const MILESTONE_NAME_MAX = 200;
+const DATE_INPUT_MAX = 24;
+
+const isValidDate = (value) => {
+  if (!value) return true;
+  const d = new Date(value);
+  return !Number.isNaN(d.getTime());
+};
 
 // =================== SHARED ===================
 const Dot = ({ status }) => {
@@ -126,6 +136,7 @@ const DateFields = ({
   endDate,
   onStartChange,
   onEndChange,
+  endDateHint,
   readOnly,
 }) => {
   return (
@@ -133,23 +144,52 @@ const DateFields = ({
       {[
         { label: "Start Date", value: startDate, onChange: onStartChange },
         { label: "End Date", value: endDate, onChange: onEndChange },
-      ].map(({ label, value, onChange }) => (
-        <div key={label}>
-          <div className="flex items-center gap-2 mb-2">
-            <Dot status="green" />
-            <span className="text-[13px] text-text-secondary">{label}</span>
+      ].map(({ label, value, onChange }) => {
+        const valid = isValidDate(value);
+        const isEnd = label === "End Date";
+        return (
+          <div key={label}>
+            <div className="flex items-center gap-2 mb-2">
+              <Dot status="green" />
+              <span className="text-[13px] text-text-secondary">{label}</span>
+            </div>
+            <input
+              type="text"
+              maxLength={DATE_INPUT_MAX}
+              aria-label={label}
+              aria-invalid={!valid}
+              value={formatDate(value)}
+              onChange={
+                readOnly
+                  ? undefined
+                  : (e) => onChange(e.target.value.slice(0, DATE_INPUT_MAX))
+              }
+              readOnly={readOnly}
+              placeholder="e.g. 1 Jan 2026"
+              className={`w-full px-4 py-3 border rounded-lg text-[14px]
+                text-text-primary bg-bg-cards1 outline-none transition-colors ${
+                  !valid ? "border-status-risk" : "border-gray-200"
+                } ${readOnly ? "cursor-default" : "focus:border-primary"}`}
+            />
+            {!valid && (
+              <p className="mt-1 text-[11px] text-status-risk">
+                Enter a valid date
+              </p>
+            )}
+            {isEnd && endDateHint && valid && (
+              <p
+                className={`mt-1 text-[11px] ${
+                  endDateHint.startsWith("Duration updated")
+                    ? "text-status-track"
+                    : "text-text-secondary"
+                }`}
+              >
+                {endDateHint}
+              </p>
+            )}
           </div>
-          <input
-            type="text"
-            value={formatDate(value)}
-            onChange={readOnly ? undefined : (e) => onChange(e.target.value)}
-            readOnly={readOnly}
-            className={`w-full px-4 py-3 border border-gray-200 rounded-lg text-[14px]
-              text-text-primary bg-bg-cards1 outline-none transition-colors ${readOnly ? "cursor-default" : "focus:border-primary"
-              }`}
-          />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -173,11 +213,18 @@ const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
           Milestone
         </span>
         <input
+          type="text"
+          maxLength={MILESTONE_NAME_MAX}
+          aria-label="Milestone name"
           value={local.name}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, name: e.target.value }))
+              : (e) =>
+                  setLocal((p) => ({
+                    ...p,
+                    name: e.target.value.slice(0, MILESTONE_NAME_MAX),
+                  }))
           }
           onBlur={readOnly ? undefined : () => onChange({ ...local })}
           readOnly={readOnly}
@@ -192,18 +239,26 @@ const MilestoneRow = ({ milestone, onRemove, onChange, readOnly }) => {
           Due Date
         </span>
         <input
+          type="text"
+          maxLength={DATE_INPUT_MAX}
+          aria-label="Milestone due date"
+          aria-invalid={!isValidDate(local.dueDate)}
           value={local.dueDate}
           onChange={
             readOnly
               ? undefined
-              : (e) => setLocal((p) => ({ ...p, dueDate: e.target.value }))
+              : (e) =>
+                  setLocal((p) => ({
+                    ...p,
+                    dueDate: e.target.value.slice(0, DATE_INPUT_MAX),
+                  }))
           }
           onBlur={readOnly ? undefined : () => onChange({ ...local })}
           readOnly={readOnly}
-          className={`w-full rounded-lg border border-border bg-bg-cards1 px-3 py-2 text-[13.5px] font-medium text-text-primary outline-none transition-colors md:rounded-none md:border-transparent md:bg-transparent md:px-0 md:py-0 ${readOnly
-            ? "cursor-default"
-            : "focus:border-primary md:focus:border-gray-300"
-            }`}
+          placeholder="e.g. 1 Jan 2026"
+          className={`w-full rounded-lg border bg-bg-cards1 px-3 py-2 text-[13.5px] font-medium text-text-primary outline-none transition-colors md:rounded-none md:border-transparent md:bg-transparent md:px-0 md:py-0 ${
+            !isValidDate(local.dueDate) ? "border-status-risk" : "border-border"
+          } ${readOnly ? "cursor-default" : "focus:border-primary md:focus:border-gray-300"}`}
         />
       </label>
 
@@ -282,6 +337,7 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
 
   const [startDate, setStartDate] = useState(data.start_date ?? "");
   const [endDate, setEndDate] = useState(data.end_date ?? "");
+  const [endDateHint, setEndDateHint] = useState(null);
 
   const [milestones, setMilestones] = useState(
     (data.milestones ?? []).map((m, i) => ({
@@ -292,6 +348,11 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
       dueDate: formatDate(m.dueDate),
     })),
   );
+
+  useEffect(() => {
+    setStartDate(data.start_date ?? "");
+    setEndDate(data.end_date ?? "");
+  }, [data.start_date, data.end_date]);
 
   const syncMilestones = (updated) => {
     changeData({
@@ -328,12 +389,46 @@ const ScheduleMilestonesSection = ({ data, readOnly }) => {
         endDate={endDate}
         onStartChange={(val) => {
           setStartDate(val);
-          changeData({ start_date: val });
+          const updates = { start_date: val };
+          const days = Number(data.duration_days);
+          if (val && Number.isInteger(days) && days >= 1) {
+            const computedEnd = computeEndDateFromDuration(val, days);
+            if (computedEnd) {
+              updates.end_date = computedEnd;
+              setEndDate(computedEnd);
+            }
+          }
+          changeData(updates);
         }}
         onEndChange={(val) => {
           setEndDate(val);
-          changeData({ end_date: val });
+          setEndDateHint(null);
+
+          const updates = { end_date: val };
+          const start = startDate || data.start_date;
+
+          if (!start) {
+            changeData(updates);
+            setEndDateHint(
+              "Add a start date to auto-update the duration.",
+            );
+            return;
+          }
+
+          const computedDays = computeDurationFromDates(start, val);
+          if (computedDays == null) {
+            changeData(updates);
+            if (val.trim()) {
+              setEndDateHint("End date must be after the start date.");
+            }
+            return;
+          }
+
+          updates.duration_days = computedDays;
+          changeData(updates);
+          setEndDateHint(`Duration updated to ${computedDays} days.`);
         }}
+        endDateHint={endDateHint}
         readOnly={readOnly}
       />
       <MilestonesTable
