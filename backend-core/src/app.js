@@ -1,37 +1,62 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 
-const authRoutes = require('./routes/authRoutes');
-const contractRoutes = require('./routes/contractRoutes');
-const financeRoutes = require('./routes/financeRoutes');
-const reportRoutes = require('./routes/reportRoutes');
-const userRoutes = require('./routes/userRoutes');
-const { errorHandler, notFound } = require('./middleware/errorMiddleware');
+import authRoutes from './routes/authRoutes.js';
+import financeRoutes from './routes/financeRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import userRoutes from './routes/userRoutes.js';
+import { errorHandler, notFound } from './middleware/errorMiddleware.js';
 
 const app = express();
 
-// Security & logging
+// CORS whitelist — localhost is always allowed for dev, production origin
+// comes from FRONTEND_URL. .filter(Boolean) drops it if the env var is unset.
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
+// Security headers and request logging
 app.use(helmet());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+
+// CORS with credentials enabled so the httpOnly auth cookie is sent cross-origin
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
+
+// Global rate limit — 200 requests per 15 minutes per IP
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
+
+// Body and cookie parsing
 app.use(express.json({ limit: '10mb' }));
+app.use(cookieParser());
 
-// Health check
-app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'cpms-core' }));
+// Liveness probe for orchestrators / load balancers
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', service: 'cpms-core' });
+});
 
-// Routes
+// Feature routers
 app.use('/api/auth', authRoutes);
-app.use('/api/contracts', contractRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 
-// Error handling
+// 404 + centralized error handler must be registered last
 app.use(notFound);
 app.use(errorHandler);
 
-module.exports = app;
+export default app;

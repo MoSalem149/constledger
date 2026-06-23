@@ -1,0 +1,32 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/auth/:path*",
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/auth/:path*"
+    },
+    {
+      "source": "/api/users/:path*",
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/users/:path*"
+    },
+    {
+      "source": "/api/contracts/:path*",
+      "destination": "https://cpms-ai-prod-420306063918.europe-west1.run.app/api/contracts/:path*"
+    },
+    {
+      "source": "/api/uploads/:path*",
+      "destination": "https://cpms-ai-prod-420306063918.europe-west1.run.app/api/uploads/:path*"
+    },
+    {
+      "source": "/api/finance/:path*",
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/finance/:path*"
+    },
+    {
+      "source": "/api/reports/:path*",
+      "destination": "https://cpms-core--deploy.mosalem149.deno.net/api/reports/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

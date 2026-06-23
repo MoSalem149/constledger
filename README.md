@@ -2,7 +2,7 @@
 
 # ConstLedger
 
-**AI-Powered Contract & Project Management System**
+**AI-assisted contract extraction, finance planning, and reporting**
 
 > Graduation Project — Information Technology Institute (ITI) · May 2026
 
@@ -18,7 +18,14 @@
 
 ## What is ConstLedger?
 
-ConstLedger replaces Excel-based construction project management with a unified web platform featuring AI-powered contract analysis, financial tracking, and real-time performance reporting.
+ConstLedger currently has two implemented backend services and a React frontend
+scaffold. Backend AI handles S3 uploads, PDF parsing, AI extraction, validation,
+and contract storage. Backend Core handles authentication, users, finance
+planning, reporting, and XLSX exports.
+
+The frontend currently contains routing, API clients, authentication state, and
+placeholder pages. Its service modules still include endpoints from an older
+API design and need alignment before the UI is fully functional.
 
 ---
 
@@ -50,17 +57,24 @@ constledger/
 
 ### Service Communication
 
+The browser talks to both backend services. Core owns `/api/auth`,
+`/api/users`, `/api/finance`, and `/api/reports`; AI owns `/api/uploads` and
+`/api/contracts`. Both services use the same MongoDB database and verify the
+same HTTP-only JWT cookie. There is no active `x-internal-secret` service call
+between them.
+
 ```
 Browser
-  │  HTTPS
-  ▼
-frontend :5173
-  │  REST /api/*
-  ▼
-backend-core :3000  ──────────  MongoDB :27017
-  │  internal (x-internal-secret)
-  ▼
-backend-ai :5000
+  ├── /api/auth, /api/users, /api/finance, /api/reports
+  │      └── backend-core :3000
+  └── /api/uploads, /api/contracts
+         └── backend-ai :5000
+
+backend-core ──┐
+              ├── shared MongoDB :27017
+backend-ai  ───┘
+      └── Amazon S3
+      └── Gemini, OpenRouter, or Groq
 ```
 
 ---
@@ -69,9 +83,10 @@ backend-ai :5000
 
 | Module                    | Description                                                                                 | AI?                 |
 | ------------------------- | ------------------------------------------------------------------------------------------- | ------------------- |
-| **Contracts**             | Upload PDF/DOCX contracts — AI extracts key data as JSON, user reviews & confirms           | ✅ GPT-4o           |
-| **Finance**               | Auto-generate planned budget from contract; site teams submit actual progress; PMO approves | Partial             |
-| **Performance & Reports** | SPI / CPI KPIs, monthly/quarterly reports, PDF & Excel export                               | ❌ Aggregation only |
+| **Contracts** | Direct-to-S3 upload, background PDF extraction, validation, human review, editing, and re-analysis | Gemini, OpenRouter, or Groq |
+| **Finance** | Straight-line, S-curve, and milestone-weighted plans; manual edits; confirmation; payment schedule | Deterministic |
+| **Reports** | Contract, planned-budget, payment-schedule, and project-summary JSON/XLSX reports | Aggregation |
+| **Frontend** | React/Vite routes and service scaffold; page implementations are placeholders | Not complete |
 
 ---
 
@@ -80,9 +95,8 @@ backend-ai :5000
 | Role               | Permissions                                                 |
 | ------------------ | ----------------------------------------------------------- |
 | `contract_manager` | Upload contracts, review AI extractions, edit contract data |
-| `pmo`              | Everything above + approve/reject reports, manage users     |
-| `finance_team`     | Submit actual progress reports                              |
-| `top_management`   | Read-only dashboards and reports                            |
+| `pmo`              | Everything above + manage users and all finance operations  |
+| `top_management`   | Read finance plans and reports                              |
 
 ---
 
@@ -94,9 +108,10 @@ backend-ai :5000
 | Core Backend      | Node.js, Express, Mongoose                    |
 | AI Backend        | Node.js, Express, TypeScript                  |
 | Database          | MongoDB (Mongoose ODM)                        |
-| File Storage      | Cloudinary                                    |
-| LLM               | OpenAI GPT-4o                                 |
-| Auth              | JWT + RBAC                                    |
+| File Storage      | Amazon S3                                     |
+| LLM               | Gemini, OpenRouter, or Groq                   |
+| Auth              | JWT in HTTP-only cookie + RBAC                |
+| Testing           | Vitest                                        |
 | Dev Orchestration | Docker Compose                                |
 
 ---
@@ -105,7 +120,8 @@ backend-ai :5000
 
 ### Option A — Docker (recommended)
 
-**Prerequisites:** Docker Desktop, Cloudinary account, OpenAI API key.
+**Prerequisites:** Docker Desktop, an Amazon S3 bucket, and at least one
+Gemini, OpenRouter, or Groq API key.
 
 ```bash
 # 1. Clone
@@ -117,8 +133,10 @@ cp backend-core/.env.example    backend-core/.env
 cp backend-ai/.env.example      backend-ai/.env
 
 # 3. Fill in secrets
-#    backend-core/.env  →  JWT_SECRET, CLOUDINARY_*, AI_SERVICE_SECRET
-#    backend-ai/.env    →  OPENAI_API_KEY, INTERNAL_SECRET
+#    use the same JWT_SECRET in both backend env files
+#    backend-core/.env  → MONGODB_URI, JWT_SECRET
+#    backend-ai/.env    → MONGODB_URI, JWT_SECRET, AWS_*, S3_BUCKET,
+#                         and at least one AI provider API key
 
 # 4. Start everything
 docker-compose up --build
@@ -158,7 +176,7 @@ npm run dev
 ```bash
 cd backend-ai
 cp .env.example .env        # set MONGODB_URI=mongodb://localhost:27017/cpms
-                             # set CORE_SERVICE_URL=http://localhost:3000
+                             # configure JWT_SECRET, S3, and an AI provider key
 npm install
 npm run dev
 ```
@@ -172,7 +190,7 @@ npm install
 npm run dev
 ```
 
-> Start order: MongoDB → backend-core → backend-ai → frontend
+> Start order: MongoDB → backend-core and backend-ai → frontend
 
 ---
 
@@ -185,6 +203,112 @@ curl http://localhost:5000/health   # {"status":"ok","service":"cpms-ai"}
 
 ---
 
+## Backend Tests
+
+Focused Vitest suites cover the main backend business logic without requiring
+MongoDB, AWS, OCR, or AI provider credentials.
+
+```bash
+cd backend-core && npm test
+cd ../backend-ai && npm test
+cd ../frontend && npm run build
+```
+
+Use `npm run test:watch` inside either backend while developing. Docker files
+do not need test-specific changes because Vitest is a development dependency
+and the runtime images continue to install production dependencies only.
+
+---
+
+## API Ownership
+
+| Service | Mounted API prefixes |
+|---|---|
+| Backend Core | `/api/auth`, `/api/users`, `/api/finance`, `/api/reports` |
+| Backend AI | `/api/uploads`, `/api/contracts` |
+
+See [backend-core/README.md](backend-core/README.md) and
+[backend-ai/README.md](backend-ai/README.md) for the current endpoints,
+authorization rules, request shapes, and environment variables.
+
+---
+
+## Fixed: Frontend couldn't reach Backend AI under Docker Compose
+
+`docker-compose up` used to bring up all four containers successfully, but
+the frontend couldn't actually reach `backend-ai` once you started clicking
+around (contract list, upload, analysis all failed) — even though
+`npm run dev` for each service on the host (Option B) worked fine. Two
+stacked issues caused it, and both are now fixed in `vite.config.js` and
+`docker-compose.yml`:
+
+1. **`vite.config.js`'s dev-server proxy targets were hardcoded to
+   `localhost`.** That proxy runs *inside* whichever process is running
+   Vite. When that process is the `frontend` container, `localhost`
+   resolves to the container itself — not to `backend-core` or `backend-ai`,
+   which are only reachable from `frontend` via their Compose service names
+   (`http://backend-core:3000`, `http://backend-ai:5000`) on the `cpms-net`
+   network. Running all three as plain host processes has no such
+   isolation, so the same hardcoded targets happened to be correct there.
+
+   **Fix:** the proxy targets are now read from `CORE_PROXY_TARGET` /
+   `AI_PROXY_TARGET` env vars, defaulting to `localhost` for local dev.
+   `docker-compose.yml` sets them to the service names instead.
+
+2. **`docker-compose.yml` overrode `VITE_API_URL` to an absolute URL**
+   (`http://localhost:3000/api`) instead of the relative `/api` default in
+   `frontend/.env.example`. `frontend/.dockerignore` excludes `.env.local`
+   from the build context, so inside the container that Compose value was
+   the *only* value Vite ever saw. Because `services/api.js` has a single
+   Axios instance whose `baseURL` is `VITE_API_URL` — and `VITE_AI_API_URL`
+   (also set in the old `docker-compose.yml`) was never read anywhere in the
+   frontend code — every request, including ones for `/api/contracts` and
+   `/api/uploads`, got sent to `backend-core`, which doesn't mount those
+   routes, so they 404'd.
+
+   In local/standalone dev, `VITE_API_URL` stayed relative (`/api`), so
+   requests went through the Vite proxy from issue #1 instead — and that
+   proxy *did* correctly split traffic by path between `:3000` and `:5000`,
+   because in that mode `localhost` was unambiguous. That's why
+   contracts/uploads worked outside Docker even though the frontend only
+   ever had one configured API base URL.
+
+   **Fix:** `docker-compose.yml` now sets `VITE_API_URL=/api` (relative,
+   matching local dev), so every request goes through the now-correctly-
+   targeted Vite proxy from fix #1. `VITE_AI_API_URL` was removed since
+   nothing reads it.
+
+If you pulled this repo before this fix landed: `docker-compose up --build`
+again to pick up the new `frontend` environment variables, no other changes
+needed.
+
+---
+
+## Current Limitations
+
+- All frontend page components are placeholders.
+- The frontend authentication client expects a response token and sends bearer
+  tokens, while the backends use only an HTTP-only cookie. Axios also needs
+  `withCredentials: true`.
+- Several frontend finance and report URLs belong to an older API and are not
+  mounted by the current backends.
+- Upload signing accepts PDF, DOC, and DOCX MIME types, but active analysis
+  supports PDF only. Word uploads currently end in `analysis_failed`.
+- AI extraction always finishes in `pending_review`; a manager must activate
+  the contract before finance-plan generation.
+- `docker-compose.yml` still sets `AI_SERVICE_URL` / `CORE_SERVICE_URL` on
+  the backends, and both `.env.example` files document `AI_SERVICE_SECRET` /
+  an `x-internal-secret` header. None of these are read anywhere in `src/`
+  for either backend — there is no service-to-service HTTP call today
+  (matches the "Service Communication" note above). Safe to ignore or
+  remove until that call is actually built.
+- There are no automated frontend tests yet.
+
+See [frontend/README.md](frontend/README.md) for the frontend integration work
+that remains.
+
+---
+
 ## Deployment
 
 ### Frontend → Vercel
@@ -194,6 +318,7 @@ cd frontend && npm run build
 npx vercel --prod
 # Set in Vercel dashboard:
 #   VITE_API_URL = https://your-core-service.run.app/api
+#   VITE_AI_API_URL = https://your-ai-service.run.app/api
 ```
 
 ### Backends → Google Cloud Run
@@ -207,15 +332,19 @@ gcloud run deploy constledger-backend-core \
   --platform managed --region us-central1 \
   --set-env-vars MONGODB_URI=...,JWT_SECRET=...
 
-# backend-ai (private — not accessible from browser)
+# backend-ai
 cd backend-ai
 gcloud builds submit --tag gcr.io/YOUR_PROJECT/constledger-backend-ai
 gcloud run deploy constledger-backend-ai \
   --image gcr.io/YOUR_PROJECT/constledger-backend-ai \
   --platform managed --region us-central1 \
-  --no-allow-unauthenticated \
-  --set-env-vars MONGODB_URI=...,OPENAI_API_KEY=...,INTERNAL_SECRET=...
+  --allow-unauthenticated \
+  --set-env-vars MONGODB_URI=...,JWT_SECRET=...,S3_BUCKET=...,AWS_REGION=...
 ```
+
+The browser currently calls Backend AI directly, so a private Cloud Run
+service would require an additional authenticated proxy architecture. Inject
+JWT, database, S3, and AI-provider secrets through Secret Manager in production.
 
 ---
 

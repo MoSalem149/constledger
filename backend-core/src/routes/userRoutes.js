@@ -1,12 +1,13 @@
-const { Router } = require('express');
-const { protect, authorize } = require('../middleware/authMiddleware');
-const User = require('../models/User');
+import { Router } from 'express';
+import { protect, authorize } from '../middleware/authMiddleware.js';
+import { createUser, listUsers, getUser, updateUser, deleteUser } from '../controllers/userController.js';
+
 const router = Router();
+
+// All user-management endpoints require a valid token AND the pmo role.
 router.use(protect, authorize('pmo'));
-router.get('/', async (req, res, next) => {
-  try {
-    const users = await User.find().select('-password');
-    res.json({ users });
-  } catch (err) { next(err); }
-});
-module.exports = router;
+
+router.route('/').post(createUser).get(listUsers);
+router.route('/:id').get(getUser).put(updateUser).delete(deleteUser);
+
+export default router;

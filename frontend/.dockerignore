@@ -1,4 +1,50 @@
-node_modules
-dist
+# ── Dependencies (re-installed inside the image) ─────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# ── Build artifacts ──────────────────────────────────────────────────
+dist/
+dist-ssr/
+
+# ── Environment / secrets ────────────────────────────────────────────
+# Real env files never enter the image; they are provided at runtime.
 .env
-.env.local
+.env.*
+!.env.example
+
+# ── Logs ─────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ── Git ──────────────────────────────────────────────────────────────
+.git/
+.gitignore
+.gitattributes
+
+# ── Docs (not needed at runtime) ─────────────────────────────────────
+README.md
+*.md
+docs/
+apiCollections/
+
+# ── Editor / OS metadata ─────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# ── Tests / coverage ─────────────────────────────────────────────────
+coverage/
+.nyc_output/
+test/
+tests/
+__tests__/
+
+# ── Docker meta ──────────────────────────────────────────────────────
+Dockerfile
+.dockerignore
+docker-compose*.yml

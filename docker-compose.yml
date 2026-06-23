@@ -1,58 +1,90 @@
+# docker-compose.yml — CPMS root
+name: cpms
+
 services:
 
-  # ── MongoDB ─────────────────────────────────────────────────────────
-  mongo:
+  # ───────────────────────────────────────────────────────────────────────────
+  # mongodb  (MongoDB database)
+  # ───────────────────────────────────────────────────────────────────────────
+  mongodb:
     image: mongo:7
-    container_name: cpms-mongo
+    container_name: cpms-mongodb
     restart: unless-stopped
-    ports:
-      - '27017:27017'           # MongoDB default
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
     volumes:
-      - mongo_data:/data/db
+      - mongodb_data:/data/db
     networks:
       - cpms-net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 5
+    ports:
+      - "27017:27017"
 
-  # ── Core Backend (Node/Express JS) ──────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
+  # backend-core  (Node / Express — auth, users, finance, reports)
+  # ───────────────────────────────────────────────────────────────────────────
   backend-core:
     build:
       context: ./backend-core
       dockerfile: Dockerfile
-    container_name: cpms-backend-core
+    container_name: cpms-core
     restart: unless-stopped
     env_file: ./backend-core/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - AI_SERVICE_URL=http://backend-ai:5000
-    ports:
-      - '3000:3000'             # Express default
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_URL: http://localhost:5173
     depends_on:
-      - mongo
+      mongodb:
+        condition: service_healthy
     networks:
       - cpms-net
-    volumes:
-      # hot-reload in dev — comment out for production image
-      - ./backend-core/src:/app/src:ro
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:3000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    ports:
+      - "3000:3000"
 
-  # ── AI Backend (Node/Express TS) ─────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
+  # backend-ai  (Node / TypeScript — contracts, uploads, AI analysis)
+  # ───────────────────────────────────────────────────────────────────────────
   backend-ai:
     build:
       context: ./backend-ai
       dockerfile: Dockerfile
-    container_name: cpms-backend-ai
+    container_name: cpms-ai
     restart: unless-stopped
     env_file: ./backend-ai/.env
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/cpms
-      - CORE_SERVICE_URL=http://backend-core:3000
-    ports:
-      - '5000:5000'             # AI service default
+      NODE_ENV: production
+      PORT: 5000
+      FRONTEND_URL: http://localhost:5173
     depends_on:
-      - mongo
-      - backend-core
+      mongodb:
+        condition: service_healthy
     networks:
       - cpms-net
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://127.0.0.1:5000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    ports:
+      - "5000:5000"
 
-  # ── Frontend (React + Vite) ──────────────────────────────────────────
+  # ───────────────────────────────────────────────────────────────────────────
+  # frontend  (React / Vite — served by nginx, api proxied to backends)
+  # ───────────────────────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -60,19 +92,27 @@ services:
     container_name: cpms-frontend
     restart: unless-stopped
     environment:
-      - VITE_API_URL=http://localhost:3000/api
-      - VITE_AI_API_URL=http://localhost:5000/api
+      CORE_BACKEND_URL: http://backend-core:3000
+      AI_BACKEND_URL: http://backend-ai:5000
     ports:
-      - '5173:5173'             # Vite default
+      - "5173:80"
     depends_on:
-      - backend-core
-      - backend-ai
+      backend-core:
+        condition: service_healthy
+      backend-ai:
+        condition: service_healthy
     networks:
       - cpms-net
 
-volumes:
-  mongo_data:
-
+# ─────────────────────────────────────────────────────────────────────────────
+# Networks
+# ─────────────────────────────────────────────────────────────────────────────
 networks:
   cpms-net:
     driver: bridge
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Volumes
+# ─────────────────────────────────────────────────────────────────────────────
+volumes:
+  mongodb_data:
